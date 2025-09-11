@@ -119,12 +119,17 @@ def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
+    # Save chart to temp file
+    chart_path = "chart.png"
+    with open(chart_path, "wb") as f:
+        f.write(chart_buf.getbuffer())
+
     # Page 1: Chart
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 20)
     pdf.cell(0, 10, "Creative Identity Profile", ln=True, align="C")
     pdf.ln(10)
-    pdf.image(chart_buf, x=30, y=40, w=150)
+    pdf.image(chart_path, x=30, y=40, w=150)
 
     # Page 2: Archetype
     pdf.add_page()
