@@ -1,9 +1,6 @@
 import streamlit as st
 import random
-import matplotlib.pyplot as plt
-import numpy as np
 from fpdf import FPDF
-from io import BytesIO
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
@@ -86,35 +83,6 @@ archetype_extras = {
     }
 }
 
-# Exercises
-archetype_exercises = {
-    "Visionary Dreamer": [
-        "Sketch your ideal future and identify one step you could take today.",
-        "Create a moodboard of images that capture your vision.",
-        "Pick one idea and prototype it in the simplest way possible."
-    ],
-    "Inquisitive Explorer": [
-        "Spend 30 minutes learning something completely unfamiliar.",
-        "Interview someone outside your field about their work.",
-        "Keep a ‘question diary’ and revisit it weekly."
-    ],
-    "Bold Experimenter": [
-        "Run a one-day project where failure is part of the process.",
-        "Try an improv game to practice spontaneity.",
-        "Redesign a familiar object in an unexpected way."
-    ],
-    "Resilient Maker": [
-        "Revive an abandoned project and push it to completion.",
-        "Try the ‘one percent better’ method daily.",
-        "Schedule a creative stamina session and push past frustration."
-    ],
-    "Collaborative Connector": [
-        "Run a brainstorming session where you only build on others’ ideas.",
-        "Pair with someone different from you and co-create.",
-        "Ask for feedback and integrate at least one suggestion."
-    ]
-}
-
 trait_extras = {
     "Imagination": {
         "Meaning": "Your strength lies in envisioning possibilities.",
@@ -138,34 +106,6 @@ trait_extras = {
     }
 }
 
-creative_exercises = {
-    "Imagination": [
-        "Keep a 10-minute daily idea journal.",
-        "Play with metaphors by imagining unusual uses for objects.",
-        "Sketch or mindmap freely without worrying about polish."
-    ],
-    "Curiosity": [
-        "Ask 5 ‘why’ questions about any problem.",
-        "Dive into a new topic each week.",
-        "Keep a question log to revisit unanswered curiosities."
-    ],
-    "Risk-taking": [
-        "Run a quick ‘small bet’ experiment.",
-        "Do one slightly uncomfortable activity weekly.",
-        "Play improv games to grow comfortable with uncertainty."
-    ],
-    "Persistence": [
-        "Break projects into milestones and track small wins.",
-        "Use the Pomodoro technique for tough challenges.",
-        "Revive a past unfinished project and finish it."
-    ],
-    "Social Sensitivity": [
-        "Only build on others’ ideas in a brainstorming session.",
-        "Practice perspective-shifting on a challenge.",
-        "Co-create with someone in real time."
-    ]
-}
-
 # ---------------------------
 # Functions
 # ---------------------------
@@ -173,28 +113,7 @@ def assign_profile(traits):
     strongest = max(traits, key=traits.get)
     return archetypes.get(strongest, "Balanced Creator")
 
-def create_radar_chart(traits):
-    labels = list(traits.keys())
-    values = list(traits.values())
-    values += values[:1]
-
-    angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False).tolist()
-    angles += angles[:1]
-
-    fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, color="blue", linewidth=2)
-    ax.fill(angles, values, color="blue", alpha=0.25)
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels([])
-    st.pyplot(fig)
-
-    buf = BytesIO()
-    plt.savefig(buf, format="png")
-    buf.seek(0)
-    return buf
-
-def create_pdf(profile_name, traits, chart_file):
+def create_pdf(profile_name, traits):
     pdf = FPDF()
     pdf.add_page()
 
@@ -225,16 +144,6 @@ def create_pdf(profile_name, traits, chart_file):
         pdf.multi_cell(0, 10, f"Blind Spots: {extra['Blind Spots']}")
         pdf.multi_cell(0, 10, f"Growth Practices: {extra['Practices']}")
 
-    # Radar chart (save to temp file)
-    tmp_chart_path = "radar_chart.png"
-    with open(tmp_chart_path, "wb") as f:
-        f.write(chart_file.getbuffer())
-
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, "Your Creative Trait Profile", ln=True)
-    pdf.image(tmp_chart_path, x=40, w=120)
-
     # Traits
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 14)
@@ -249,29 +158,6 @@ def create_pdf(profile_name, traits, chart_file):
             pdf.set_font("Arial", size=12)
             pdf.multi_cell(0, 10, f"Meaning: {trait_extras[trait]['Meaning']}")
             pdf.multi_cell(0, 10, f"Growth: {trait_extras[trait]['Growth']}")
-
-    # Exercises (Traits + Archetype)
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, "Next Steps: Trait-Based Exercises", ln=True)
-    pdf.set_font("Arial", size=12)
-
-    top_two = sorted(traits.items(), key=lambda x: x[1], reverse=True)[:2]
-    for trait, _ in top_two:
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 12)
-        pdf.multi_cell(0, 10, f"{trait} Exercises:")
-        pdf.set_font("Arial", size=12)
-        for ex in creative_exercises.get(trait, []):
-            pdf.multi_cell(0, 10, f"- {ex}")
-
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, f"{profile_name} Exercises", ln=True)
-    pdf.set_font("Arial", size=12)
-    if profile_name in archetype_exercises:
-        for ex in archetype_exercises[profile_name]:
-            pdf.multi_cell(0, 10, f"- {ex}")
 
     return pdf
 
@@ -301,9 +187,6 @@ if st.button("Submit"):
 
     profile = assign_profile(trait_scores)
 
-    # Radar
-    chart_buf = create_radar_chart(trait_scores)
-
     # Show archetype
     st.subheader("Your Creative Archetype")
     st.write(profile)
@@ -314,7 +197,7 @@ if st.button("Submit"):
         st.write("**Practices:**", archetype_extras[profile]["Practices"])
 
     # PDF
-    pdf = create_pdf(profile, trait_scores, chart_buf)
+    pdf = create_pdf(profile, trait_scores)
     pdf_bytes = pdf.output(dest="S").encode("latin-1")
     st.download_button(
         "📥 Download Your Full Report",
@@ -322,4 +205,5 @@ if st.button("Submit"):
         file_name="creative_identity_report.pdf",
         mime="application/pdf"
     )
+
 
