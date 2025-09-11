@@ -1,119 +1,62 @@
-import streamlit as st
-import matplotlib.pyplot as plt
-import numpy as np
-from fpdf import FPDF
+def assign_profile(traits):
+    # sort traits from highest to lowest
+    sorted_traits = sorted(traits.items(), key=lambda x: x[1], reverse=True)
+    top_trait, top_score = sorted_traits[0]
+    second_trait, second_score = sorted_traits[1]
 
-# ----------------------------
-# 1. ARCHETYPE FUNCTION
-# ----------------------------
-def assign_profile(traits, preferences):
-    if traits["Imagination"] > 12 and preferences["Artistic"] > 10:
-        return "Visionary Dreamer", (
-            "You thrive on imagination and artistic exploration.",
-            "Lean into surreal art, free writing, and future-scenario thinking."
-        )
-    elif traits["Curiosity"] > 12 and preferences["Scientific"] > 10:
-        return "Analytical Builder", (
-            "You are driven by curiosity and analysis.",
-            "Experiment with data-driven creativity and puzzles."
-        )
-    elif traits["Risk-taking"] > 12 and preferences["Practical"] > 10:
-        return "Bold Experimenter", (
-            "You embrace uncertainty and hands-on learning.",
-            "Prototype fast, fail smart, and iterate."
-        )
-    elif traits["Social Sensitivity"] > 12 and preferences["Social"] > 10:
-        return "Collaborative Connector", (
-            "You thrive on co-creation and empathy.",
-            "Facilitate group brainstorming and collective design."
-        )
-    else:
-        return "Balanced Creator", (
-            "You draw on multiple creative strengths.",
-            "Experiment with different creative modes to see what sticks."
-        )
+    # thresholds (adjustable)
+    HIGH = 15
 
-# ----------------------------
-# 2. PDF EXPORT FUNCTION
-# ----------------------------
-def create_pdf(profile_name, profile_desc, profile_growth, traits, preferences):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, "Creative Identity Report", ln=True, align="C")
+    # Two-trait archetypes
+    if top_trait == "Imagination" and second_trait == "Curiosity":
+        return ("Visionary Dreamer",
+                "You see possibilities others don’t. You love exploring 'what ifs' and imagining bold futures.",
+                "Ground your visions by sketching or prototyping them.")
+    elif top_trait == "Curiosity" and second_trait == "Persistence":
+        return ("Analytical Builder",
+                "You dig deep, ask hard questions, and keep working until solutions appear.",
+                "Balance analysis with playful exploration.")
+    elif top_trait == "Risk-taking" and second_trait == "Imagination":
+        return ("Bold Experimenter",
+                "You embrace uncertainty and jump into new ideas with courage.",
+                "Structure your experiments to learn quickly from failure.")
+    elif top_trait == "Social Sensitivity" and second_trait == "Persistence":
+        return ("Collaborative Connector",
+                "You thrive in groups, amplifying and shaping ideas with empathy.",
+                "Make space to share your own voice alongside supporting others.")
+    elif top_trait == "Curiosity" and second_trait == "Risk-taking":
+        return ("Strategic Innovator",
+                "You explore new fields and act decisively on discoveries.",
+                "Balance speed with deeper reflection before moving on.")
+    elif top_trait == "Imagination" and second_trait == "Social Sensitivity":
+        return ("Playful Improviser",
+                "You love spontaneous creativity, games, and improvisation with others.",
+                "Add structure to channel playful sparks into lasting results.")
 
-    pdf.set_font("Arial", size=12)
-    pdf.ln(10)
-    pdf.multi_cell(0, 10, f"Profile: {profile_name}")
-    pdf.multi_cell(0, 10, f"Description: {profile_desc}")
-    pdf.multi_cell(0, 10, f"Growth Suggestion: {profile_growth}")
+    # Single-trait archetypes
+    if top_trait == "Imagination":
+        return ("Imaginative Storyteller",
+                "You love narrative, symbolism, and creating new worlds.",
+                "Transform stories into action or products.")
+    elif top_trait == "Curiosity":
+        return ("Inquisitive Explorer",
+                "You are energized by questions, new information, and discovery.",
+                "Narrow focus at times to turn curiosity into creations.")
+    elif top_trait == "Risk-taking":
+        return ("Fearless Challenger",
+                "You thrive on breaking rules and disrupting the status quo.",
+                "Learn when to take calculated risks versus when to pause.")
+    elif top_trait == "Persistence":
+        return ("Resilient Maker",
+                "You stick with creative work through obstacles and setbacks.",
+                "Pair persistence with reflection to avoid burnout.")
+    elif top_trait == "Social Sensitivity":
+        return ("Empathic Creator",
+                "You tune into people’s needs and create with empathy at the core.",
+                "Pair empathy with boldness to push ideas further.")
 
-    pdf.ln(10)
-    pdf.cell(200, 10, "Traits:", ln=True)
-    for k, v in traits.items():
-        pdf.cell(200, 10, f"{k}: {v}", ln=True)
-
-    pdf.ln(5)
-    pdf.cell(200, 10, "Preferences:", ln=True)
-    for k, v in preferences.items():
-        pdf.cell(200, 10, f"{k}: {v}", ln=True)
-
-    return pdf
-
-# ----------------------------
-# 3. STREAMLIT APP
-# ----------------------------
-st.title("✨ Creative Identity Profile ✨")
-st.write("Discover your creative archetype and get tailored growth suggestions.")
-
-# Trait sliders
-traits = {
-    "Imagination": st.slider("Imagination", 1, 15, 7),
-    "Curiosity": st.slider("Curiosity", 1, 15, 7),
-    "Risk-taking": st.slider("Risk-taking", 1, 15, 7),
-    "Persistence": st.slider("Persistence", 1, 15, 7),
-    "Social Sensitivity": st.slider("Social Sensitivity", 1, 15, 7),
-}
-
-# Preference sliders
-preferences = {
-    "Artistic": st.slider("Artistic", 1, 15, 7),
-    "Scientific": st.slider("Scientific", 1, 15, 7),
-    "Practical": st.slider("Practical", 1, 15, 7),
-    "Social": st.slider("Social", 1, 15, 7),
-}
-
-# Get archetype
-profile_name, (profile_desc, profile_growth) = assign_profile(traits, preferences)
-
-st.subheader(f"🌟 Your Creative Archetype: {profile_name}")
-st.write(profile_desc)
-st.write("**Growth suggestion:**", profile_growth)
-
-# ----------------------------
-# 4. RADAR CHART
-# ----------------------------
-labels = list(traits.keys())
-values = list(traits.values())
-angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-values += values[:1]
-angles += angles[:1]
-
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-ax.plot(angles, values, "o-", linewidth=2)
-ax.fill(angles, values, alpha=0.25)
-ax.set_yticklabels([])
-ax.set_xticks(angles[:-1])
-ax.set_xticklabels(labels)
-st.pyplot(fig)
-
-# ----------------------------
-# 5. EXPORT PDF
-# ----------------------------
-if st.button("📄 Export Report as PDF"):
-    pdf = create_pdf(profile_name, profile_desc, profile_growth, traits, preferences)
-    pdf_output = "Creative_Identity_Report.pdf"
-    pdf.output(pdf_output)
-    with open(pdf_output, "rb") as f:
-        st.download_button("⬇️ Download Report", f, file_name=pdf_output)
+    # Balanced fallback
+    return ("Grounded Realist",
+            "You integrate imagination, persistence, and empathy in steady ways.",
+            "Push beyond comfort zones to discover new strengths.")
 
