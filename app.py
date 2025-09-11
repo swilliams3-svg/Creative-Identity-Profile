@@ -7,7 +7,8 @@ import random
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 st.title("✨ Creative Identity Profile ✨")
-st.write("Tick the boxes that feel true for you to explore your creative archetype and traits.")
+
+st.write("Rate each statement from 1 (Strongly Disagree) to 5 (Strongly Agree).")
 
 # --------------------------------------------------
 # Questions per trait
@@ -46,7 +47,7 @@ questions = {
 }
 
 # --------------------------------------------------
-# Archetype mapping
+# Archetype mapping (same as before)
 # --------------------------------------------------
 archetype_extras = {
     "Visionary Dreamer": {
@@ -178,20 +179,28 @@ def create_pdf(profile_name, traits, chart_file):
 # --------------------------------------------------
 scores = {trait: 0 for trait in questions}
 
-# Flatten and randomise questions
+# Flatten and randomise
 all_questions = [(trait, q) for trait, qs in questions.items() for q in qs]
 random.shuffle(all_questions)
 
 with st.form("quiz_form"):
-    st.subheader("Answer the following questions:")
+    st.subheader("Answer the following:")
     for trait, q in all_questions:
-        if st.checkbox(q, key=q):
-            scores[trait] += 1
+        scores[trait] += st.radio(
+            q,
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: {
+                1: "1 - Strongly Disagree",
+                2: "2 - Disagree",
+                3: "3 - Neutral",
+                4: "4 - Agree",
+                5: "5 - Strongly Agree"
+            }[x],
+            key=q
+        )
     submitted = st.form_submit_button("See My Profile")
 
 if submitted:
-    # scale scores to /20
-    scores = {k: v * 5 for k, v in scores.items()}
     profile = assign_profile(scores)
 
     st.subheader("Your Creative Identity")
@@ -220,5 +229,4 @@ if submitted:
         pdf.output(pdf_output)
         with open(pdf_output, "rb") as f:
             st.download_button("⬇️ Download Report", f, file_name=pdf_output)
-
 
