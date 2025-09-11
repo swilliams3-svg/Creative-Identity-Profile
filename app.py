@@ -11,6 +11,15 @@ st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 # ---- TRAIT DEFINITIONS ----
 traits = ["Openness", "Flexibility", "Imagination", "Curiosity", "Risk-taking", "Persistence"]
 
+trait_colors = {
+    "Openness": (0, 102, 204),
+    "Flexibility": (0, 153, 76),
+    "Imagination": (153, 51, 255),
+    "Curiosity": (255, 153, 51),
+    "Risk-taking": (220, 20, 60),
+    "Persistence": (100, 100, 100),
+}
+
 questions = {
     "Openness": [
         "I enjoy exploring new ideas and perspectives.",
@@ -94,16 +103,18 @@ activities = {
     "Persistence": "Set a small creative goal and commit to finishing it, no matter what."
 }
 
+# ---- SAFE TEXT WRAPPER ----
+def safe_text(text):
+    return text.encode("latin-1", "ignore").decode("latin-1")
+
 # --- FUNCTIONS ---
 def calculate_scores(responses):
-    """Average scores per trait."""
     scores = {}
     for trait in traits:
         scores[trait] = np.mean(responses[trait])
     return scores
 
 def generate_chart(scores):
-    """Radar chart with legend below chart."""
     labels = list(scores.keys())
     values = list(scores.values())
     num_vars = len(labels)
@@ -113,15 +124,29 @@ def generate_chart(scores):
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, color="blue", linewidth=2)
-    ax.fill(angles, values, color="blue", alpha=0.25)
+
+    for trait, color in trait_colors.items():
+        idx = labels.index(trait)
+        ax.plot(
+            [angles[idx], angles[idx]],
+            [0, scores[trait]],
+            color=np.array(color) / 255,
+            linewidth=2,
+            label=trait
+        )
+        ax.fill_between(
+            [angles[idx], angles[idx]],
+            [0, scores[trait]],
+            [0, 0],
+            color=np.array(color) / 255,
+            alpha=0.25
+        )
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
     ax.set_yticks([1, 2, 3, 4, 5])
     ax.set_ylim(0, 5)
 
-    # Legend below chart
     fig.legend(
         labels,
         loc="lower center",
@@ -138,7 +163,6 @@ def generate_chart(scores):
     return buf
 
 def determine_archetype(scores):
-    """Pick main + secondary archetype based on highest scores."""
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait, main_score = sorted_traits[0]
     sub_trait, sub_score = sorted_traits[1]
@@ -165,41 +189,40 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(30, 30, 120)
-    pdf.cell(0, 10, "Your Creative Identity Profile", ln=True, align="C")
+    pdf.cell(0, 10, safe_text("Your Creative Identity Profile"), ln=True, align="C")
 
-    # Save chart buffer to temp file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
         tmpfile.write(chart_buf.getbuffer())
         tmp_path = tmpfile.name
-
     pdf.image(tmp_path, x=30, y=40, w=150)
     pdf.ln(160)
     pdf.set_font("Helvetica", "I", 12)
-    pdf.cell(0, 10, "Radar chart of your creative traits", ln=True, align="C")
+    pdf.cell(0, 10, safe_text("Radar chart of your creative traits"), ln=True, align="C")
 
     # Page 2+
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(0, 102, 204)
-    pdf.cell(0, 10, "Your Creative Archetypes", ln=True)
+    pdf.cell(0, 10, safe_text("Your Creative Archetypes"), ln=True)
 
     pdf.set_font("Helvetica", "", 12)
     pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 8,
+    pdf.multi_cell(0, 8, safe_text(
         f"Main Archetype: {archetype['main']['name']} ({archetype['main']['trait']})\n"
         f"Sub-Archetype: {archetype['sub']['name']} ({archetype['sub']['trait']})\n"
-    )
+    ))
     pdf.ln(5)
 
     pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(0, 102, 204)
-    pdf.cell(0, 10, "Trait Insights & Growth Activities", ln=True)
+    pdf.cell(0, 10, safe_text("Trait Insights & Growth Activities"), ln=True)
 
     for trait, score in scores.items():
         pdf.ln(5)
+        r, g, b = trait_colors[trait]
         pdf.set_font("Helvetica", "B", 12)
-        pdf.set_text_color(50, 50, 50)
-        pdf.cell(0, 8, f"{trait}: {score:.1f}/5", ln=True)
+        pdf.set_text_color(r, g, b)
+        pdf.cell(0, 8, safe_text(f"{trait}: {score:.1f}/5"), ln=True)
 
         if score <= 2:
             interpretation = interpretations[trait]["low"]
@@ -209,11 +232,12 @@ def create_pdf(scores, archetype, chart_buf):
             interpretation = interpretations[trait]["high"]
 
         pdf.set_font("Helvetica", "", 11)
-        pdf.multi_cell(0, 6, f"Insight: {interpretation}")
+        pdf.set_text_color(0, 0, 0)
+        pdf.multi_cell(0, 6, safe_text(f"Insight: {interpretation}"))
 
         pdf.set_font("Helvetica", "I", 10)
         pdf.set_text_color(80, 80, 80)
-        pdf.multi_cell(0, 6, f"Try this: {activities[trait]}")
+        pdf.multi_cell(0, 6, safe_text(f"Try this: {activities[trait]}"))
         pdf.set_text_color(0, 0, 0)
 
     return pdf
@@ -227,7 +251,7 @@ responses = {trait: [] for trait in traits}
 with st.form("creativity_test"):
     for trait in traits:
         st.subheader(trait)
-        q_list = questions[trait]
+        q_list = questions[trait][:]
         random.shuffle(q_list)
         for q in q_list:
             responses[trait].append(st.radio(
