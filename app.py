@@ -2,11 +2,12 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
+import random
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 st.title("🎨 Creative Identity Profile")
-st.write("Answer the questions to explore your creative archetype and traits.")
+st.write("Tick the boxes that feel true for you to explore your creative archetype and traits.")
 
 # --------------------------------------------------
 # Questions per trait
@@ -151,7 +152,6 @@ def create_pdf(profile_name, traits, chart_file):
     pdf.cell(200, 10, "Creative Identity Report", ln=True, align="C")
     pdf.ln(10)
 
-    # Profile
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, f"Profile: {profile_name}")
     if profile_name in archetype_extras:
@@ -161,8 +161,6 @@ def create_pdf(profile_name, traits, chart_file):
         pdf.multi_cell(0, 10, f"Growth Practices: {extra['Practices']}")
 
     pdf.ln(10)
-
-    # Insert radar chart
     pdf.cell(200, 10, "Your Creative Trait Profile:", ln=True)
     pdf.image(chart_file, x=40, w=120)
 
@@ -180,14 +178,20 @@ def create_pdf(profile_name, traits, chart_file):
 # --------------------------------------------------
 scores = {trait: 0 for trait in questions}
 
+# Flatten and randomise questions
+all_questions = [(trait, q) for trait, qs in questions.items() for q in qs]
+random.shuffle(all_questions)
+
 with st.form("quiz_form"):
-    for trait, qs in questions.items():
-        st.subheader(trait)
-        for q in qs:
-            scores[trait] += st.slider(q, 1, 5, 3, key=q)
+    st.subheader("Answer the following questions:")
+    for trait, q in all_questions:
+        if st.checkbox(q, key=q):
+            scores[trait] += 1
     submitted = st.form_submit_button("See My Profile")
 
 if submitted:
+    # scale scores to /20
+    scores = {k: v * 5 for k, v in scores.items()}
     profile = assign_profile(scores)
 
     st.subheader("Your Creative Identity")
@@ -216,4 +220,5 @@ if submitted:
         pdf.output(pdf_output)
         with open(pdf_output, "rb") as f:
             st.download_button("⬇️ Download Report", f, file_name=pdf_output)
+
 
