@@ -262,4 +262,3 @@ if st.button("Generate My Profile"):
         file_name="creative_identity_report.pdf",
         mime="application/pdf"
     )
-
