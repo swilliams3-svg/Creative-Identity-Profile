@@ -6,7 +6,7 @@ import random
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
-st.title("🎨 Creative Identity Profile")
+st.title("✨ Creative Identity Profile ✨")
 st.write("Tick the boxes that feel true for you to explore your creative archetype and traits.")
 
 # --------------------------------------------------
