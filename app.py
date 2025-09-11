@@ -122,7 +122,7 @@ def create_pdf(profile_name, traits, chart_buf):
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", 'B', 16)
     pdf.cell(0, 10, clean_text("⭐ Creative Identity Report ⭐"), ln=True, align="C")
-    pdf.ln(10)
+    pdf.ln(15)  # space after banner
     pdf.set_text_color(0, 0, 0)
 
     # Chart on left
@@ -130,33 +130,33 @@ def create_pdf(profile_name, traits, chart_buf):
         chart_file = "chart.png"
         with open(chart_file, "wb") as f:
             f.write(chart_buf.getbuffer())
-        pdf.image(chart_file, x=15, y=40, w=120)
+        pdf.image(chart_file, x=20, y=35, w=110)
 
     # Archetype + traits on right
-    pdf.set_xy(150, 40)
+    pdf.set_xy(145, 35)
     pdf.set_font("Helvetica", 'B', 14)
-    pdf.multi_cell(120, 8, clean_text("Your Creative Archetype"))
+    pdf.multi_cell(130, 8, clean_text("Your Creative Archetype"))
     pdf.set_font("Helvetica", size=11)
-    pdf.multi_cell(120, 6, clean_text(f"Profile: {profile_name}"))
+    pdf.multi_cell(130, 6, clean_text(f"Profile: {profile_name}"))
 
     if profile_name in archetype_extras:
         extra = archetype_extras[profile_name]
-        pdf.multi_cell(120, 6, clean_text(f"Strengths: {extra['Strengths']}"))
-        pdf.multi_cell(120, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
-        pdf.multi_cell(120, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
+        pdf.multi_cell(130, 6, clean_text(f"Strengths: {extra['Strengths']}"))
+        pdf.multi_cell(130, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
+        pdf.multi_cell(130, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
 
     pdf.ln(2)
     pdf.set_font("Helvetica", 'B', 12)
-    pdf.multi_cell(120, 6, clean_text("Trait Scores & Growth Tips"))
+    pdf.multi_cell(130, 6, clean_text("Trait Scores & Growth Tips"))
 
     pdf.set_font("Helvetica", size=10)
     for trait, score in traits.items():
         pdf.set_font("Helvetica", 'B', 10)
-        pdf.multi_cell(120, 5, clean_text(f"{trait}: {score}/20"))
+        pdf.multi_cell(130, 5, clean_text(f"{trait}: {score}/20"))
         if trait in trait_extras:
             pdf.set_font("Helvetica", size=10)
-            pdf.multi_cell(120, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
-            pdf.multi_cell(120, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
+            pdf.multi_cell(130, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
+            pdf.multi_cell(130, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
 
     # Closing
     pdf.set_xy(15, 190)
