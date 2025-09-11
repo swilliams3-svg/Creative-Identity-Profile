@@ -8,7 +8,23 @@ from io import BytesIO
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # ---------------------------
-# Questions per trait (4 each)
+# Style: Hero Banner
+# ---------------------------
+st.markdown(
+    """
+    <div style="background-color:#4B9CD3;padding:20px;border-radius:10px;margin-bottom:20px;">
+        <h2 style="color:white;text-align:center;">✨ Discover Your Creative Identity ✨</h2>
+        <p style="color:white;text-align:center;">
+        Explore your imagination, curiosity, and collaboration style.<br>
+        Complete the profile below and unlock a personalised PDF report!
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# ---------------------------
+# Questions per trait
 # ---------------------------
 questions = {
     "Imagination": [
@@ -110,10 +126,9 @@ trait_extras = {
 }
 
 # ---------------------------
-# Helper functions
+# Helpers
 # ---------------------------
 def clean_text(text: str) -> str:
-    """Remove unsupported characters for PDF output (latin-1 safe)."""
     return text.encode("latin-1", "ignore").decode("latin-1")
 
 def assign_profile(traits):
@@ -145,7 +160,6 @@ def create_pdf(profile_name, traits, chart_buf):
     pdf = FPDF()
     pdf.add_page()
 
-    # Intro
     pdf.set_font("Helvetica", 'B', 16)
     pdf.cell(200, 10, clean_text("Creative Identity Report"), ln=True, align="C")
     pdf.ln(10)
@@ -160,7 +174,6 @@ def create_pdf(profile_name, traits, chart_buf):
     ))
     pdf.add_page()
 
-    # Archetype
     pdf.set_font("Helvetica", 'B', 14)
     pdf.cell(200, 10, clean_text("Your Creative Archetype"), ln=True)
     pdf.set_font("Helvetica", size=12)
@@ -172,14 +185,12 @@ def create_pdf(profile_name, traits, chart_buf):
         pdf.multi_cell(0, 10, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
         pdf.multi_cell(0, 10, clean_text(f"Growth Practices: {extra['Practices']}"))
 
-    # Radar chart
     if chart_buf:
         chart_file = "chart.png"
         with open(chart_file, "wb") as f:
             f.write(chart_buf.getbuffer())
         pdf.image(chart_file, x=40, w=120)
 
-    # Traits
     pdf.ln(10)
     pdf.set_font("Helvetica", 'B', 14)
     pdf.cell(200, 10, clean_text("Trait Scores & Growth Tips"), ln=True)
@@ -197,7 +208,7 @@ def create_pdf(profile_name, traits, chart_buf):
     return pdf
 
 # ---------------------------
-# Streamlit UI
+# UI: Questions
 # ---------------------------
 st.title("Creative Identity Profile")
 st.write("Rate each statement from 1 (Not like me) to 5 (Very much like me).")
@@ -207,42 +218,62 @@ progress = 0
 total_qs = len(all_questions)
 
 for i, (trait, q) in enumerate(all_questions):
-    st.write(f"**{q}**")
+    st.write(f"**Question {i+1} of {total_qs}**")
     responses[(trait, q)] = st.radio(
-        "", [1, 2, 3, 4, 5], index=2, horizontal=True, key=f"{trait}_{i}"
+        f"{q}", [1, 2, 3, 4, 5], index=2, horizontal=True, key=f"{trait}_{i}"
     )
     progress = (i+1) / total_qs
     st.progress(progress)
 
+# ---------------------------
+# Results
+# ---------------------------
 if st.button("Submit"):
-    # Calculate scores
     trait_scores = {t: 0 for t in questions.keys()}
     for (trait, q), score in responses.items():
         trait_scores[trait] += score
 
     profile = assign_profile(trait_scores)
 
-    # Show archetype
-    st.subheader("Your Creative Archetype")
-    st.write(profile)
+    st.markdown(
+        f"""
+        <div style="border:2px solid #4B9CD3; border-radius:10px; padding:15px; margin:20px 0;">
+            <h3 style="color:#4B9CD3;">🌟 Your Creative Archetype: {profile}</h3>
+            <p><b>Strengths:</b> {archetype_extras[profile]["Strengths"]}</p>
+            <p><b>Blind Spots:</b> {archetype_extras[profile]["Blind Spots"]}</p>
+            <p><b>Practices:</b> {archetype_extras[profile]["Practices"]}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    if profile in archetype_extras:
-        st.write("**Strengths:**", archetype_extras[profile]["Strengths"])
-        st.write("**Blind Spots:**", archetype_extras[profile]["Blind Spots"])
-        st.write("**Practices:**", archetype_extras[profile]["Practices"])
-
-    # Radar chart for app
     chart_buf = create_radar_chart(trait_scores)
     st.image(chart_buf, caption="Your Creative Profile")
 
-    # PDF
     pdf = create_pdf(profile, trait_scores, chart_buf)
     pdf_bytes = pdf.output(dest="S").encode("latin-1", "ignore")
     st.download_button(
-        "📥 Download Your Full Report",
+        label="🌟 Download Your Creative Identity Report (PDF)",
         data=pdf_bytes,
         file_name="creative_identity_report.pdf",
         mime="application/pdf"
     )
+
+# ---------------------------
+# Closing Inspiration
+# ---------------------------
+st.markdown("---")
+st.markdown(
+    """
+    <div style="text-align:center; padding:20px;">
+        <h3>🌱 Keep Creating!</h3>
+        <p>Your creativity is a muscle – the more you use it, the stronger it gets.<br>
+        Explore, take risks, and share your ideas with the world.</p>
+        <p style="font-style:italic;">Every idea is a seed. What will you grow today?</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
