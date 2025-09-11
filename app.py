@@ -157,53 +157,51 @@ def create_radar_chart(traits):
     return buf
 
 def create_pdf(profile_name, traits, chart_buf):
-    pdf = FPDF()
+    pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.add_page()
 
+    # Title
     pdf.set_font("Helvetica", 'B', 16)
-    pdf.cell(200, 10, clean_text("Creative Identity Report"), ln=True, align="C")
-    pdf.ln(10)
+    pdf.cell(0, 10, clean_text("Creative Identity Report"), ln=True, align="C")
+    pdf.ln(5)
 
-    pdf.set_font("Helvetica", size=12)
-    pdf.multi_cell(0, 10, clean_text(
-        "Welcome to your Creative Identity Report!\n\n"
-        "This assessment explores your creative personality across five traits:\n"
-        "Imagination, Curiosity, Risk-taking, Persistence, and Social Sensitivity.\n\n"
-        "Inside, you’ll discover your creative archetype, reflect on your strengths "
-        "and growth opportunities, and get personalised exercises to expand your creative thinking."
-    ))
-    pdf.add_page()
-
-    pdf.set_font("Helvetica", 'B', 14)
-    pdf.cell(200, 10, clean_text("Your Creative Archetype"), ln=True)
-    pdf.set_font("Helvetica", size=12)
-    pdf.multi_cell(0, 10, clean_text(f"Profile: {profile_name}"))
-
-    if profile_name in archetype_extras:
-        extra = archetype_extras[profile_name]
-        pdf.multi_cell(0, 10, clean_text(f"Strengths: {extra['Strengths']}"))
-        pdf.multi_cell(0, 10, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
-        pdf.multi_cell(0, 10, clean_text(f"Growth Practices: {extra['Practices']}"))
-
+    # Left: Radar chart
     if chart_buf:
         chart_file = "chart.png"
         with open(chart_file, "wb") as f:
             f.write(chart_buf.getbuffer())
-        pdf.image(chart_file, x=40, w=120)
+        pdf.image(chart_file, x=15, y=30, w=120)  # smaller + positioned left
 
-    pdf.ln(10)
+    # Right: Archetype + Traits
+    pdf.set_xy(150, 30)
     pdf.set_font("Helvetica", 'B', 14)
-    pdf.cell(200, 10, clean_text("Trait Scores & Growth Tips"), ln=True)
-    pdf.set_font("Helvetica", size=12)
+    pdf.multi_cell(120, 8, clean_text("Your Creative Archetype"), ln=True)
+    pdf.set_font("Helvetica", size=11)
+    pdf.multi_cell(120, 6, clean_text(f"Profile: {profile_name}"))
 
+    if profile_name in archetype_extras:
+        extra = archetype_extras[profile_name]
+        pdf.multi_cell(120, 6, clean_text(f"Strengths: {extra['Strengths']}"))
+        pdf.multi_cell(120, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
+        pdf.multi_cell(120, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
+
+    pdf.ln(2)
+    pdf.set_font("Helvetica", 'B', 12)
+    pdf.multi_cell(120, 6, clean_text("Trait Scores & Growth Tips"))
+
+    pdf.set_font("Helvetica", size=10)
     for trait, score in traits.items():
-        pdf.ln(5)
-        pdf.set_font("Helvetica", 'B', 12)
-        pdf.multi_cell(0, 10, clean_text(f"{trait}: {score}/20"))
+        pdf.set_font("Helvetica", 'B', 10)
+        pdf.multi_cell(120, 5, clean_text(f"{trait}: {score}/20"))
         if trait in trait_extras:
-            pdf.set_font("Helvetica", size=12)
-            pdf.multi_cell(0, 10, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
-            pdf.multi_cell(0, 10, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
+            pdf.set_font("Helvetica", size=10)
+            pdf.multi_cell(120, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
+            pdf.multi_cell(120, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
+
+    # Closing inspirational line
+    pdf.set_xy(15, 190)
+    pdf.set_font("Helvetica", 'I', 10)
+    pdf.multi_cell(0, 6, clean_text("🌱 Keep Creating! Every idea is a seed — what will you grow today?"), align="C")
 
     return pdf
 
