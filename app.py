@@ -47,7 +47,7 @@ traits = {
     ]
 }
 
-# Archetype definitions with personalised descriptions
+# Archetype definitions
 archetypes = {
     "Openness": {
         "name": "The Explorer",
@@ -87,7 +87,6 @@ def radar_chart(scores):
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
 
-    # Colors for each trait
     colors = {
         "Openness": "tab:blue",
         "Risk-taking": "tab:red",
@@ -97,7 +96,6 @@ def radar_chart(scores):
         "Convergent Thinking": "tab:brown"
     }
 
-    # Plot each trait separately, filling its wedge
     for i, label in enumerate(labels):
         ax.plot(angles[i:i+2], values[i:i+2], color=colors[label], linewidth=2)
         ax.fill(angles[i:i+2], values[i:i+2], color=colors[label], alpha=0.25)
@@ -107,10 +105,13 @@ def radar_chart(scores):
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
 
-    ax.legend(labels, loc="upper center", bbox_to_anchor=(0.5, -0.1),
+    ax.legend(labels, loc="lower center", bbox_to_anchor=(0.5, -0.25),
               ncol=3, frameon=False)
+
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.savefig(buf, format="png")
     buf.seek(0)
     plt.close(fig)
     return buf
@@ -119,7 +120,6 @@ def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # Save chart to temp file
     chart_path = "chart.png"
     with open(chart_path, "wb") as f:
         f.write(chart_buf.getbuffer())
@@ -140,7 +140,6 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.multi_cell(0, 10,
                    f"Main Archetype: {archetypes[archetype]['name']}\n\n"
                    f"{archetypes[archetype]['description']}")
-    # Find sub-archetype
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     if len(sorted_traits) > 1:
         sub_trait = sorted_traits[1][0]
@@ -149,7 +148,7 @@ def create_pdf(scores, archetype, chart_buf):
                        f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
                        f"{archetypes[sub_trait]['description']}")
 
-    # Page 3: Trait insights
+    # Page 3: Trait Insights
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Trait Insights", ln=True)
@@ -185,7 +184,6 @@ if "all_questions" not in st.session_state:
 
 all_questions = st.session_state.all_questions
 
-# Initialise responses
 if "responses" not in st.session_state:
     st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
 
@@ -201,10 +199,10 @@ for i, (trait, question) in enumerate(all_questions, 1):
         f"Q{i}/{total_qs}: {question}",
         [1, 2, 3, 4, 5],
         horizontal=True,
-        index=(responses[key] - 1) if responses[key] else 0,
+        index=(responses[key] - 1) if responses[key] else None,
         key=key
     )
-    if responses[key]:
+    if responses[key] is not None:
         answered += 1
 
 progress = answered / total_qs
@@ -214,7 +212,6 @@ st.progress(progress)
 if answered == total_qs:
     st.success("✅ Questionnaire complete! See your results below:")
 
-    # Average scores per trait
     scores = {trait: 0 for trait in traits}
     counts = {trait: 0 for trait in traits}
     for key, val in responses.items():
@@ -225,21 +222,19 @@ if answered == total_qs:
     for trait in scores:
         scores[trait] /= counts[trait]
 
-    # Radar chart
     chart_buf = radar_chart(scores)
     st.image(chart_buf, caption="Your Creative Trait Profile", use_container_width=True)
 
-    # Archetype
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
     sub_trait = sorted_traits[1][0]
+
     st.subheader("🎭 Your Creative Archetype")
     st.write(f"**Main Archetype: {archetypes[main_trait]['name']}**")
     st.write(archetypes[main_trait]['description'])
     st.write(f"**Sub-Archetype: {archetypes[sub_trait]['name']}**")
     st.write(archetypes[sub_trait]['description'])
 
-    # Trait insights
     st.subheader("📊 Trait Insights")
     for trait, score in scores.items():
         if score >= 4:
@@ -250,7 +245,6 @@ if answered == total_qs:
             level = "Low"
         st.write(f"**{trait} ({level})** – {score:.2f}/5")
 
-    # PDF Download
     pdf_bytes = create_pdf(scores, main_trait, chart_buf)
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
