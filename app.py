@@ -1,6 +1,9 @@
 import streamlit as st
 import random
+import matplotlib.pyplot as plt
+import numpy as np
 from fpdf import FPDF
+from io import BytesIO
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
@@ -113,16 +116,37 @@ def assign_profile(traits):
     strongest = max(traits, key=traits.get)
     return archetypes.get(strongest, "Balanced Creator")
 
-def create_pdf(profile_name, traits):
+def create_radar_chart(traits):
+    labels = list(traits.keys())
+    scores = list(traits.values())
+
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    scores += scores[:1]
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.plot(angles, scores, color="blue", linewidth=2)
+    ax.fill(angles, scores, color="skyblue", alpha=0.4)
+    ax.set_yticklabels([])
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+def create_pdf(profile_name, traits, chart_buf):
     pdf = FPDF()
     pdf.add_page()
 
     # Intro
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, "Creative Identity Report", ln=True, align="C")
+    pdf.set_font("Helvetica", 'B', 16)
+    pdf.cell(200, 10, "🌟 Creative Identity Report 🌟", ln=True, align="C")
     pdf.ln(10)
 
-    pdf.set_font("Arial", size=12)
+    pdf.set_font("Helvetica", size=12)
     pdf.multi_cell(0, 10,
         "Welcome to your Creative Identity Report!\n\n"
         "This assessment explores your creative personality across five traits:\n"
@@ -133,9 +157,9 @@ def create_pdf(profile_name, traits):
     pdf.add_page()
 
     # Archetype
-    pdf.set_font("Arial", 'B', 14)
+    pdf.set_font("Helvetica", 'B', 14)
     pdf.cell(200, 10, "Your Creative Archetype", ln=True)
-    pdf.set_font("Arial", size=12)
+    pdf.set_font("Helvetica", size=12)
     pdf.multi_cell(0, 10, f"Profile: {profile_name}")
 
     if profile_name in archetype_extras:
@@ -144,18 +168,25 @@ def create_pdf(profile_name, traits):
         pdf.multi_cell(0, 10, f"Blind Spots: {extra['Blind Spots']}")
         pdf.multi_cell(0, 10, f"Growth Practices: {extra['Practices']}")
 
+    # Radar chart
+    if chart_buf:
+        chart_file = "chart.png"
+        with open(chart_file, "wb") as f:
+            f.write(chart_buf.getbuffer())
+        pdf.image(chart_file, x=40, w=120)
+
     # Traits
     pdf.ln(10)
-    pdf.set_font("Arial", 'B', 14)
+    pdf.set_font("Helvetica", 'B', 14)
     pdf.cell(200, 10, "Trait Scores & Growth Tips", ln=True)
-    pdf.set_font("Arial", size=12)
+    pdf.set_font("Helvetica", size=12)
 
     for trait, score in traits.items():
         pdf.ln(5)
-        pdf.set_font("Arial", 'B', 12)
+        pdf.set_font("Helvetica", 'B', 12)
         pdf.multi_cell(0, 10, f"{trait}: {score}/20")
         if trait in trait_extras:
-            pdf.set_font("Arial", size=12)
+            pdf.set_font("Helvetica", size=12)
             pdf.multi_cell(0, 10, f"Meaning: {trait_extras[trait]['Meaning']}")
             pdf.multi_cell(0, 10, f"Growth: {trait_extras[trait]['Growth']}")
 
@@ -196,9 +227,13 @@ if st.button("Submit"):
         st.write("**Blind Spots:**", archetype_extras[profile]["Blind Spots"])
         st.write("**Practices:**", archetype_extras[profile]["Practices"])
 
+    # Radar chart for app
+    chart_buf = create_radar_chart(trait_scores)
+    st.image(chart_buf, caption="Your Creative Profile")
+
     # PDF
-    pdf = create_pdf(profile, trait_scores)
-    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+    pdf = create_pdf(profile, trait_scores, chart_buf)
+    pdf_bytes = pdf.output(dest="S").encode("latin-1", "ignore")
     st.download_button(
         "📥 Download Your Full Report",
         data=pdf_bytes,
