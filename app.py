@@ -3,191 +3,217 @@ import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
 
-# ----------------------------
-# 1. ARCHETYPE FUNCTION
-# ----------------------------
+st.set_page_config(page_title="Creative Identity Profile", layout="centered")
+
+st.title("🎨 Creative Identity Profile")
+st.write("Answer the questions to explore your creative archetype and traits.")
+
+# --------------------------------------------------
+# Questions per trait
+# --------------------------------------------------
+questions = {
+    "Imagination": [
+        "I often see possibilities where others don’t.",
+        "I enjoy daydreaming and imagining new worlds.",
+        "I like to create stories, images, or concepts.",
+        "I can think of unusual uses for common objects."
+    ],
+    "Curiosity": [
+        "I often ask ‘why’ and ‘how’ questions.",
+        "I enjoy learning about new topics.",
+        "I like exploring unfamiliar ideas.",
+        "I read widely to discover new things."
+    ],
+    "Risk-taking": [
+        "I am comfortable trying new and uncertain things.",
+        "I often experiment without worrying about failure.",
+        "I like pushing boundaries or breaking rules.",
+        "I am willing to take bold steps in creative work."
+    ],
+    "Persistence": [
+        "I keep working even when ideas don’t come easily.",
+        "I don’t give up easily on creative challenges.",
+        "I can stay focused on a project for a long time.",
+        "I see setbacks as opportunities to improve."
+    ],
+    "Social Sensitivity": [
+        "I can sense how others feel about ideas.",
+        "I collaborate well with others.",
+        "I value listening as much as sharing ideas.",
+        "I often adapt ideas to suit group needs."
+    ]
+}
+
+# --------------------------------------------------
+# Archetype mapping
+# --------------------------------------------------
+archetype_extras = {
+    "Visionary Dreamer": {
+        "Strengths": "Sees possibilities others miss; highly imaginative and forward-looking.",
+        "Blind Spots": "May lose focus or struggle to turn visions into reality.",
+        "Practices": "Prototype your ideas quickly; use deadlines to stay grounded."
+    },
+    "Analytical Builder": {
+        "Strengths": "Thorough, logical, and persistent problem solver.",
+        "Blind Spots": "Risk of over-analysis or slow progress.",
+        "Practices": "Balance deep thinking with moments of playful brainstorming."
+    },
+    "Bold Experimenter": {
+        "Strengths": "Thrives in uncertainty; fearless in trying new things.",
+        "Blind Spots": "Can act without enough planning; high failure risk.",
+        "Practices": "Structure experiments to learn quickly from outcomes."
+    },
+    "Resilient Maker": {
+        "Strengths": "Determined, disciplined, and able to overcome obstacles.",
+        "Blind Spots": "May become rigid or burn out under pressure.",
+        "Practices": "Pair persistence with reflection and rest."
+    },
+    "Collaborative Connector": {
+        "Strengths": "Empathetic, cooperative, and able to amplify others’ ideas.",
+        "Blind Spots": "Risk of prioritizing others’ voices over your own.",
+        "Practices": "Balance collaboration with expressing your unique vision."
+    },
+    "Inquisitive Explorer": {
+        "Strengths": "Curious, questioning, and energized by discovery.",
+        "Blind Spots": "May scatter attention without producing results.",
+        "Practices": "Narrow focus sometimes to turn curiosity into concrete output."
+    },
+    "Imaginative Storyteller": {
+        "Strengths": "Creative with narrative, symbolism, and envisioning worlds.",
+        "Blind Spots": "Risk of being overly abstract or impractical.",
+        "Practices": "Translate ideas into practical projects or experiences."
+    },
+    "Fearless Challenger": {
+        "Strengths": "Challenges conventions and disrupts the status quo.",
+        "Blind Spots": "Can be confrontational or reckless.",
+        "Practices": "Use discernment to choose battles worth fighting."
+    },
+    "Empathic Creator": {
+        "Strengths": "Deeply attuned to people’s needs; creates with compassion.",
+        "Blind Spots": "May hesitate to push bold ideas for fear of conflict.",
+        "Practices": "Pair empathy with assertiveness to maximize impact."
+    },
+    "Strategic Innovator": {
+        "Strengths": "Combines curiosity with risk-taking; acts decisively.",
+        "Blind Spots": "May move too quickly without depth or refinement.",
+        "Practices": "Pause for reflection before executing new ideas."
+    },
+    "Grounded Realist": {
+        "Strengths": "Balanced across traits; integrates imagination and persistence steadily.",
+        "Blind Spots": "May avoid extremes and miss bold breakthroughs.",
+        "Practices": "Push outside comfort zones to spark fresh discoveries."
+    },
+    "Playful Improviser": {
+        "Strengths": "Spontaneous, fun, and adaptable in group creativity.",
+        "Blind Spots": "Can lack structure; ideas may fade quickly.",
+        "Practices": "Capture playful sparks and turn them into lasting outcomes."
+    }
+}
+
+# --------------------------------------------------
+# Functions
+# --------------------------------------------------
 def assign_profile(traits):
-    # sort traits from highest to lowest
     sorted_traits = sorted(traits.items(), key=lambda x: x[1], reverse=True)
-    top_trait, top_score = sorted_traits[0]
-    second_trait, second_score = sorted_traits[1]
+    top_trait, _ = sorted_traits[0]
+    second_trait, _ = sorted_traits[1]
 
-    # Two-trait archetypes
     if top_trait == "Imagination" and second_trait == "Curiosity":
-        return ("Visionary Dreamer",
-                "You see possibilities others don’t. You love exploring 'what ifs' and imagining bold futures.",
-                "Ground your visions by sketching or prototyping them.",
-                top_trait, second_trait)
+        return "Visionary Dreamer"
     elif top_trait == "Curiosity" and second_trait == "Persistence":
-        return ("Analytical Builder",
-                "You dig deep, ask hard questions, and keep working until solutions appear.",
-                "Balance analysis with playful exploration.",
-                top_trait, second_trait)
+        return "Analytical Builder"
     elif top_trait == "Risk-taking" and second_trait == "Imagination":
-        return ("Bold Experimenter",
-                "You embrace uncertainty and jump into new ideas with courage.",
-                "Structure your experiments to learn quickly from failure.",
-                top_trait, second_trait)
+        return "Bold Experimenter"
     elif top_trait == "Social Sensitivity" and second_trait == "Persistence":
-        return ("Collaborative Connector",
-                "You thrive in groups, amplifying and shaping ideas with empathy.",
-                "Make space to share your own voice alongside supporting others.",
-                top_trait, second_trait)
+        return "Collaborative Connector"
     elif top_trait == "Curiosity" and second_trait == "Risk-taking":
-        return ("Strategic Innovator",
-                "You explore new fields and act decisively on discoveries.",
-                "Balance speed with deeper reflection before moving on.",
-                top_trait, second_trait)
+        return "Strategic Innovator"
     elif top_trait == "Imagination" and second_trait == "Social Sensitivity":
-        return ("Playful Improviser",
-                "You love spontaneous creativity, games, and improvisation with others.",
-                "Add structure to channel playful sparks into lasting results.",
-                top_trait, second_trait)
+        return "Playful Improviser"
 
-    # Single-trait archetypes
     if top_trait == "Imagination":
-        return ("Imaginative Storyteller",
-                "You love narrative, symbolism, and creating new worlds.",
-                "Transform stories into action or products.",
-                top_trait, second_trait)
+        return "Imaginative Storyteller"
     elif top_trait == "Curiosity":
-        return ("Inquisitive Explorer",
-                "You are energized by questions, new information, and discovery.",
-                "Narrow focus at times to turn curiosity into creations.",
-                top_trait, second_trait)
+        return "Inquisitive Explorer"
     elif top_trait == "Risk-taking":
-        return ("Fearless Challenger",
-                "You thrive on breaking rules and disrupting the status quo.",
-                "Learn when to take calculated risks versus when to pause.",
-                top_trait, second_trait)
+        return "Fearless Challenger"
     elif top_trait == "Persistence":
-        return ("Resilient Maker",
-                "You stick with creative work through obstacles and setbacks.",
-                "Pair persistence with reflection to avoid burnout.",
-                top_trait, second_trait)
+        return "Resilient Maker"
     elif top_trait == "Social Sensitivity":
-        return ("Empathic Creator",
-                "You tune into people’s needs and create with empathy at the core.",
-                "Pair empathy with boldness to push ideas further.",
-                top_trait, second_trait)
+        return "Empathic Creator"
 
-    # Balanced fallback
-    return ("Grounded Realist",
-            "You integrate imagination, persistence, and empathy in steady ways.",
-            "Push beyond comfort zones to discover new strengths.",
-            top_trait, second_trait)
+    return "Grounded Realist"
 
-# ----------------------------
-# 2. PDF EXPORT FUNCTION
-# ----------------------------
-def create_pdf(profile_name, profile_desc, profile_growth, traits, top_trait, second_trait):
+def create_pdf(profile_name, traits, chart_file):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, "Creative Identity Report", ln=True, align="C")
+    pdf.ln(10)
 
+    # Profile
     pdf.set_font("Arial", size=12)
-    pdf.ln(10)
     pdf.multi_cell(0, 10, f"Profile: {profile_name}")
-    pdf.multi_cell(0, 10, f"Description: {profile_desc}")
-    pdf.multi_cell(0, 10, f"Growth Suggestion: {profile_growth}")
+    if profile_name in archetype_extras:
+        extra = archetype_extras[profile_name]
+        pdf.multi_cell(0, 10, f"Strengths: {extra['Strengths']}")
+        pdf.multi_cell(0, 10, f"Blind Spots: {extra['Blind Spots']}")
+        pdf.multi_cell(0, 10, f"Growth Practices: {extra['Practices']}")
 
     pdf.ln(10)
-    pdf.multi_cell(0, 10, f"Your strongest traits were: {top_trait} and {second_trait}.")
+
+    # Insert radar chart
+    pdf.cell(200, 10, "Your Creative Trait Profile:", ln=True)
+    pdf.image(chart_file, x=40, w=120)
 
     pdf.ln(10)
-    pdf.cell(200, 10, "Trait Scores:", ln=True)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, "Trait Scores", ln=True)
+    pdf.set_font("Arial", size=12)
     for k, v in traits.items():
-        pdf.cell(200, 10, f"{k}: {v}", ln=True)
+        pdf.multi_cell(0, 10, f"{k}: {v}/20")
 
     return pdf
 
-# ----------------------------
-# 3. STREAMLIT APP
-# ----------------------------
-st.title("✨ Creative Identity Profile ✨")
-st.write("Answer each question on a scale from 1 (Strongly Disagree) to 5 (Strongly Agree).")
+# --------------------------------------------------
+# Streamlit UI
+# --------------------------------------------------
+scores = {trait: 0 for trait in questions}
 
-# --- IMAGINATION ---
-st.subheader("Imagination")
-i1 = st.radio("I enjoy inventing new stories or ideas.", [1,2,3,4,5], horizontal=True)
-i2 = st.radio("I often picture possibilities others don’t see.", [1,2,3,4,5], horizontal=True)
-i3 = st.radio("I like to imagine alternative futures.", [1,2,3,4,5], horizontal=True)
-i4 = st.radio("I use daydreaming to explore new ideas.", [1,2,3,4,5], horizontal=True)
-imagination_score = i1+i2+i3+i4
+with st.form("quiz_form"):
+    for trait, qs in questions.items():
+        st.subheader(trait)
+        for q in qs:
+            scores[trait] += st.slider(q, 1, 5, 3, key=q)
+    submitted = st.form_submit_button("See My Profile")
 
-# --- CURIOSITY ---
-st.subheader("Curiosity")
-c1 = st.radio("I like asking questions to understand how things work.", [1,2,3,4,5], horizontal=True)
-c2 = st.radio("I get excited when learning something new.", [1,2,3,4,5], horizontal=True)
-c3 = st.radio("I often investigate topics that spark my interest.", [1,2,3,4,5], horizontal=True)
-c4 = st.radio("I enjoy exploring subjects outside my expertise.", [1,2,3,4,5], horizontal=True)
-curiosity_score = c1+c2+c3+c4
+if submitted:
+    profile = assign_profile(scores)
 
-# --- RISK-TAKING ---
-st.subheader("Risk-taking")
-r1 = st.radio("I’m comfortable trying things without knowing the outcome.", [1,2,3,4,5], horizontal=True)
-r2 = st.radio("I see mistakes as part of learning.", [1,2,3,4,5], horizontal=True)
-r3 = st.radio("I would rather try something new than repeat what works.", [1,2,3,4,5], horizontal=True)
-r4 = st.radio("I take on challenges even when success isn’t guaranteed.", [1,2,3,4,5], horizontal=True)
-risk_score = r1+r2+r3+r4
+    st.subheader("Your Creative Identity")
+    st.write(f"**{profile}**")
 
-# --- PERSISTENCE ---
-st.subheader("Persistence")
-p1 = st.radio("I keep working on problems even when they’re frustrating.", [1,2,3,4,5], horizontal=True)
-p2 = st.radio("I don’t give up easily when stuck.", [1,2,3,4,5], horizontal=True)
-p3 = st.radio("I believe effort matters more than talent.", [1,2,3,4,5], horizontal=True)
-p4 = st.radio("I push through difficulties until I find a solution.", [1,2,3,4,5], horizontal=True)
-persistence_score = p1+p2+p3+p4
+    # Radar chart
+    labels = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]
+    angles = np.linspace(0, 2 * np.pi, len(labels) + 1, endpoint=True)
 
-# --- SOCIAL SENSITIVITY ---
-st.subheader("Social Sensitivity")
-s1 = st.radio("I notice how others are feeling.", [1,2,3,4,5], horizontal=True)
-s2 = st.radio("I adapt my ideas when working with a group.", [1,2,3,4,5], horizontal=True)
-s3 = st.radio("I enjoy collaborating and building on others’ ideas.", [1,2,3,4,5], horizontal=True)
-s4 = st.radio("I try to make sure everyone feels included in discussions.", [1,2,3,4,5], horizontal=True)
-social_score = s1+s2+s3+s4
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, "o-", linewidth=2)
+    ax.fill(angles, values, alpha=0.25)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])
+    chart_file = "radar_chart.png"
+    plt.savefig(chart_file, bbox_inches="tight")
+    st.pyplot(fig)
 
-# Collect scores
-traits = {
-    "Imagination": imagination_score,
-    "Curiosity": curiosity_score,
-    "Risk-taking": risk_score,
-    "Persistence": persistence_score,
-    "Social Sensitivity": social_score,
-}
+    # Export PDF
+    if st.button("📄 Export Report as PDF"):
+        pdf = create_pdf(profile, scores, chart_file)
+        pdf_output = "Creative_Identity_Report.pdf"
+        pdf.output(pdf_output)
+        with open(pdf_output, "rb") as f:
+            st.download_button("⬇️ Download Report", f, file_name=pdf_output)
 
-# Archetype
-profile_name, profile_desc, profile_growth, top_trait, second_trait = assign_profile(traits)
-
-st.subheader(f"🌟 Your Creative Archetype: {profile_name}")
-st.write(profile_desc)
-st.write("**Growth suggestion:**", profile_growth)
-st.write(f"Your strongest traits were: {top_trait} and {second_trait}.")
-
-# ----------------------------
-# 4. RADAR CHART
-# ----------------------------
-labels = list(traits.keys())
-values = list(traits.values())
-angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-values += values[:1]
-angles += angles[:1]
-
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-ax.plot(angles, values, "o-", linewidth=2)
-ax.fill(angles, values, alpha=0.25)
-ax.set_yticklabels([])
-ax.set_xticks(angles[:-1])
-ax.set_xticklabels(labels)
-st.pyplot(fig)
-
-# ----------------------------
-# 5. EXPORT PDF
-# ----------------------------
-if st.button("📄 Export Report as PDF"):
-    pdf = create_pdf(profile_name, profile_desc, profile_growth, traits, top_trait, second_trait)
-    pdf_output = "Creative_Identity_Report.pdf"
-    pdf.output(pdf_output)
-    with open(pdf_output, "rb") as f:
-        st.download_button("⬇️ Download Report", f, file_name=pdf_output)
