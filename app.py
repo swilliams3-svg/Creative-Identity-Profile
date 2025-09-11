@@ -1,102 +1,100 @@
-# app.py
-
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
 import io
 import random
+import tempfile
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
-# --- TRAIT DEFINITIONS ---
+# ---- TRAIT DEFINITIONS ----
 traits = ["Openness", "Flexibility", "Imagination", "Curiosity", "Risk-taking", "Persistence"]
 
-# --- INTERPRETATIONS ---
-interpretations = {
-    "Openness": {
-        "low": "You may prefer structure and routine, but this can sometimes limit experimentation.",
-        "medium": "You balance tradition with novelty, exploring some new ideas while valuing the familiar.",
-        "high": "You thrive on novelty, curiosity, and exploring unconventional ideas."
-    },
-    "Flexibility": {
-        "low": "You may prefer sticking with known solutions, but risk missing alternative perspectives.",
-        "medium": "You adapt when necessary, though sometimes lean on familiar approaches.",
-        "high": "You easily shift perspectives and adapt ideas, reframing challenges creatively."
-    },
-    "Imagination": {
-        "low": "You may find it challenging to think beyond practical or immediate concerns.",
-        "medium": "You sometimes generate new ideas but often within realistic boundaries.",
-        "high": "You frequently generate vivid, original, and playful ideas."
-    },
-    "Curiosity": {
-        "low": "You may be satisfied with existing knowledge and less likely to question assumptions.",
-        "medium": "You show curiosity selectively, diving deeper only into certain areas.",
-        "high": "You are naturally inquisitive, asking questions and exploring new topics with enthusiasm."
-    },
-    "Risk-taking": {
-        "low": "You prefer safety and predictability, avoiding uncertain outcomes.",
-        "medium": "You sometimes take risks but usually after careful consideration.",
-        "high": "You embrace uncertainty and are willing to take bold risks for new possibilities."
-    },
-    "Persistence": {
-        "low": "You may give up quickly when challenges arise, limiting idea development.",
-        "medium": "You persevere when motivated, though setbacks can discourage you.",
-        "high": "You keep pushing forward despite difficulties, developing ideas fully."
-    }
-}
-
-# --- GROWTH ACTIVITIES ---
-activities = {
-    "Openness": "Try exposing yourself to unfamiliar art, music, or literature. Journal your reactions.",
-    "Flexibility": "Practice brainstorming multiple solutions for one problem each day.",
-    "Imagination": "Engage in creative play — draw, invent stories, or imagine 'what if' scenarios.",
-    "Curiosity": "Ask 'why' five times when exploring a new idea to uncover deeper insights.",
-    "Risk-taking": "Challenge yourself with a small but meaningful risk each week.",
-    "Persistence": "Break down a long-term creative project into smaller, achievable milestones."
-}
-
-# --- QUESTIONS ---
 questions = {
     "Openness": [
-        "I enjoy trying out new experiences.",
-        "I like to challenge conventional ways of thinking.",
-        "I find inspiration in diverse fields (art, science, etc.).",
-        "I actively seek novelty in my life."
+        "I enjoy exploring new ideas and perspectives.",
+        "I am open to experiences that challenge my worldview.",
+        "I actively seek out different forms of art, culture, or knowledge.",
+        "I adapt my thinking when presented with new evidence."
     ],
     "Flexibility": [
-        "I can change direction easily when circumstances shift.",
-        "I am comfortable considering opposing viewpoints.",
-        "I often find alternative uses for familiar objects.",
-        "I adapt quickly to new challenges."
+        "I can easily adapt when plans change unexpectedly.",
+        "I generate multiple solutions to a problem.",
+        "I shift my perspective when faced with challenges.",
+        "I feel comfortable working outside my comfort zone."
     ],
     "Imagination": [
         "I often visualize ideas vividly in my mind.",
-        "I enjoy creating stories, scenarios, or fantasies.",
-        "I use daydreaming as a source of inspiration.",
-        "I think of unusual connections between unrelated ideas."
+        "I enjoy creating stories, images, or scenarios in my head.",
+        "I use mental imagery to solve problems creatively.",
+        "I see possibilities that others may overlook."
     ],
     "Curiosity": [
-        "I ask a lot of questions about how things work.",
-        "I enjoy learning about unfamiliar subjects.",
-        "I pursue knowledge even if it doesn’t relate to my work.",
-        "I wonder about things most people take for granted."
+        "I ask questions to deepen my understanding.",
+        "I seek out new knowledge beyond what is required.",
+        "I am fascinated by how things work.",
+        "I enjoy exploring unfamiliar subjects or areas."
     ],
     "Risk-taking": [
-        "I enjoy stepping into the unknown.",
-        "I am comfortable with uncertain outcomes.",
-        "I would rather try and fail than not try at all.",
-        "I take bold steps even without full information."
+        "I am willing to try new things, even if I might fail.",
+        "I embrace uncertainty in creative projects.",
+        "I see failure as a learning opportunity.",
+        "I enjoy experimenting with untested ideas."
     ],
     "Persistence": [
-        "I keep working on problems even when they are difficult.",
-        "I don’t give up easily on long-term projects.",
-        "I push through challenges to complete creative work.",
-        "I am determined to achieve my creative goals."
+        "I keep working on projects even when they are difficult.",
+        "I see challenges as opportunities to grow.",
+        "I do not give up easily when facing setbacks.",
+        "I am determined to bring my ideas to life."
     ]
 }
-# --- FUNCTIONS ---
 
+# ---- INTERPRETATIONS ----
+interpretations = {
+    "Openness": {
+        "low": "You may prefer stability, but risk missing creative opportunities.",
+        "medium": "You balance stability with curiosity. Consider widening perspectives.",
+        "high": "You thrive on novelty and diverse ideas, fueling creative growth."
+    },
+    "Flexibility": {
+        "low": "You may rely on fixed routines, which can limit adaptability.",
+        "medium": "You adapt sometimes, but could explore alternative solutions more often.",
+        "high": "You quickly shift and adapt, a key strength for creativity."
+    },
+    "Imagination": {
+        "low": "You may focus on practical details but miss visionary possibilities.",
+        "medium": "You use imagination occasionally, but there’s room for dreaming bigger.",
+        "high": "You vividly imagine and create, fueling originality and innovation."
+    },
+    "Curiosity": {
+        "low": "You may avoid exploring, which can limit inspiration.",
+        "medium": "You sometimes question and explore. Push further into discovery.",
+        "high": "You constantly question and explore, sparking new ideas and insights."
+    },
+    "Risk-taking": {
+        "low": "You prefer safety, but may miss bold creative leaps.",
+        "medium": "You sometimes take risks, but could embrace uncertainty more.",
+        "high": "You embrace challenges and thrive on bold experimentation."
+    },
+    "Persistence": {
+        "low": "You may abandon ideas too quickly, limiting achievement.",
+        "medium": "You show effort, but consistency will boost success.",
+        "high": "You persevere through setbacks, ensuring creative ideas come alive."
+    }
+}
+
+# ---- GROWTH ACTIVITIES ----
+activities = {
+    "Openness": "Try exposing yourself to a completely new culture, genre, or field weekly.",
+    "Flexibility": "Practice 'What if?' scenarios to reframe challenges in different ways.",
+    "Imagination": "Engage in free drawing or story-creation sessions without constraints.",
+    "Curiosity": "Commit to asking 'why' five times when faced with a problem.",
+    "Risk-taking": "Try one new activity this week that pushes you outside your comfort zone.",
+    "Persistence": "Set a small creative goal and commit to finishing it, no matter what."
+}
+
+# --- FUNCTIONS ---
 def calculate_scores(responses):
     """Average scores per trait."""
     scores = {}
@@ -108,16 +106,13 @@ def generate_chart(scores):
     """Radar chart with legend below chart."""
     labels = list(scores.keys())
     values = list(scores.values())
-
     num_vars = len(labels)
 
-    # repeat first value to close radar circle
     values += values[:1]
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-
     ax.plot(angles, values, color="blue", linewidth=2)
     ax.fill(angles, values, color="blue", alpha=0.25)
 
@@ -127,10 +122,10 @@ def generate_chart(scores):
     ax.set_ylim(0, 5)
 
     # Legend below chart
-    plt.legend(
+    fig.legend(
         labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.05),
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.1),
         ncol=3,
         fontsize=8,
         frameon=False
@@ -161,25 +156,28 @@ def determine_archetype(scores):
         "main": {"trait": main_trait, "score": main_score, "name": archetypes[main_trait]},
         "sub": {"trait": sub_trait, "score": sub_score, "name": archetypes[sub_trait]}
     }
-# --- PDF GENERATION ---
 
 def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # Page 1: Chart
+    # Page 1
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(30, 30, 120)
     pdf.cell(0, 10, "Your Creative Identity Profile", ln=True, align="C")
 
-    pdf.image(chart_buf, x=30, y=40, w=150)
-    pdf.ln(140)
+    # Save chart buffer to temp file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+        tmpfile.write(chart_buf.getbuffer())
+        tmp_path = tmpfile.name
 
+    pdf.image(tmp_path, x=30, y=40, w=150)
+    pdf.ln(160)
     pdf.set_font("Helvetica", "I", 12)
     pdf.cell(0, 10, "Radar chart of your creative traits", ln=True, align="C")
 
-    # Page 2+: Archetypes and Traits
+    # Page 2+
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(0, 102, 204)
@@ -203,7 +201,6 @@ def create_pdf(scores, archetype, chart_buf):
         pdf.set_text_color(50, 50, 50)
         pdf.cell(0, 8, f"{trait}: {score:.1f}/5", ln=True)
 
-        # Interpretation
         if score <= 2:
             interpretation = interpretations[trait]["low"]
         elif score == 3:
@@ -214,7 +211,6 @@ def create_pdf(scores, archetype, chart_buf):
         pdf.set_font("Helvetica", "", 11)
         pdf.multi_cell(0, 6, f"Insight: {interpretation}")
 
-        # Growth activity
         pdf.set_font("Helvetica", "I", 10)
         pdf.set_text_color(80, 80, 80)
         pdf.multi_cell(0, 6, f"Try this: {activities[trait]}")
@@ -222,51 +218,39 @@ def create_pdf(scores, archetype, chart_buf):
 
     return pdf
 
-
-# --- STREAMLIT APP BODY ---
-
-st.title("🌟 Creative Identity Profile")
-st.write("Discover your creative strengths through 6 core traits.")
+# ---- STREAMLIT APP ----
+st.title("✨ Creative Identity Profile ✨")
+st.write("Discover your creative strengths across six key traits.")
 
 responses = {trait: [] for trait in traits}
-total_questions = sum(len(qs) for qs in questions.values())
-progress = 0
-q_index = 0
 
-# Ask questions
-for trait, qs in questions.items():
-    st.subheader(trait)
-    for q in qs:
-        q_index += 1
-        responses[trait].append(
-            st.radio(
-                f"{q} ({q_index}/{total_questions})",
-                options=[1, 2, 3, 4, 5],
-                format_func=lambda x: {
-                    1: "1 - Strongly Disagree",
-                    2: "2 - Disagree",
-                    3: "3 - Neutral",
-                    4: "4 - Agree",
-                    5: "5 - Strongly Agree"
-                }[x],
-                key=f"{trait}_{q_index}"
-            )
-        )
-        st.progress(q_index / total_questions)
+with st.form("creativity_test"):
+    for trait in traits:
+        st.subheader(trait)
+        q_list = questions[trait]
+        random.shuffle(q_list)
+        for q in q_list:
+            responses[trait].append(st.radio(
+                q,
+                [1, 2, 3, 4, 5],
+                horizontal=True,
+                index=2,
+                key=f"{trait}_{q}"
+            ))
+    submitted = st.form_submit_button("Generate My Profile")
 
-if st.button("Generate My Profile"):
+if submitted:
     scores = calculate_scores(responses)
     chart_buf = generate_chart(scores)
     archetype = determine_archetype(scores)
 
-    # Show results in app
-    st.subheader("🌈 Your Archetypes")
+    st.subheader("📊 Your Results")
+    st.image(chart_buf, caption="Radar Chart of Creative Traits", use_container_width=True)
+
     st.write(f"**Main Archetype:** {archetype['main']['name']} ({archetype['main']['trait']})")
     st.write(f"**Sub-Archetype:** {archetype['sub']['name']} ({archetype['sub']['trait']})")
 
-    st.image(chart_buf, caption="Your Creative Profile", use_container_width=True)
-
-    st.subheader("🔎 Trait Insights")
+    st.subheader("🔍 Trait Insights")
     for trait, score in scores.items():
         if score <= 2:
             interpretation = interpretations[trait]["low"]
@@ -275,15 +259,14 @@ if st.button("Generate My Profile"):
         else:
             interpretation = interpretations[trait]["high"]
 
-        st.write(f"**{trait} ({score:.1f}/5):** {interpretation}")
+        st.markdown(f"**{trait} ({score:.1f}/5):** {interpretation}")
         st.caption(f"💡 Try this: {activities[trait]}")
 
-    # Create downloadable PDF
+    # PDF download
     pdf = create_pdf(scores, archetype, chart_buf)
     pdf_bytes = pdf.output(dest="S").encode("latin-1", "ignore")
-
     st.download_button(
-        label="📥 Download My Creative Profile (PDF)",
+        label="📥 Download My Creative Identity Report (PDF)",
         data=pdf_bytes,
         file_name="creative_identity_profile.pdf",
         mime="application/pdf"
