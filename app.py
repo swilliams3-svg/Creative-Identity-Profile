@@ -93,8 +93,17 @@ archetype_extras = {
     }
 }
 
+# Trait colors (used in chart + PDF)
+trait_colors = {
+    "Openness": (255/255, 99/255, 132/255),
+    "Curiosity": (54/255, 162/255, 235/255),
+    "Imagination": (255/255, 206/255, 86/255),
+    "Risk-Taking": (75/255, 192/255, 192/255),
+    "Persistence": (153/255, 102/255, 255/255)
+}
+
 # -------------------------------
-# Radar chart generator
+# Radar chart generator (with colors)
 # -------------------------------
 def generate_radar_chart(trait_scores):
     labels = list(trait_scores.keys())
@@ -105,27 +114,39 @@ def generate_radar_chart(trait_scores):
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, color="blue", linewidth=2)
-    ax.fill(angles, values, color="skyblue", alpha=0.4)
+
+    # plot each trait separately in its color
+    for i, trait in enumerate(labels):
+        val = [0] * len(labels)
+        val[i] = trait_scores[trait]
+        val += val[:1]
+        ax.plot(angles, val, color=trait_colors[trait], linewidth=2, label=trait)
+
+    # fill the overall shape in light grey
+    ax.plot(angles, values, color="grey", linewidth=1)
+    ax.fill(angles, values, color="lightgrey", alpha=0.3)
+
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=10)
 
+    ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1))
+
     buf = io.BytesIO()
-    plt.savefig(buf, format="png")
+    plt.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close(fig)
     return buf
 
 # -------------------------------
-# PDF generator (landscape with banner)
+# PDF generator (landscape with banner & colors)
 # -------------------------------
 def create_pdf(profile_name, traits, chart_buf):
     pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.add_page()
 
     # Banner
-    pdf.set_fill_color(50, 100, 200)  # blue banner
+    pdf.set_fill_color(50, 100, 200)  # blue
     pdf.rect(0, 0, 297, 20, "F")
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", 'B', 16)
@@ -137,39 +158,45 @@ def create_pdf(profile_name, traits, chart_buf):
         chart_file = "chart.png"
         with open(chart_file, "wb") as f:
             f.write(chart_buf.getbuffer())
-        pdf.image(chart_file, x=15, y=40, w=120)
+        pdf.image(chart_file, x=10, y=35, w=110)
 
-    # Archetype and traits (right side)
-    pdf.set_xy(150, 40)
+    # Archetype + traits
+    pdf.set_xy(140, 35)
     pdf.set_font("Helvetica", 'B', 14)
-    pdf.multi_cell(120, 8, clean_text("Your Creative Archetype"))
+    pdf.multi_cell(140, 8, clean_text("Your Creative Archetype"))
     pdf.set_font("Helvetica", size=11)
-    pdf.multi_cell(120, 6, clean_text(f"Profile: {profile_name}"))
+    pdf.multi_cell(140, 6, clean_text(f"Profile: {profile_name}"))
 
     if profile_name in archetype_extras:
         extra = archetype_extras[profile_name]
-        pdf.multi_cell(120, 6, clean_text(f"Strengths: {extra['Strengths']}"))
-        pdf.multi_cell(120, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
-        pdf.multi_cell(120, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
+        pdf.multi_cell(140, 6, clean_text(f"Strengths: {extra['Strengths']}"))
+        pdf.multi_cell(140, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
+        pdf.multi_cell(140, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
 
     pdf.ln(2)
     pdf.set_font("Helvetica", 'B', 12)
-    pdf.multi_cell(120, 6, clean_text("Trait Scores & Growth Tips"))
+    pdf.multi_cell(140, 6, clean_text("Trait Scores & Growth Tips"))
 
-    pdf.set_font("Helvetica", size=10)
     for trait, score in traits.items():
+        r, g, b = [int(c * 255) for c in trait_colors[trait]]
+        pdf.set_text_color(r, g, b)
         pdf.set_font("Helvetica", 'B', 10)
-        pdf.multi_cell(120, 5, clean_text(f"{trait}: {score}/20"))
+        pdf.multi_cell(140, 5, clean_text(f"{trait}: {score}/20"))
+
+        pdf.set_text_color(0, 0, 0)
         if trait in trait_extras:
             pdf.set_font("Helvetica", size=10)
-            pdf.multi_cell(120, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
-            pdf.multi_cell(120, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
+            pdf.multi_cell(140, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
+            pdf.multi_cell(140, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
+        pdf.ln(1)
 
     # Footer
     pdf.set_xy(15, 190)
     pdf.set_font("Helvetica", 'I', 10)
+    pdf.set_text_color(0, 100, 0)
     pdf.multi_cell(0, 6, clean_text("🌱 Keep Creating! Every idea is a seed — what will you grow today?"), align="C")
 
+    pdf.set_text_color(0, 0, 0)
     return pdf
 
 # -------------------------------
