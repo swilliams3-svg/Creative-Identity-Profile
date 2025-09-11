@@ -110,8 +110,12 @@ trait_extras = {
 }
 
 # ---------------------------
-# Functions
+# Helper functions
 # ---------------------------
+def clean_text(text: str) -> str:
+    """Remove unsupported characters for PDF output (latin-1 safe)."""
+    return text.encode("latin-1", "ignore").decode("latin-1")
+
 def assign_profile(traits):
     strongest = max(traits, key=traits.get)
     return archetypes.get(strongest, "Balanced Creator")
@@ -143,30 +147,30 @@ def create_pdf(profile_name, traits, chart_buf):
 
     # Intro
     pdf.set_font("Helvetica", 'B', 16)
-    pdf.cell(200, 10, "🌟 Creative Identity Report 🌟", ln=True, align="C")
+    pdf.cell(200, 10, clean_text("Creative Identity Report"), ln=True, align="C")
     pdf.ln(10)
 
     pdf.set_font("Helvetica", size=12)
-    pdf.multi_cell(0, 10,
+    pdf.multi_cell(0, 10, clean_text(
         "Welcome to your Creative Identity Report!\n\n"
         "This assessment explores your creative personality across five traits:\n"
         "Imagination, Curiosity, Risk-taking, Persistence, and Social Sensitivity.\n\n"
         "Inside, you’ll discover your creative archetype, reflect on your strengths "
         "and growth opportunities, and get personalised exercises to expand your creative thinking."
-    )
+    ))
     pdf.add_page()
 
     # Archetype
     pdf.set_font("Helvetica", 'B', 14)
-    pdf.cell(200, 10, "Your Creative Archetype", ln=True)
+    pdf.cell(200, 10, clean_text("Your Creative Archetype"), ln=True)
     pdf.set_font("Helvetica", size=12)
-    pdf.multi_cell(0, 10, f"Profile: {profile_name}")
+    pdf.multi_cell(0, 10, clean_text(f"Profile: {profile_name}"))
 
     if profile_name in archetype_extras:
         extra = archetype_extras[profile_name]
-        pdf.multi_cell(0, 10, f"Strengths: {extra['Strengths']}")
-        pdf.multi_cell(0, 10, f"Blind Spots: {extra['Blind Spots']}")
-        pdf.multi_cell(0, 10, f"Growth Practices: {extra['Practices']}")
+        pdf.multi_cell(0, 10, clean_text(f"Strengths: {extra['Strengths']}"))
+        pdf.multi_cell(0, 10, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
+        pdf.multi_cell(0, 10, clean_text(f"Growth Practices: {extra['Practices']}"))
 
     # Radar chart
     if chart_buf:
@@ -178,24 +182,24 @@ def create_pdf(profile_name, traits, chart_buf):
     # Traits
     pdf.ln(10)
     pdf.set_font("Helvetica", 'B', 14)
-    pdf.cell(200, 10, "Trait Scores & Growth Tips", ln=True)
+    pdf.cell(200, 10, clean_text("Trait Scores & Growth Tips"), ln=True)
     pdf.set_font("Helvetica", size=12)
 
     for trait, score in traits.items():
         pdf.ln(5)
         pdf.set_font("Helvetica", 'B', 12)
-        pdf.multi_cell(0, 10, f"{trait}: {score}/20")
+        pdf.multi_cell(0, 10, clean_text(f"{trait}: {score}/20"))
         if trait in trait_extras:
             pdf.set_font("Helvetica", size=12)
-            pdf.multi_cell(0, 10, f"Meaning: {trait_extras[trait]['Meaning']}")
-            pdf.multi_cell(0, 10, f"Growth: {trait_extras[trait]['Growth']}")
+            pdf.multi_cell(0, 10, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
+            pdf.multi_cell(0, 10, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
 
     return pdf
 
 # ---------------------------
 # Streamlit UI
 # ---------------------------
-st.title("🌟 Creative Identity Profile 🌟")
+st.title("Creative Identity Profile")
 st.write("Rate each statement from 1 (Not like me) to 5 (Very much like me).")
 
 responses = {}
@@ -205,14 +209,14 @@ total_qs = len(all_questions)
 for i, (trait, q) in enumerate(all_questions):
     st.write(f"**{q}**")
     responses[(trait, q)] = st.radio(
-        "", [1,2,3,4,5], index=2, horizontal=True, key=f"{trait}_{i}"
+        "", [1, 2, 3, 4, 5], index=2, horizontal=True, key=f"{trait}_{i}"
     )
     progress = (i+1) / total_qs
     st.progress(progress)
 
 if st.button("Submit"):
     # Calculate scores
-    trait_scores = {t:0 for t in questions.keys()}
+    trait_scores = {t: 0 for t in questions.keys()}
     for (trait, q), score in responses.items():
         trait_scores[trait] += score
 
