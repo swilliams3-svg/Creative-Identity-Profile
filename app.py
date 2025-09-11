@@ -48,7 +48,7 @@ all_questions = [(trait, q) for trait, qs in questions.items() for q in qs]
 random.shuffle(all_questions)
 
 # ---------------------------
-# Archetype logic
+# Archetypes
 # ---------------------------
 archetypes = {
     "Imagination": "Visionary Dreamer",
@@ -86,7 +86,7 @@ archetype_extras = {
     }
 }
 
-# Archetype exercises
+# Exercises
 archetype_exercises = {
     "Visionary Dreamer": [
         "Sketch your ideal future and identify one step you could take today.",
@@ -115,7 +115,6 @@ archetype_exercises = {
     ]
 }
 
-# Trait extras
 trait_extras = {
     "Imagination": {
         "Meaning": "Your strength lies in envisioning possibilities.",
@@ -139,7 +138,6 @@ trait_extras = {
     }
 }
 
-# Creative exercises per trait
 creative_exercises = {
     "Imagination": [
         "Keep a 10-minute daily idea journal.",
@@ -200,7 +198,7 @@ def create_pdf(profile_name, traits, chart_file):
     pdf = FPDF()
     pdf.add_page()
 
-    # Intro Page
+    # Intro
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, "Creative Identity Report", ln=True, align="C")
     pdf.ln(10)
@@ -227,13 +225,17 @@ def create_pdf(profile_name, traits, chart_file):
         pdf.multi_cell(0, 10, f"Blind Spots: {extra['Blind Spots']}")
         pdf.multi_cell(0, 10, f"Growth Practices: {extra['Practices']}")
 
-    # Radar chart
+    # Radar chart (save to temp file)
+    tmp_chart_path = "radar_chart.png"
+    with open(tmp_chart_path, "wb") as f:
+        f.write(chart_file.getbuffer())
+
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, "Your Creative Trait Profile", ln=True)
-    pdf.image(chart_file, x=40, w=120)
+    pdf.image(tmp_chart_path, x=40, w=120)
 
-    # Trait breakdown
+    # Traits
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, "Trait Scores & Growth Tips", ln=True)
@@ -248,7 +250,7 @@ def create_pdf(profile_name, traits, chart_file):
             pdf.multi_cell(0, 10, f"Meaning: {trait_extras[trait]['Meaning']}")
             pdf.multi_cell(0, 10, f"Growth: {trait_extras[trait]['Growth']}")
 
-    # Next Steps - Traits
+    # Exercises (Traits + Archetype)
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, "Next Steps: Trait-Based Exercises", ln=True)
@@ -263,12 +265,10 @@ def create_pdf(profile_name, traits, chart_file):
         for ex in creative_exercises.get(trait, []):
             pdf.multi_cell(0, 10, f"- {ex}")
 
-    # Next Steps - Archetype
     pdf.ln(10)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, f"{profile_name} Exercises", ln=True)
     pdf.set_font("Arial", size=12)
-
     if profile_name in archetype_exercises:
         for ex in archetype_exercises[profile_name]:
             pdf.multi_cell(0, 10, f"- {ex}")
@@ -301,7 +301,7 @@ if st.button("Submit"):
 
     profile = assign_profile(trait_scores)
 
-    # Display radar
+    # Radar
     chart_buf = create_radar_chart(trait_scores)
 
     # Show archetype
@@ -313,7 +313,7 @@ if st.button("Submit"):
         st.write("**Blind Spots:**", archetype_extras[profile]["Blind Spots"])
         st.write("**Practices:**", archetype_extras[profile]["Practices"])
 
-    # PDF download
+    # PDF
     pdf = create_pdf(profile, trait_scores, chart_buf)
     pdf_bytes = pdf.output(dest="S").encode("latin-1")
     st.download_button(
