@@ -6,259 +6,206 @@ from fpdf import FPDF
 import io
 
 # -------------------------------
-# Utility to clean text (remove unsupported chars)
+# Utility: clean text for PDF
 # -------------------------------
 def clean_text(text):
     return text.encode("latin-1", "ignore").decode("latin-1")
 
 # -------------------------------
-# Traits, questions, extras
+# Trait definitions
 # -------------------------------
 traits = {
     "Openness": [
-        "I enjoy trying out new experiences.",
-        "I actively seek variety in my daily life.",
-        "I feel excited by exploring unfamiliar ideas.",
-        "I am drawn to new artistic or cultural experiences."
+        "I enjoy exploring new ideas, even if they seem unusual.",
+        "I often seek out new experiences.",
+        "I like trying new creative methods.",
+        "I embrace change and variety in life."
     ],
     "Curiosity": [
-        "I often wonder about how things work.",
-        "I like asking questions to deepen my understanding.",
-        "I explore different perspectives before forming opinions.",
-        "I enjoy discovering surprising connections between ideas."
+        "I frequently ask questions to deepen understanding.",
+        "I enjoy researching topics that interest me.",
+        "I like discovering how things work.",
+        "I investigate ideas beyond the obvious."
     ],
     "Imagination": [
-        "I often picture alternative realities or scenarios.",
-        "I like to create stories or mental images in my mind.",
-        "I can easily visualize things that don’t exist yet.",
-        "I get inspired by daydreams or fantasies."
-    ],
-    "Risk-Taking": [
-        "I feel comfortable taking chances with uncertain outcomes.",
-        "I see failure as an opportunity to learn.",
-        "I’m willing to experiment even without guarantees.",
-        "I don’t let fear of mistakes hold me back."
+        "I often picture things in my mind vividly.",
+        "I like inventing stories or scenarios.",
+        "I can see possibilities beyond what exists.",
+        "I use mental imagery to solve problems."
     ],
     "Persistence": [
-        "I keep working on ideas even when progress is slow.",
-        "I see creative challenges as puzzles to be solved.",
-        "I bounce back after setbacks.",
-        "I stay focused until I complete my projects."
+        "I keep working on ideas, even if they seem difficult.",
+        "I don’t give up easily when exploring something new.",
+        "I return to problems until I solve them.",
+        "I show determination when developing ideas."
+    ],
+    "Risk-Taking": [
+        "I don’t mind making mistakes if it leads to new ideas.",
+        "I take risks when trying creative approaches.",
+        "I feel comfortable with uncertainty.",
+        "I try new things even if they might fail."
     ]
 }
 
 trait_extras = {
-    "Openness": {
-        "Meaning": "How receptive you are to novelty and diversity of thought.",
-        "Growth": "Expose yourself to new cultures, arts, and fields outside your comfort zone."
-    },
-    "Curiosity": {
-        "Meaning": "Your drive to ask questions and seek understanding.",
-        "Growth": "Practice active questioning — ask 'why' and 'what if' daily."
-    },
-    "Imagination": {
-        "Meaning": "The capacity to generate novel mental images and ideas.",
-        "Growth": "Engage in creative exercises like mind-mapping or storytelling."
-    },
-    "Risk-Taking": {
-        "Meaning": "Your willingness to take intellectual and practical risks.",
-        "Growth": "Frame risks as experiments — learn from outcomes rather than fearing them."
-    },
-    "Persistence": {
-        "Meaning": "Your grit in pushing ideas into reality.",
-        "Growth": "Break projects into milestones to maintain momentum."
-    }
+    "Openness": {"Meaning": "Being receptive to new experiences and ideas.",
+                 "Growth": "Experiment with unfamiliar art forms, music, or writing."},
+    "Curiosity": {"Meaning": "Asking questions and seeking knowledge.",
+                  "Growth": "Keep a daily log of questions that spark your interest."},
+    "Imagination": {"Meaning": "Visualizing possibilities and thinking beyond the obvious.",
+                    "Growth": "Practice daydreaming exercises and creative storytelling."},
+    "Persistence": {"Meaning": "Sticking with challenges until you find solutions.",
+                    "Growth": "Break big creative projects into small achievable tasks."},
+    "Risk-Taking": {"Meaning": "Courage to try new things despite uncertainty.",
+                    "Growth": "Reframe failure as learning in your creative journey."}
+}
+
+archetypes = {
+    "Visionary": ["Openness", "Imagination"],
+    "Explorer": ["Curiosity", "Risk-Taking"],
+    "Maker": ["Persistence", "Imagination"],
+    "Challenger": ["Risk-Taking", "Openness"],
+    "Scholar": ["Curiosity", "Persistence"]
 }
 
 archetype_extras = {
-    "The Visionary": {
-        "Strengths": "Sees possibilities others miss, future-oriented, inspiring.",
-        "Blind Spots": "May overlook practical details.",
-        "Practices": "Balance big ideas with concrete planning."
-    },
-    "The Explorer": {
-        "Strengths": "Curious, adaptable, thrives on discovery.",
-        "Blind Spots": "Can be scattered or unfocused.",
-        "Practices": "Set small goals to direct your explorations."
-    },
-    "The Maker": {
-        "Strengths": "Hands-on, persistent, brings ideas into form.",
-        "Blind Spots": "Can get stuck in perfectionism.",
-        "Practices": "Embrace iteration and progress over perfection."
-    },
-    "The Challenger": {
-        "Strengths": "Asks tough questions, disrupts old patterns.",
-        "Blind Spots": "May be confrontational or resistant.",
-        "Practices": "Channel disruption into constructive change."
-    }
-}
-
-# Trait colors (used in chart + PDF)
-trait_colors = {
-    "Openness": (255/255, 99/255, 132/255),
-    "Curiosity": (54/255, 162/255, 235/255),
-    "Imagination": (255/255, 206/255, 86/255),
-    "Risk-Taking": (75/255, 192/255, 192/255),
-    "Persistence": (153/255, 102/255, 255/255)
+    "Visionary": {"Strengths": "Sees future possibilities and inspires others.",
+                  "Blind Spots": "Ideas may be impractical without grounding.",
+                  "Practices": "Balance dreams with actionable steps."},
+    "Explorer": {"Strengths": "Loves adventure and experimentation.",
+                 "Blind Spots": "May lose focus jumping between ideas.",
+                 "Practices": "Set goals to channel curiosity productively."},
+    "Maker": {"Strengths": "Turns visions into tangible outcomes.",
+              "Blind Spots": "May overwork or get stuck on details.",
+              "Practices": "Celebrate progress, not just completion."},
+    "Challenger": {"Strengths": "Breaks norms, sparks innovation.",
+                   "Blind Spots": "Can be disruptive without solutions.",
+                   "Practices": "Direct energy toward constructive change."},
+    "Scholar": {"Strengths": "Deep understanding and thoughtful creativity.",
+                "Blind Spots": "Risk of analysis paralysis.",
+                "Practices": "Balance study with creative action."}
 }
 
 # -------------------------------
-# Radar chart generator (with colors)
+# Radar Chart
 # -------------------------------
-def generate_radar_chart(trait_scores):
+def create_radar_chart(trait_scores):
     labels = list(trait_scores.keys())
     values = list(trait_scores.values())
-    values += values[:1]  # loop back to start
-
+    values += values[:1]
     angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-
-    # plot each trait separately in its color
-    for i, trait in enumerate(labels):
-        val = [0] * len(labels)
-        val[i] = trait_scores[trait]
-        val += val[:1]
-        ax.plot(angles, val, color=trait_colors[trait], linewidth=2, label=trait)
-
-    # fill the overall shape in light grey
-    ax.plot(angles, values, color="grey", linewidth=1)
-    ax.fill(angles, values, color="lightgrey", alpha=0.3)
-
+    ax.fill(angles, values, color="skyblue", alpha=0.4)
+    ax.plot(angles, values, color="blue", linewidth=2)
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=10)
-
-    ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1))
+    ax.set_xticklabels(labels)
 
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
-    buf.seek(0)
+    plt.savefig(buf, format="png")
     plt.close(fig)
+    buf.seek(0)
     return buf
 
 # -------------------------------
-# PDF generator (landscape with banner & colors)
+# PDF Report
 # -------------------------------
 def create_pdf(profile_name, traits, chart_buf):
     pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.add_page()
 
     # Banner
-    pdf.set_fill_color(50, 100, 200)  # blue
+    pdf.set_fill_color(70, 130, 180)
     pdf.rect(0, 0, 297, 20, "F")
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", 'B', 16)
-    pdf.cell(0, 12, clean_text("🌟 Creative Identity Report 🌟"), align="C", ln=True)
+    pdf.cell(0, 10, clean_text("⭐ Creative Identity Report ⭐"), ln=True, align="C")
+    pdf.ln(10)
     pdf.set_text_color(0, 0, 0)
 
-    # Radar chart
+    # Chart on left
     if chart_buf:
         chart_file = "chart.png"
         with open(chart_file, "wb") as f:
             f.write(chart_buf.getbuffer())
-        pdf.image(chart_file, x=10, y=35, w=110)
+        pdf.image(chart_file, x=15, y=40, w=120)
 
-    # Archetype + traits
-    pdf.set_xy(140, 35)
+    # Archetype + traits on right
+    pdf.set_xy(150, 40)
     pdf.set_font("Helvetica", 'B', 14)
-    pdf.multi_cell(140, 8, clean_text("Your Creative Archetype"))
+    pdf.multi_cell(120, 8, clean_text("Your Creative Archetype"))
     pdf.set_font("Helvetica", size=11)
-    pdf.multi_cell(140, 6, clean_text(f"Profile: {profile_name}"))
+    pdf.multi_cell(120, 6, clean_text(f"Profile: {profile_name}"))
 
     if profile_name in archetype_extras:
         extra = archetype_extras[profile_name]
-        pdf.multi_cell(140, 6, clean_text(f"Strengths: {extra['Strengths']}"))
-        pdf.multi_cell(140, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
-        pdf.multi_cell(140, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
+        pdf.multi_cell(120, 6, clean_text(f"Strengths: {extra['Strengths']}"))
+        pdf.multi_cell(120, 6, clean_text(f"Blind Spots: {extra['Blind Spots']}"))
+        pdf.multi_cell(120, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
 
     pdf.ln(2)
     pdf.set_font("Helvetica", 'B', 12)
-    pdf.multi_cell(140, 6, clean_text("Trait Scores & Growth Tips"))
+    pdf.multi_cell(120, 6, clean_text("Trait Scores & Growth Tips"))
 
+    pdf.set_font("Helvetica", size=10)
     for trait, score in traits.items():
-        r, g, b = [int(c * 255) for c in trait_colors[trait]]
-        pdf.set_text_color(r, g, b)
         pdf.set_font("Helvetica", 'B', 10)
-        pdf.multi_cell(140, 5, clean_text(f"{trait}: {score}/20"))
-
-        pdf.set_text_color(0, 0, 0)
+        pdf.multi_cell(120, 5, clean_text(f"{trait}: {score}/20"))
         if trait in trait_extras:
             pdf.set_font("Helvetica", size=10)
-            pdf.multi_cell(140, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
-            pdf.multi_cell(140, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
-        pdf.ln(1)
+            pdf.multi_cell(120, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
+            pdf.multi_cell(120, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
 
-    # Footer
+    # Closing
     pdf.set_xy(15, 190)
     pdf.set_font("Helvetica", 'I', 10)
-    pdf.set_text_color(0, 100, 0)
     pdf.multi_cell(0, 6, clean_text("🌱 Keep Creating! Every idea is a seed — what will you grow today?"), align="C")
 
-    pdf.set_text_color(0, 0, 0)
     return pdf
 
 # -------------------------------
-# Streamlit app
+# Streamlit App
 # -------------------------------
-st.set_page_config(page_title="Creative Identity Profile", layout="wide")
-st.title("🌟 Creative Identity Profile")
-st.write("Discover your creative strengths across 5 key traits.")
+st.set_page_config(page_title="Creative Identity Profile", layout="centered")
+st.markdown("<h1 style='text-align:center; color: #4682B4;'>✨ Creative Identity Profile ✨</h1>", unsafe_allow_html=True)
 
 # Shuffle questions
-questions = []
-for trait, qs in traits.items():
-    for q in qs:
-        questions.append((trait, q))
-random.shuffle(questions)
+all_questions = [(trait, q) for trait, qs in traits.items() for q in qs]
+random.shuffle(all_questions)
 
 responses = {}
 progress = 0
+total_questions = len(all_questions)
 
-# Questionnaire
-for i, (trait, q) in enumerate(questions, 1):
-    st.markdown(f"**Q{i}. {q}**")
-    responses[(trait, q)] = st.radio(
-        "Select your response:",
-        [1, 2, 3, 4, 5],
-        horizontal=True,
-        key=f"q{i}"
-    )
-    progress = int(i / len(questions) * 100)
+for i, (trait, question) in enumerate(all_questions, 1):
+    st.write(f"**Q{i}. {question}**")
+    response = st.radio("", [1, 2, 3, 4, 5], horizontal=True, key=f"q{i}")
+    responses.setdefault(trait, []).append(response)
+    progress = i / total_questions
     st.progress(progress)
 
-if st.button("Generate My Profile"):
-    trait_scores = {trait: 0 for trait in traits.keys()}
-    for (trait, q), score in responses.items():
-        trait_scores[trait] += score
+if st.button("Generate My Creative Profile"):
+    trait_scores = {trait: sum(scores) for trait, scores in responses.items()}
+    top_traits = sorted(trait_scores, key=trait_scores.get, reverse=True)[:2]
 
-    # Assign archetype
-    top_trait = max(trait_scores, key=trait_scores.get)
-    if top_trait == "Openness":
-        profile = "The Visionary"
-    elif top_trait == "Curiosity":
-        profile = "The Explorer"
-    elif top_trait == "Imagination":
-        profile = "The Maker"
-    elif top_trait == "Risk-Taking":
-        profile = "The Challenger"
-    else:
-        profile = "The Maker"
+    profile = "Unique Creator"
+    for arch, arch_traits in archetypes.items():
+        if set(top_traits) == set(arch_traits):
+            profile = arch
 
-    st.subheader("🌟 Your Creative Archetype:")
-    st.write(f"**{profile}** — {archetype_extras[profile]['Strengths']}")
+    chart_buf = create_radar_chart(trait_scores)
 
-    # Chart
-    chart_buf = generate_radar_chart(trait_scores)
-    st.image(chart_buf, caption="Your Creative Profile", use_column_width=True)
+    st.image(chart_buf, caption="Your Creative Profile", use_container_width=True)
+    st.subheader(f"🎭 Your Creative Archetype: {profile}")
 
-    # PDF
     pdf = create_pdf(profile, trait_scores, chart_buf)
     pdf_bytes = pdf.output(dest="S").encode("latin-1", "ignore")
+
     st.download_button(
-        "📥 Download Your Full Report",
+        "📥 Download My Creative Report",
         data=pdf_bytes,
-        file_name="creative_identity_report.pdf",
+        file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
