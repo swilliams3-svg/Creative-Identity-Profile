@@ -48,18 +48,43 @@ traits = {
 }
 
 trait_extras = {
-    "Openness": {"Meaning": "Being receptive to new experiences and ideas.",
-                 "Growth": "Experiment with unfamiliar art forms, music, or writing."},
-    "Curiosity": {"Meaning": "Asking questions and seeking knowledge.",
-                  "Growth": "Keep a daily log of questions that spark your interest."},
-    "Imagination": {"Meaning": "Visualizing possibilities and thinking beyond the obvious.",
-                    "Growth": "Practice daydreaming exercises and creative storytelling."},
-    "Persistence": {"Meaning": "Sticking with challenges until you find solutions.",
-                    "Growth": "Break big creative projects into small achievable tasks."},
-    "Risk-Taking": {"Meaning": "Courage to try new things despite uncertainty.",
-                    "Growth": "Reframe failure as learning in your creative journey."}
+    "Openness": {
+        "Meaning": "Being receptive to new experiences and ideas.",
+        "Growth": "Experiment with unfamiliar art forms, music, or writing.",
+        "Activities": "🔹 Visit an art gallery and reflect on pieces you wouldn’t normally notice.\n🔹 Try a cuisine you’ve never eaten before."
+    },
+    "Curiosity": {
+        "Meaning": "Asking questions and seeking knowledge.",
+        "Growth": "Keep a daily log of questions that spark your interest.",
+        "Activities": "🔹 Dedicate 10 minutes a day to researching something unrelated to your work.\n🔹 Play 'Why?' by asking 'why' five times in a row about something ordinary."
+    },
+    "Imagination": {
+        "Meaning": "Visualizing possibilities and thinking beyond the obvious.",
+        "Growth": "Practice daydreaming exercises and creative storytelling.",
+        "Activities": "🔹 Rewrite the ending of a film or book.\n🔹 Imagine alternative uses for everyday objects."
+    },
+    "Persistence": {
+        "Meaning": "Sticking with challenges until you find solutions.",
+        "Growth": "Break big creative projects into small achievable tasks.",
+        "Activities": "🔹 Commit to a 30-day micro-project (like a photo a day).\n🔹 Track your creative progress visually on a calendar."
+    },
+    "Risk-Taking": {
+        "Meaning": "Courage to try new things despite uncertainty.",
+        "Growth": "Reframe failure as learning in your creative journey.",
+        "Activities": "🔹 Try improvisational theatre or storytelling.\n🔹 Share unfinished work with someone for feedback."
+    }
 }
 
+# Score interpretations
+def interpret_trait(trait, score):
+    if score <= 8:
+        return f"Low {trait}: You may prefer stability but might miss creative opportunities."
+    elif 9 <= score <= 14:
+        return f"Moderate {trait}: You sometimes tap into this trait but could grow further."
+    else:
+        return f"High {trait}: This is one of your creative strengths."
+
+# Archetypes
 archetypes = {
     "Visionary": ["Openness", "Imagination"],
     "Explorer": ["Curiosity", "Risk-Taking"],
@@ -99,14 +124,21 @@ def create_radar_chart(trait_scores):
     colors = ["green", "orange", "purple", "red", "blue"]
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_theta_direction(-1)
+
+    ax.plot(angles, values, linewidth=2, linestyle='solid')
+    ax.fill(angles, values, 'b', alpha=0.1)
+
     for i, label in enumerate(labels):
-        ax.plot([angles[i], angles[i]], [0, values[i]], color=colors[i], linewidth=2, label=label)
-        ax.fill([angles[i], angles[i+1], angles[i+1], angles[i]], 
-                [0, 0, values[i+1], values[i]], color=colors[i], alpha=0.2)
+        ax.plot([angles[i], angles[i]], [0, values[i]], color=colors[i], linewidth=2)
+        ax.scatter(angles[i], values[i], color=colors[i], s=80, label=label)
 
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
+
+    plt.legend(loc="upper right", bbox_to_anchor=(1.2, 1.1))
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
@@ -115,9 +147,9 @@ def create_radar_chart(trait_scores):
     return buf
 
 # -------------------------------
-# PDF Report (Chart on page 1, Text on page 2)
+# PDF Report (multi-page allowed)
 # -------------------------------
-def create_pdf(profile_name, traits, chart_buf):
+def create_pdf(profile_name, traits, chart_buf, secondary=None):
     pdf = FPDF(orientation="L", unit="mm", format="A4")
 
     # Page 1 - Banner + Chart
@@ -136,13 +168,15 @@ def create_pdf(profile_name, traits, chart_buf):
             f.write(chart_buf.getbuffer())
         pdf.image(chart_file, x=60, y=40, w=170)
 
-    # Page 2 - Archetype + Traits
+    # Page 2+ - Archetype + Traits
     pdf.add_page()
     pdf.set_font("Helvetica", 'B', 14)
     pdf.cell(0, 10, clean_text("Your Creative Archetype"), ln=True, align="C")
     pdf.set_font("Helvetica", size=11)
     pdf.ln(5)
-    pdf.multi_cell(0, 6, clean_text(f"Profile: {profile_name}"), align="C")
+    pdf.multi_cell(0, 6, clean_text(f"Main Profile: {profile_name}"))
+    if secondary:
+        pdf.multi_cell(0, 6, clean_text(f"Secondary Influence: {secondary}"))
 
     if profile_name in archetype_extras:
         extra = archetype_extras[profile_name]
@@ -153,17 +187,18 @@ def create_pdf(profile_name, traits, chart_buf):
 
     pdf.ln(5)
     pdf.set_font("Helvetica", 'B', 12)
-    pdf.cell(0, 8, clean_text("Trait Scores & Growth Tips"), ln=True)
+    pdf.cell(0, 8, clean_text("Trait Scores, Insights & Growth Ideas"), ln=True)
 
-    pdf.set_font("Helvetica", size=10)
     for trait, score in traits.items():
-        pdf.set_font("Helvetica", 'B', 10)
-        pdf.multi_cell(0, 5, clean_text(f"{trait}: {score}/20"))
+        pdf.set_font("Helvetica", 'B', 11)
+        pdf.multi_cell(0, 6, clean_text(f"{trait}: {score}/20"))
+        pdf.set_font("Helvetica", size=10)
+        pdf.multi_cell(0, 5, clean_text(interpret_trait(trait, score)))
         if trait in trait_extras:
-            pdf.set_font("Helvetica", size=10)
             pdf.multi_cell(0, 5, clean_text(f"Meaning: {trait_extras[trait]['Meaning']}"))
             pdf.multi_cell(0, 5, clean_text(f"Growth: {trait_extras[trait]['Growth']}"))
-        pdf.ln(2)
+            pdf.multi_cell(0, 5, clean_text(f"Suggested Activities:\n{trait_extras[trait]['Activities']}"))
+        pdf.ln(4)
 
     pdf.ln(5)
     pdf.set_font("Helvetica", 'I', 10)
@@ -184,36 +219,52 @@ random.shuffle(all_questions)
 responses = {}
 progress = 0
 total_questions = len(all_questions)
+messages = ["🚀 Let’s go!", "💡 You’re unlocking insights!", "🌟 Halfway there!", "🔥 Keep going, almost done!", "🎉 Last question!"]
 
 for i, (trait, question) in enumerate(all_questions, 1):
     st.write(f"**Q{i}. {question}**")
-    response = st.radio("", [1, 2, 3, 4, 5], horizontal=True, key=f"q{i}")
-    responses.setdefault(trait, []).append(response)
+    response = st.radio("Select your response", 
+                        ["1 - Strongly Disagree", "2 - Disagree", "3 - Neutral", "4 - Agree", "5 - Strongly Agree"], 
+                        horizontal=True, key=f"q{i}")
+    responses.setdefault(trait, []).append(int(response[0]))
     progress = i / total_questions
-    st.progress(progress)
+    st.progress(progress, text=messages[min(i*len(messages)//total_questions, len(messages)-1)])
 
 if st.button("Generate My Creative Profile"):
     trait_scores = {trait: sum(scores) for trait, scores in responses.items()}
     top_traits = sorted(trait_scores, key=trait_scores.get, reverse=True)[:2]
 
     profile = "Unique Creator"
+    secondary = None
     for arch, arch_traits in archetypes.items():
         if set(top_traits) == set(arch_traits):
             profile = arch
+
+    # find secondary if close
+    second_best = sorted(trait_scores, key=trait_scores.get, reverse=True)[2]
+    for arch, arch_traits in archetypes.items():
+        if second_best in arch_traits and profile != arch:
+            secondary = arch
 
     chart_buf = create_radar_chart(trait_scores)
 
     # Show chart + archetype info on webpage
     st.image(chart_buf, caption="Your Creative Profile", use_container_width=True)
     st.subheader(f"🎭 Your Creative Archetype: {profile}")
+    if secondary:
+        st.write(f"✨ Secondary Influence: {secondary}")
 
     if profile in archetype_extras:
         st.write(f"**Strengths:** {archetype_extras[profile]['Strengths']}")
         st.write(f"**Blind Spots:** {archetype_extras[profile]['Blind Spots']}")
         st.write(f"**Growth Practices:** {archetype_extras[profile]['Practices']}")
 
+    # Show interpretations on webpage
+    for trait, score in trait_scores.items():
+        st.write(f"**{trait} ({score}/20):** {interpret_trait(trait, score)}")
+
     # Generate PDF
-    pdf = create_pdf(profile, trait_scores, chart_buf)
+    pdf = create_pdf(profile, trait_scores, chart_buf, secondary)
     pdf_bytes = pdf.output(dest="S").encode("latin-1", "ignore")
 
     st.download_button(
@@ -222,3 +273,4 @@ if st.button("Generate My Creative Profile"):
         file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
+
