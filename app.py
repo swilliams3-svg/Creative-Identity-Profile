@@ -161,7 +161,7 @@ def create_pdf(profile_name, traits, chart_buf):
     pdf.add_page()
 
     # Title
-    pdf.set_font("Helvetica", 'B', 16)
+    pdf.set_font("Helvetica", 'B', 12)
     pdf.cell(0, 10, clean_text("Creative Identity Report"), ln=True, align="C")
     pdf.ln(5)
 
@@ -174,7 +174,7 @@ def create_pdf(profile_name, traits, chart_buf):
 
     # Right: Archetype + Traits
     pdf.set_xy(150, 30)
-    pdf.set_font("Helvetica", 'B', 14)
+    pdf.set_font("Helvetica", 'B', 10)
     pdf.multi_cell(120, 8, clean_text("Your Creative Archetype"), ln=True)
     pdf.set_font("Helvetica", size=11)
     pdf.multi_cell(120, 6, clean_text(f"Profile: {profile_name}"))
@@ -186,7 +186,7 @@ def create_pdf(profile_name, traits, chart_buf):
         pdf.multi_cell(120, 6, clean_text(f"Growth Practices: {extra['Practices']}"))
 
     pdf.ln(2)
-    pdf.set_font("Helvetica", 'B', 12)
+    pdf.set_font("Helvetica", 'B', 10)
     pdf.multi_cell(120, 6, clean_text("Trait Scores & Growth Tips"))
 
     pdf.set_font("Helvetica", size=10)
