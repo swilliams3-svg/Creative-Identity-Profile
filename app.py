@@ -1,161 +1,153 @@
 import streamlit as st
 import matplotlib.pyplot as plt
-import numpy as np
+import io
 from fpdf import FPDF
-from io import BytesIO
-
-st.set_page_config(page_title="Creative Identity Profile", layout="wide")
 
 # -------------------------------
-# Define archetypes and questions
+# Archetypes and Questions
 # -------------------------------
 ARCHETYPES = {
     "Explorer": [
-        "I enjoy experimenting with new creative approaches.",
-        "I seek out new experiences and perspectives.",
-        "I like to challenge conventional ways of doing things."
+        "I enjoy experimenting with new ideas and approaches.",
+        "I actively seek out new experiences.",
+        "I see creativity as a way to discover the unknown."
     ],
     "Visionary": [
-        "I can easily imagine future possibilities.",
-        "I often think about big-picture ideas.",
-        "I enjoy turning abstract thoughts into plans."
+        "I often imagine future possibilities.",
+        "I connect abstract ideas into bigger pictures.",
+        "I think about long-term impact when being creative."
     ],
-    "Maker": [
-        "I like to create tangible outputs from my ideas.",
-        "I take satisfaction in building and crafting.",
-        "I prefer practical application over abstract thinking."
+    "Inventor": [
+        "I like solving practical problems in novel ways.",
+        "I often build or design new things.",
+        "I enjoy finding clever fixes to everyday challenges."
+    ],
+    "Artist": [
+        "I express myself through creative outlets.",
+        "I value beauty, style, or aesthetics.",
+        "I enjoy making things that evoke emotions."
     ],
     "Connector": [
-        "I enjoy collaborating with others on projects.",
-        "I thrive when sharing ideas in groups.",
-        "I find inspiration in conversations with others."
+        "I collaborate to spark new ideas.",
+        "I enjoy learning from diverse perspectives.",
+        "I thrive when bouncing ideas with others."
+    ],
+    "Analyst": [
+        "I use logic and evidence in my creativity.",
+        "I enjoy breaking problems into smaller parts.",
+        "I like evaluating ideas critically before acting."
     ]
+}
+
+TRAIT_COLORS = {
+    "Explorer": "#1f77b4",
+    "Visionary": "#ff7f0e",
+    "Inventor": "#2ca02c",
+    "Artist": "#d62728",
+    "Connector": "#9467bd",
+    "Analyst": "#8c564b",
 }
 
 # -------------------------------
 # Store responses
 # -------------------------------
 if "responses" not in st.session_state:
-    st.session_state.responses = {f"{arch}_{i}": None for arch in ARCHETYPES for i in range(len(ARCHETYPES[arch]))}
+    st.session_state.responses = {
+        f"{arch}_{i+1}": None for arch in ARCHETYPES for i in range(len(ARCHETYPES[arch]))
+    }
 
 responses = st.session_state.responses
 all_questions = [(arch, q) for arch, qs in ARCHETYPES.items() for q in qs]
 total_qs = len(all_questions)
 
 # -------------------------------
-# Questionnaire
+# App UI
 # -------------------------------
-st.title("🎨 Creative Identity Profile")
+st.title("🌀 Creative Identity Profile")
+st.write("Answer honestly: **1 = Strongly Disagree** to **5 = Strongly Agree**")
 
-st.write("Please answer each question on a scale from 1 (Strongly Disagree) to 5 (Strongly Agree).")
+completed = 0
+for arch, qs in ARCHETYPES.items():
+    st.subheader(arch)
+    for i, q in enumerate(qs, start=1):
+        key = f"{arch}_{i}"
+        prev_val = responses[key]
+        responses[key] = st.radio(
+            q,
+            options=[1, 2, 3, 4, 5],
+            index=(prev_val - 1) if prev_val else None,
+            horizontal=True,
+            key=key,
+        )
+        if responses[key]:
+            completed += 1
 
-answered = 0
-for i, (arch, question) in enumerate(all_questions, 1):
-    key = f"{arch}_{i}"
-    prev_val = responses[key]
-
-    st.markdown(f"**Q{i}/{total_qs}: {question}**")
-    st.caption("Choose: 1 = Strongly Disagree · 2 = Disagree · 3 = Neutral · 4 = Agree · 5 = Strongly Agree")
-
-    responses[key] = st.radio(
-        "",
-        [1, 2, 3, 4, 5],
-        horizontal=True,
-        index=(prev_val - 1) if prev_val is not None else None,
-        key=key
-    )
-
-    if responses[key] is not None:
-        answered += 1
-
-progress = answered / total_qs
+progress = completed / total_qs
 st.progress(progress)
 
 # -------------------------------
 # Process results
 # -------------------------------
-def calculate_scores(responses):
-    scores = {}
-    for arch, qs in ARCHETYPES.items():
-        vals = [responses[f"{arch}_{i+1}"] for i in range(len(qs)) if responses[f"{arch}_{i+1}"] is not None]
-        if vals:
-            scores[arch] = np.mean(vals)
-    return scores
+if completed == total_qs:
+    st.success("✅ All questions answered!")
 
-def classify_score(score):
-    if score >= 4.0:
-        return "High"
-    elif score >= 3.0:
-        return "Moderate"
-    else:
-        return "Low"
+    scores = {
+        arch: sum(responses[f"{arch}_{i+1}"] for i in range(len(qs))) / len(qs)
+        for arch, qs in ARCHETYPES.items()
+    }
 
-# -------------------------------
-# PDF generation
-# -------------------------------
-def create_pdf(scores, main_arch, chart_buf):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "Creative Identity Profile Report", ln=True, align="C")
-    pdf.ln(10)
+    main_trait = max(scores, key=scores.get)
+    st.subheader("🌟 Your Creative Identity")
+    st.write(f"Your strongest trait is **{main_trait}** with a score of {scores[main_trait]:.2f}/5.")
 
-    pdf.set_font("Arial", "", 12)
-    for arch, score in scores.items():
-        level = classify_score(score)
-        pdf.multi_cell(0, 10, f"{arch} ({level}): {score:.2f}/5")
+    # Bar chart
+    fig, ax = plt.subplots()
+    ax.bar(scores.keys(), scores.values(), color=[TRAIT_COLORS[a] for a in scores.keys()])
+    ax.set_ylabel("Average Score")
+    ax.set_title("Your Creative Profile")
+    plt.xticks(rotation=45)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    st.image(buf)
 
-    pdf.ln(10)
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, f"Your Dominant Archetype: {main_arch}", ln=True)
+    # -------------------------------
+    # PDF Generator
+    # -------------------------------
+    class PDF(FPDF):
+        def header(self):
+            self.set_font("Arial", "B", 14)
+            self.cell(0, 10, "Creative Identity Report", ln=True, align="C")
+            self.ln(10)
 
-    pdf.ln(10)
-    pdf.set_font("Arial", "", 12)
-    pdf.multi_cell(0, 10, "Radar Chart:")
-    pdf.ln(5)
+    def create_pdf(scores, main_trait, chart_buf):
+        pdf = PDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
 
-    chart_buf.seek(0)
-    pdf.image(chart_buf, x=30, w=150)
+        pdf.multi_cell(0, 10, f"Your strongest trait: {main_trait}\n")
 
-    return pdf.output(dest="S").encode("latin-1")
+        for trait, score in scores.items():
+            level = "High" if score >= 4 else "Moderate" if score >= 2.5 else "Low"
+            pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
 
-# -------------------------------
-# Show results when complete
-# -------------------------------
-if answered == total_qs:
-    scores = calculate_scores(responses)
-    main_arch = max(scores, key=scores.get)
+        # Chart
+        pdf.ln(10)
+        chart_buf.seek(0)
+        pdf.image(chart_buf, x=10, y=None, w=pdf.w - 20)
 
-    st.subheader("✅ Your Results")
-    for arch, score in scores.items():
-        st.write(f"**{arch}**: {score:.2f}/5 ({classify_score(score)})")
+        # Return as bytes
+        return pdf.output(dest="S").encode("latin-1")
 
-    # Radar chart
-    labels = list(scores.keys())
-    values = list(scores.values())
-    values += values[:1]
+    pdf_bytes = create_pdf(scores, main_trait, buf)
 
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-    angles += angles[:1]
-
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, "o-", linewidth=2)
-    ax.fill(angles, values, alpha=0.25)
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
-    ax.set_ylim(0, 5)
-
-    chart_buf = BytesIO()
-    plt.savefig(chart_buf, format="PNG")
-    st.pyplot(fig)
-
-    # PDF download
-    pdf_bytes = create_pdf(scores, main_arch, chart_buf)
     st.download_button(
         "📥 Download Your Personalised PDF Report",
         data=pdf_bytes,
         file_name="Creative_Identity_Report.pdf",
-        mime="application/pdf"
+        mime="application/pdf",
     )
 else:
-    st.info("Please complete all questions before viewing your results.")
+    st.warning("⚠️ Please answer all questions before viewing your profile.")
+
 
