@@ -55,13 +55,13 @@ def create_pdf(scores, main_trait, chart_buf):
 
     pdf.ln(10)
 
-    # Insert chart image from buffer
+    # Insert chart
     chart_buf.seek(0)
     pdf.image(chart_buf, x=10, y=None, w=180)
 
-    # ✅ Always return bytes (fix)
-    out = pdf.output(dest="S").encode("latin-1")
-    return out
+    # ✅ Guarantee bytes for Streamlit
+    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+    return io.BytesIO(pdf_bytes).getvalue()
 
 # -------------------------
 # Questionnaire app
@@ -130,4 +130,5 @@ if submitted:
         file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
+
 
