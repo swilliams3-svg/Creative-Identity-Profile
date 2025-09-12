@@ -2,9 +2,9 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
-from io import BytesIO
-from PIL import Image
+import io
 import random
+from PIL import Image
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
@@ -48,7 +48,7 @@ traits = {
     ]
 }
 
-# ---------- ARCHETYPE DEFINITIONS ----------
+# Archetype definitions
 archetypes = {
     "Openness": {
         "name": "The Explorer",
@@ -97,6 +97,9 @@ def radar_chart(scores):
         "Convergent Thinking": "tab:brown"
     }
 
+    ax.plot(angles, values, color="black", linewidth=1)
+    ax.fill(angles, values, color="grey", alpha=0.1)
+
     for i, label in enumerate(labels):
         ax.plot(angles[i:i+2], values[i:i+2], color=colors[label], linewidth=2)
         ax.fill(angles[i:i+2], values[i:i+2], color=colors[label], alpha=0.25)
@@ -106,24 +109,26 @@ def radar_chart(scores):
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
 
-    ax.legend(labels, loc="lower center", bbox_to_anchor=(0.5, -0.25),
-              ncol=3, frameon=False)
-
     plt.tight_layout(rect=[0, 0.05, 1, 1])
 
-    buf = BytesIO()
+    buf = io.BytesIO()
     plt.savefig(buf, format="PNG")
     buf.seek(0)
     plt.close(fig)
-    return buf
+
+    # Return both PIL Image (for Streamlit) and BytesIO (for PDF)
+    image = Image.open(buf)
+    buf.seek(0)
+    return image, buf
 
 def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
+    # Save chart to temp file for embedding
     chart_path = "chart.png"
     with open(chart_path, "wb") as f:
-        f.write(chart_buf.getbuffer())
+        f.write(chart_buf.getvalue())
 
     # Page 1: Chart
     pdf.add_page()
@@ -223,15 +228,9 @@ if answered == total_qs:
     for trait in scores:
         scores[trait] /= counts[trait]
 
-    chart_buf = radar_chart(scores)
-
-    # Display chart safely
-    chart_buf.seek(0)
-    image = Image.open(chart_buf)
-    img_bytes = BytesIO()
-    image.save(img_bytes, format="PNG")
-    img_bytes.seek(0)
-    st.image(img_bytes.getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
+    # Get both formats of chart
+    image, chart_buf = radar_chart(scores)
+    st.image(image, caption="Your Creative Trait Profile", use_container_width=True)
 
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
@@ -257,6 +256,7 @@ if answered == total_qs:
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
+
 
 
 
