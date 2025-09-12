@@ -50,7 +50,17 @@ traits = {
     ]
 }
 
-# Archetype metadata + suggestions for growth (plain text only)
+# Colours for each trait
+trait_colors = {
+    "Openness": "tab:blue",
+    "Risk-taking": "tab:red",
+    "Resilience": "tab:green",
+    "Collaboration": "tab:orange",
+    "Divergent Thinking": "tab:purple",
+    "Convergent Thinking": "tab:brown"
+}
+
+# Archetype metadata + suggestions for growth
 archetypes = {
     "Openness": {
         "name": "The Explorer",
@@ -88,12 +98,8 @@ archetypes = {
 # Utilities
 # --------------------------
 def clean_text(text: str) -> str:
-    """
-    Convert text to latin-1-safe string for fpdf (replace unsupported chars).
-    """
     if text is None:
         return ""
-    # keep it simple: encode to latin-1 with replacement and decode back
     return str(text).encode("latin-1", "replace").decode("latin-1")
 
 def get_level(score: float) -> str:
@@ -105,21 +111,29 @@ def get_level(score: float) -> str:
         return "Low"
 
 # --------------------------
-# Radar chart (matplotlib polar)
+# Radar chart (multi-colour)
 # --------------------------
 def radar_chart(scores: dict) -> io.BytesIO:
     labels = list(scores.keys())
     values = list(scores.values())
     num_vars = len(labels)
 
-    # compute angles
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     values += values[:1]
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, linewidth=2)
-    ax.fill(angles, values, alpha=0.25)
+
+    # draw each trait segment in its colour
+    for i, trait in enumerate(labels):
+        start_angle = angles[i]
+        end_angle = angles[i+1]
+        ax.plot([start_angle, end_angle],
+                [values[i], values[i+1]],
+                color=trait_colors[trait], linewidth=3)
+        ax.fill([start_angle, end_angle, end_angle, start_angle],
+                [0, 0, values[i+1], values[i]],
+                alpha=0.2, color=trait_colors[trait])
 
     ax.set_ylim(0,5)
     ax.set_xticks(angles[:-1])
@@ -128,7 +142,6 @@ def radar_chart(scores: dict) -> io.BytesIO:
     ax.set_yticklabels(["1","2","3","4","5"])
 
     plt.tight_layout()
-
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
@@ -136,34 +149,48 @@ def radar_chart(scores: dict) -> io.BytesIO:
     return buf
 
 # --------------------------
-# PDF creation (fpdf v1.x safe)
+# Bar chart
 # --------------------------
-def create_pdf(scores: dict, main_trait: str, chart_buf: io.BytesIO) -> bytes:
+def bar_chart(scores: dict) -> io.BytesIO:
+    fig, ax = plt.subplots(figsize=(6,4))
+    traits = list(scores.keys())
+    values = list(scores.values())
+    ax.bar(traits, values, color=[trait_colors[t] for t in traits])
+    ax.set_ylim(0,5)
+    ax.set_ylabel("Score")
+    ax.set_title("Trait Scores")
+    plt.xticks(rotation=45, ha="right")
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+# --------------------------
+# PDF creation
+# --------------------------
+def create_pdf(scores: dict, main_trait: str, chart_buf: io.BytesIO, bar_buf: io.BytesIO) -> bytes:
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # write chart buffer to a temporary file (fpdf v1 expects a filename)
     chart_path = "chart_temp.png"
-    chart_buf.seek(0)
+    bar_path = "bar_temp.png"
     with open(chart_path, "wb") as f:
         f.write(chart_buf.getbuffer())
+    with open(bar_path, "wb") as f:
+        f.write(bar_buf.getbuffer())
 
-    # Page 1 - Title + chart
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, clean_text("Creative Identity Profile"), ln=True, align="C")
     pdf.ln(6)
-    # insert chart image
     try:
         pdf.image(chart_path, x=30, y=30, w=150)
+        pdf.ln(120)
+        pdf.image(bar_path, x=30, w=150)
     except Exception:
-        # fallback: try smaller width if insertion fails
-        try:
-            pdf.image(chart_path, x=10, y=30, w=120)
-        except Exception:
-            pass
+        pass
 
-    # Page 2 - Archetypes & suggestion
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main = sorted_traits[0][0]
     sub = sorted_traits[1][0]
@@ -182,7 +209,6 @@ def create_pdf(scores: dict, main_trait: str, chart_buf: io.BytesIO) -> bytes:
     pdf.ln(4)
     pdf.multi_cell(0, 8, clean_text(f"To grow your weaker area ({weakest}): {archetypes[weakest]['improvement']}"))
 
-    # Page 3 - Trait insights
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, clean_text("Trait Insights"), ln=True)
@@ -192,22 +218,20 @@ def create_pdf(scores: dict, main_trait: str, chart_buf: io.BytesIO) -> bytes:
         level = get_level(score)
         pdf.multi_cell(0, 8, clean_text(f"{trait} ({level}): {score:.2f}/5"))
 
-    # cleanup temporary chart file if it exists
-    try:
-        os.remove(chart_path)
-    except OSError:
-        pass
+    for path in [chart_path, bar_path]:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
 
-    # return bytes (latin-1 safe)
     return pdf.output(dest="S").encode("latin-1", "replace")
 
 # --------------------------
-# Streamlit UI: questionnaire (continuous list, randomized)
+# Streamlit UI
 # --------------------------
 st.title("Creative Identity Profile")
 st.write("Please respond to each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree.")
 
-# Shuffle questions once per session
 if "all_questions" not in st.session_state:
     all_questions = []
     for trait, qs in traits.items():
@@ -218,18 +242,15 @@ if "all_questions" not in st.session_state:
 
 all_questions = st.session_state.all_questions
 
-# initialize responses mapping if needed
 if "responses" not in st.session_state:
     st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
 
 responses = st.session_state.responses
 total_qs = len(all_questions)
 
-# display questions continuously (Q1/Q2/...)
 answered = 0
 for i, (trait, question) in enumerate(all_questions, 1):
     key = f"{trait}_{i}"
-    # use index param only if a previous value exists
     index_val = (responses[key] - 1) if responses[key] else None
     responses[key] = st.radio(f"Q{i}/{total_qs}: {question}", [1,2,3,4,5], horizontal=True,
                               index=index_val, key=key)
@@ -238,11 +259,9 @@ for i, (trait, question) in enumerate(all_questions, 1):
 
 st.progress(answered / total_qs)
 
-# Calculate and show results when complete
 if answered == total_qs:
     st.success("Questionnaire complete — here are your results:")
 
-    # aggregate per-trait scores
     scores = {trait: 0.0 for trait in traits}
     counts = {trait: 0 for trait in traits}
     for key, val in responses.items():
@@ -251,14 +270,13 @@ if answered == total_qs:
             scores[trait] += val
             counts[trait] += 1
     for trait in scores:
-        # avoid division by zero
         scores[trait] = (scores[trait] / counts[trait]) if counts[trait] else 0.0
 
-    # radar chart
     chart_buf = radar_chart(scores)
-    st.image(chart_buf.getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
+    bar_buf = bar_chart(scores)
+    st.image(chart_buf.getvalue(), caption="Your Creative Trait Profile (Radar)", use_container_width=True)
+    st.image(bar_buf.getvalue(), caption="Your Creative Trait Scores (Bar)", use_container_width=True)
 
-    # archetype results
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
     sub_trait = sorted_traits[1][0]
@@ -278,11 +296,15 @@ if answered == total_qs:
         level = get_level(score)
         st.write(f"**{trait} ({level})** — {score:.2f}/5")
 
-    # PDF generation and download
-    pdf_bytes = create_pdf(scores, main_trait, chart_buf)
+    pdf_bytes = create_pdf(scores, main_trait, chart_buf, bar_buf)
     st.download_button(
         "Download your personalised PDF report",
         data=pdf_bytes,
         file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
+
+else:
+    missed = [q for (trait, q), (k, v) in zip(all_questions, responses.items()) if v is None]
+    if missed:
+        st.warning(f"You still have {len(missed)} unanswered questions.")
