@@ -184,17 +184,14 @@ answered = 0
 
 for i, (trait, question) in enumerate(st.session_state.all_questions, 1):
     key = f"{trait}_{i}"
-    if key not in st.session_state:
-        st.session_state[key] = None
     responses[key] = st.radio(
         f"Q{i}/{total_qs}: {question}",
         [1, 2, 3, 4, 5],
         horizontal=True,
-        index=(st.session_state[key]-1) if st.session_state[key] else None,
+        index=None,
         key=key
     )
-    if responses[key] is not None:
-        st.session_state[key] = responses[key]
+    if st.session_state[key] is not None:
         answered += 1
 
 # Progress bar
