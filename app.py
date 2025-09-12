@@ -39,6 +39,14 @@ traits = {
     ]
 }
 
+trait_descriptions = {
+    "Curiosity": "You thrive on questions and exploration, seeing the world as full of puzzles to be solved and mysteries to uncover.",
+    "Imagination": "You think in pictures and possibilities, often seeing connections others miss and turning the ordinary into something new.",
+    "Risk-Taking": "You embrace uncertainty and experiment boldly, knowing that mistakes are often stepping stones to creative breakthroughs.",
+    "Persistence": "You treat creativity like a marathon, sticking with challenges until ideas mature and become reality.",
+    "Openness": "You welcome fresh perspectives and diversity of thought, which helps you adapt and blend different ideas into novel solutions."
+}
+
 growth_tips = {
     "Curiosity": "Practice asking 'why' and 'what if' questions daily.",
     "Imagination": "Try free writing or sketching to spark new ideas.",
@@ -58,7 +66,7 @@ random.shuffle(all_questions)
 st.title("🌟 Creative Identity Profile")
 st.write("Rate each statement on a scale of 1–5: **1 = strongly disagree, 5 = strongly agree**")
 
-# Progress bar
+# Progress bar + responses
 responses = {}
 progress = 0
 for i, (trait, q) in enumerate(all_questions, 1):
@@ -88,10 +96,11 @@ if len(responses) == len(all_questions):
     main_trait = max(scores, key=scores.get)
 
     st.write(f"**Your leading creative trait is:** 🌟 {main_trait}")
+    st.write(f"📝 {trait_descriptions[main_trait]}")
     st.write(f"💡 Growth Tip: {growth_tips[main_trait]}")
 
     # --- Radar Chart ---
-    fig1, ax1 = plt.subplots(figsize=(5,5), subplot_kw={'polar': True})
+    fig1, ax1 = plt.subplots(figsize=(5, 5), subplot_kw={'polar': True})
     categories = list(scores.keys())
     values = list(scores.values())
     angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
@@ -104,10 +113,17 @@ if len(responses) == len(all_questions):
     ax1.set_yticks([1, 2, 3, 4, 5])
     st.pyplot(fig1)
 
-    # --- Bar Chart ---
-    fig2, ax2 = plt.subplots(figsize=(6,4))
-    ax2.bar(scores.keys(), scores.values(), color="skyblue")
-    ax2.set_ylim(0,5)
+    # --- Colour-Coded Bar Chart ---
+    colors = {
+        "Curiosity": "orange",
+        "Imagination": "purple",
+        "Risk-Taking": "red",
+        "Persistence": "green",
+        "Openness": "blue"
+    }
+    fig2, ax2 = plt.subplots(figsize=(6, 4))
+    ax2.bar(scores.keys(), scores.values(), color=[colors[t] for t in scores.keys()])
+    ax2.set_ylim(0, 5)
     ax2.set_ylabel("Average Score")
     st.pyplot(fig2)
 
@@ -130,21 +146,27 @@ if len(responses) == len(all_questions):
         pdf.ln(10)
         pdf.image(chart_bufs[1], x=30, y=40, w=150)
 
-        # Page 3: Results & Growth
+        # Page 3: Archetype Description + Growth
         pdf.add_page()
         pdf.set_font("Helvetica", 'B', 14)
         pdf.cell(0, 10, f"Your Leading Trait: {main_trait}", ln=True)
         pdf.set_font("Helvetica", '', 12)
-        pdf.multi_cell(0, 8, f"Growth Tip: {growth_tips[main_trait]}")
+        pdf.multi_cell(180, 8, trait_descriptions[main_trait])
+        pdf.ln(5)
+        pdf.multi_cell(180, 8, f"Growth Tip: {growth_tips[main_trait]}")
         pdf.ln(10)
+
         for trait, value in scores.items():
-            pdf.multi_cell(0, 8, f"{trait}: {value:.2f}/5")
-            pdf.multi_cell(0, 8, f"Tip: {growth_tips[trait]}")
+            pdf.set_font("Helvetica", 'B', 12)
+            pdf.multi_cell(180, 8, f"{trait}: {value:.2f}/5")
+            pdf.set_font("Helvetica", '', 11)
+            pdf.multi_cell(180, 8, f"{trait_descriptions[trait]}")
+            pdf.multi_cell(180, 8, f"Tip: {growth_tips[trait]}")
             pdf.ln(5)
 
         return bytes(pdf.output(dest="S"))
 
-    # Save both charts as buffers
+    # Save charts
     radar_buf = io.BytesIO()
     fig1.savefig(radar_buf, format="PNG")
     radar_buf.seek(0)
