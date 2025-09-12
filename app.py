@@ -1,3 +1,10 @@
+# --- Ensure fpdf2 is installed ---
+import importlib, subprocess, sys
+try:
+    importlib.import_module("fpdf")  # fpdf2 is imported the same way
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "fpdf2"])
+
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
@@ -116,7 +123,6 @@ def radar_chart(scores):
     plt.close(fig)
     return buf
 
-
 def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -156,7 +162,7 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.ln(5)
     pdf.set_font("Helvetica", "", 12)
 
-    page_width = pdf.w - 2 * pdf.l_margin  # usable width
+    page_width = pdf.w - 2 * pdf.l_margin
 
     for trait, score in scores.items():
         if score >= 4:
@@ -170,7 +176,7 @@ def create_pdf(scores, archetype, chart_buf):
         safe_text = text.encode("latin-1", "replace").decode("latin-1")
         pdf.multi_cell(page_width, 10, safe_text)
 
-    # ✅ fpdf2 already returns bytes-like object with dest="S"
+    # ✅ fpdf2 returns bytes directly
     return pdf.output(dest="S")
 
 # ---------- STREAMLIT APP ----------
@@ -257,7 +263,3 @@ if answered == total_qs:
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
-
-
-
-
