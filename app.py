@@ -1,225 +1,288 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
+import io
+import random
 from fpdf import FPDF
-from io import BytesIO
+import os
+
+st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Questionnaire Setup
+# Traits (original 6) with questions
 # --------------------------
 traits = {
-    "Curiosity": [
-        "I enjoy exploring new ideas and concepts.",
-        "I often ask questions to deepen my understanding.",
-        "I like experimenting with new approaches.",
-        "I actively seek out new experiences.",
-        "I feel energized when learning something unfamiliar."
+    "Openness": [
+        "I enjoy exploring new ideas and experiences.",
+        "I often imagine possibilities that others don’t.",
+        "I like experimenting with unusual approaches.",
+        "I am curious about many different things."
     ],
-    "Imagination": [
-        "I often think in images and mental pictures.",
-        "I enjoy daydreaming and exploring possibilities.",
-        "I can easily picture alternatives to reality.",
-        "I often make connections between unrelated things.",
-        "I enjoy creative storytelling or fantasizing."
+    "Risk-taking": [
+        "I am comfortable taking chances with new ideas.",
+        "I don’t mind uncertainty when trying something new.",
+        "I would rather try and fail than not try at all.",
+        "I enjoy venturing into the unknown."
     ],
     "Resilience": [
-        "I bounce back quickly after setbacks.",
-        "I remain persistent even when tasks are difficult.",
-        "I use challenges as opportunities to grow.",
-        "I handle criticism constructively.",
-        "I adapt easily when circumstances change."
+        "I keep going when faced with creative setbacks.",
+        "I see mistakes as opportunities to learn.",
+        "I bounce back quickly after difficulties.",
+        "I stay motivated even when things get tough."
     ],
     "Collaboration": [
         "I enjoy brainstorming with others.",
-        "I build on other people’s ideas.",
-        "I value diverse perspectives.",
-        "I work well in creative teams.",
-        "I help others feel included in creative discussions."
+        "I build on the ideas of those around me.",
+        "I value different perspectives in problem solving.",
+        "I work well in creative teams."
     ],
-    "Discipline": [
-        "I dedicate regular time to practicing my skills.",
-        "I follow through on creative projects.",
-        "I break big tasks into manageable steps.",
-        "I balance inspiration with structured effort.",
-        "I set goals and work steadily towards them."
+    "Divergent Thinking": [
+        "I can think of many solutions to a problem.",
+        "I enjoy finding unusual uses for common things.",
+        "I generate lots of ideas quickly.",
+        "I like connecting unrelated concepts."
     ],
-    "Risk-Taking": [
-        "I feel comfortable trying untested ideas.",
-        "I see failure as part of the creative process.",
-        "I am willing to stand out with unconventional ideas.",
-        "I take initiative without knowing the outcome.",
-        "I embrace uncertainty when creating something new."
+    "Convergent Thinking": [
+        "I can evaluate which ideas are most useful.",
+        "I am good at narrowing options to find the best one.",
+        "I can turn many ideas into a clear plan.",
+        "I make decisions based on logic and evidence."
     ]
 }
 
-# --------------------------
-# Archetype Descriptions & Suggestions
-# --------------------------
+# Archetype metadata + suggestions for growth (plain text only)
 archetypes = {
-    "Curiosity": {
-        "description": "You are a **Seeker** – drawn to explore, question, and discover.",
-        "suggestions": [
-            "Keep a curiosity journal of questions you want to explore.",
-            "Attend talks, workshops, or events outside your field.",
-            "Pair your curiosity with discipline to turn ideas into action."
-        ]
+    "Openness": {
+        "name": "The Explorer",
+        "description": "You thrive on curiosity and imagination. Explorers see possibilities everywhere, though sometimes risk being unfocused.",
+        "improvement": "Try allocating short, focused 'exploration sprints' followed by a pause to capture the best ideas."
     },
-    "Imagination": {
-        "description": "You are a **Dreamer** – full of visions, ideas, and creative possibilities.",
-        "suggestions": [
-            "Translate daydreams into quick sketches, stories, or prototypes.",
-            "Use creative constraints to focus your imagination.",
-            "Collaborate with grounded thinkers to help shape your visions."
-        ]
+    "Risk-taking": {
+        "name": "The Adventurer",
+        "description": "You embrace uncertainty and try new things. Adventurers push boundaries but should manage exposure to unnecessary risk.",
+        "improvement": "Set low-cost experiments to test risky ideas before committing significant resources."
     },
     "Resilience": {
-        "description": "You are a **Warrior** – able to adapt, persist, and grow from challenges.",
-        "suggestions": [
-            "Reframe failures as learning opportunities.",
-            "Practice mindfulness to stay calm under pressure.",
-            "Celebrate small wins to fuel long-term motivation."
-        ]
+        "name": "The Perseverer",
+        "description": "You persist through challenges and learn from failure. Perseverers build strength from setbacks.",
+        "improvement": "Schedule reflection time after setbacks: note lessons and small wins to maintain momentum."
     },
     "Collaboration": {
-        "description": "You are a **Connector** – thriving in shared creativity and teamwork.",
-        "suggestions": [
-            "Facilitate brainstorming sessions with diverse groups.",
-            "Listen actively and amplify quieter voices.",
-            "Balance collaboration with solo time to refine your ideas."
-        ]
+        "name": "The Connector",
+        "description": "You spark ideas in groups and value diverse perspectives. Connectors thrive in teams but may sometimes overlook their own vision.",
+        "improvement": "Block time for solitary work to develop your own voice and deepen ideas before sharing."
     },
-    "Discipline": {
-        "description": "You are a **Builder** – structured, focused, and persistent in your craft.",
-        "suggestions": [
-            "Set aside daily or weekly practice time.",
-            "Break ambitious projects into small achievable steps.",
-            "Experiment with flexibility to spark spontaneity."
-        ]
+    "Divergent Thinking": {
+        "name": "The Visionary",
+        "description": "You generate many original ideas and enjoy unusual connections. Visionaries excel at imagination but can struggle with focus.",
+        "improvement": "Use idea-ranking criteria to select a few promising concepts to develop further."
     },
-    "Risk-Taking": {
-        "description": "You are a **Trailblazer** – bold, adventurous, and unafraid of uncertainty.",
-        "suggestions": [
-            "Experiment with small calculated risks regularly.",
-            "Share unfinished ideas for feedback early on.",
-            "Pair bold moves with strategies for managing setbacks."
-        ]
+    "Convergent Thinking": {
+        "name": "The Strategist",
+        "description": "You refine and structure ideas into action. Strategists provide clarity but can miss chance opportunities by being too selective.",
+        "improvement": "Schedule 'wild idea' sessions to intentionally loosen constraints before applying evaluation."
     }
 }
 
 # --------------------------
-# Helper Functions
+# Utilities
 # --------------------------
-def calculate_scores(responses):
-    scores = {trait: np.mean(values) for trait, values in responses.items()}
-    main_trait = max(scores, key=scores.get)
-    return scores, main_trait
+def clean_text(text: str) -> str:
+    """
+    Convert text to latin-1-safe string for fpdf (replace unsupported chars).
+    """
+    if text is None:
+        return ""
+    # keep it simple: encode to latin-1 with replacement and decode back
+    return str(text).encode("latin-1", "replace").decode("latin-1")
 
-def plot_radar_chart(scores):
+def get_level(score: float) -> str:
+    if score >= 4:
+        return "High"
+    elif score >= 2.5:
+        return "Medium"
+    else:
+        return "Low"
+
+# --------------------------
+# Radar chart (matplotlib polar)
+# --------------------------
+def radar_chart(scores: dict) -> io.BytesIO:
     labels = list(scores.keys())
     values = list(scores.values())
     num_vars = len(labels)
 
-    values += values[:1]
+    # compute angles
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    values += values[:1]
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, color="blue", linewidth=2)
-    ax.fill(angles, values, color="blue", alpha=0.25)
-    ax.set_yticks([1, 2, 3, 4, 5])
-    ax.set_yticklabels(["1","2","3","4","5"])
+    fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, linewidth=2)
+    ax.fill(angles, values, alpha=0.25)
+
+    ax.set_ylim(0,5)
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
-    plt.title("Creative Trait Profile (Radar Chart)")
-    return fig
+    ax.set_yticks([1,2,3,4,5])
+    ax.set_yticklabels(["1","2","3","4","5"])
 
-def plot_bar_chart(scores):
-    labels = list(scores.keys())
-    values = list(scores.values())
+    plt.tight_layout()
 
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.bar(labels, values, color="skyblue")
-    ax.set_ylim(0, 5)
-    ax.set_ylabel("Average Score")
-    plt.title("Creative Trait Profile (Bar Chart)")
-    plt.xticks(rotation=30, ha="right")
-    return fig
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+    plt.close(fig)
+    return buf
 
-def create_pdf(scores, main_trait, chart_buf):
+# --------------------------
+# PDF creation (fpdf v1.x safe)
+# --------------------------
+def create_pdf(scores: dict, main_trait: str, chart_buf: io.BytesIO) -> bytes:
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # write chart buffer to a temporary file (fpdf v1 expects a filename)
+    chart_path = "chart_temp.png"
+    chart_buf.seek(0)
+    with open(chart_path, "wb") as f:
+        f.write(chart_buf.getbuffer())
+
+    # Page 1 - Title + chart
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "Your Creative Identity Profile", ln=True, align="C")
+    pdf.cell(0, 10, clean_text("Creative Identity Profile"), ln=True, align="C")
+    pdf.ln(6)
+    # insert chart image
+    try:
+        pdf.image(chart_path, x=30, y=30, w=150)
+    except Exception:
+        # fallback: try smaller width if insertion fails
+        try:
+            pdf.image(chart_path, x=10, y=30, w=120)
+        except Exception:
+            pass
 
-    pdf.set_font("Arial", size=12)
-    pdf.ln(10)
-    pdf.multi_cell(0, 10, f"Your strongest creative trait is: {main_trait}")
-    pdf.multi_cell(0, 10, archetypes[main_trait]["description"])
+    # Page 2 - Archetypes & suggestion
+    sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    main = sorted_traits[0][0]
+    sub = sorted_traits[1][0]
+    weakest = sorted_traits[-1][0]
 
-    pdf.ln(5)
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, clean_text("Your Creative Archetypes"), ln=True)
+    pdf.ln(4)
+    pdf.set_font("Arial", "", 12)
+    pdf.multi_cell(0, 8, clean_text(f"Main Archetype: {archetypes[main]['name']}"))
+    pdf.multi_cell(0, 8, clean_text(archetypes[main]['description']))
+    pdf.ln(4)
+    pdf.multi_cell(0, 8, clean_text(f"Sub-Archetype: {archetypes[sub]['name']}"))
+    pdf.multi_cell(0, 8, clean_text(archetypes[sub]['description']))
+    pdf.ln(4)
+    pdf.multi_cell(0, 8, clean_text(f"To grow your weaker area ({weakest}): {archetypes[weakest]['improvement']}"))
+
+    # Page 3 - Trait insights
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, clean_text("Trait Insights"), ln=True)
+    pdf.ln(4)
+    pdf.set_font("Arial", "", 12)
     for trait, score in scores.items():
-        pdf.multi_cell(0, 10, f"{trait}: {score:.2f}/5")
+        level = get_level(score)
+        pdf.multi_cell(0, 8, clean_text(f"{trait} ({level}): {score:.2f}/5"))
 
-    # Suggestions
-    pdf.ln(10)
-    pdf.set_font("Arial", "B", 12)
-    pdf.multi_cell(0, 10, "Suggestions to strengthen your creative growth:")
-    pdf.set_font("Arial", size=12)
-    for s in archetypes[main_trait]["suggestions"]:
-        pdf.multi_cell(0, 10, f"- {s}")
+    # cleanup temporary chart file if it exists
+    try:
+        os.remove(chart_path)
+    except OSError:
+        pass
 
-    # Save chart image
-    chart_buf.seek(0)
-    with open("chart.png", "wb") as f:
-        f.write(chart_buf.read())
-    pdf.image("chart.png", x=30, w=150)
-
-    return pdf.output(dest="S").encode("latin-1")
+    # return bytes (latin-1 safe)
+    return pdf.output(dest="S").encode("latin-1", "replace")
 
 # --------------------------
-# Streamlit UI
+# Streamlit UI: questionnaire (continuous list, randomized)
 # --------------------------
-st.title("🧠 Creative Identity Profile")
+st.title("Creative Identity Profile")
+st.write("Please respond to each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree.")
 
-st.write("Answer the questions below to discover your creative strengths.")
+# Shuffle questions once per session
+if "all_questions" not in st.session_state:
+    all_questions = []
+    for trait, qs in traits.items():
+        for q in qs:
+            all_questions.append((trait, q))
+    random.shuffle(all_questions)
+    st.session_state.all_questions = all_questions
 
-responses = {}
-for trait, questions in traits.items():
-    st.subheader(trait)
-    responses[trait] = []
-    for q in questions:
-        responses[trait].append(st.radio(q, [1, 2, 3, 4, 5], horizontal=True))
+all_questions = st.session_state.all_questions
 
-if st.button("Show Results"):
-    scores, main_trait = calculate_scores(responses)
+# initialize responses mapping if needed
+if "responses" not in st.session_state:
+    st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
+
+responses = st.session_state.responses
+total_qs = len(all_questions)
+
+# display questions continuously (Q1/Q2/...)
+answered = 0
+for i, (trait, question) in enumerate(all_questions, 1):
+    key = f"{trait}_{i}"
+    # use index param only if a previous value exists
+    index_val = (responses[key] - 1) if responses[key] else None
+    responses[key] = st.radio(f"Q{i}/{total_qs}: {question}", [1,2,3,4,5], horizontal=True,
+                              index=index_val, key=key)
+    if responses[key] is not None:
+        answered += 1
+
+st.progress(answered / total_qs)
+
+# Calculate and show results when complete
+if answered == total_qs:
+    st.success("Questionnaire complete — here are your results:")
+
+    # aggregate per-trait scores
+    scores = {trait: 0.0 for trait in traits}
+    counts = {trait: 0 for trait in traits}
+    for key, val in responses.items():
+        if val is not None:
+            trait = key.split("_")[0]
+            scores[trait] += val
+            counts[trait] += 1
+    for trait in scores:
+        # avoid division by zero
+        scores[trait] = (scores[trait] / counts[trait]) if counts[trait] else 0.0
+
+    # radar chart
+    chart_buf = radar_chart(scores)
+    st.image(chart_buf.getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
+
+    # archetype results
+    sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    main_trait = sorted_traits[0][0]
+    sub_trait = sorted_traits[1][0]
+    weakest_trait = sorted_traits[-1][0]
 
     st.subheader("Your Creative Archetype")
-    st.markdown(f"**{main_trait}** – {archetypes[main_trait]['description']}")
+    st.write(f"Main Archetype: **{archetypes[main_trait]['name']}**")
+    st.write(archetypes[main_trait]['description'])
+    st.write(f"Sub-Archetype: **{archetypes[sub_trait]['name']}**")
+    st.write(archetypes[sub_trait]['description'])
 
-    st.subheader("How to strengthen your creativity:")
-    for s in archetypes[main_trait]["suggestions"]:
-        st.markdown(f"- {s}")
+    st.subheader("Ways to grow")
+    st.write(f"Weaker area: **{weakest_trait}** — {archetypes[weakest_trait]['improvement']}")
 
-    chart_type = st.radio("Choose chart type:", ["Radar Chart", "Bar Chart"])
+    st.subheader("Trait Insights")
+    for trait, score in scores.items():
+        level = get_level(score)
+        st.write(f"**{trait} ({level})** — {score:.2f}/5")
 
-    if chart_type == "Radar Chart":
-        fig = plot_radar_chart(scores)
-    else:
-        fig = plot_bar_chart(scores)
-
-    buf = BytesIO()
-    fig.savefig(buf, format="png")
-    st.image(buf, caption="Your Creative Trait Profile", use_container_width=True)
-
-    # PDF (locked to radar chart)
-    radar_fig = plot_radar_chart(scores)
-    chart_buf = BytesIO()
-    radar_fig.savefig(chart_buf, format="png")
+    # PDF generation and download
     pdf_bytes = create_pdf(scores, main_trait, chart_buf)
-
     st.download_button(
-        "📥 Download Your Profile (PDF)",
+        "Download your personalised PDF report",
         data=pdf_bytes,
-        file_name="creative_identity_profile.pdf",
+        file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
