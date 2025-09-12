@@ -1,16 +1,10 @@
-# --- Ensure fpdf2 is installed ---
-import importlib, subprocess, sys
-try:
-    importlib.import_module("fpdf")  # fpdf2 is imported the same way
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "fpdf2"])
-
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
 import io
 import random
+from io import BytesIO
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
@@ -163,7 +157,6 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.set_font("Helvetica", "", 12)
 
     page_width = pdf.w - 2 * pdf.l_margin
-
     for trait, score in scores.items():
         if score >= 4:
             level = "High"
@@ -176,8 +169,9 @@ def create_pdf(scores, archetype, chart_buf):
         safe_text = text.encode("latin-1", "replace").decode("latin-1")
         pdf.multi_cell(page_width, 10, safe_text)
 
-    # ✅ fpdf2 returns str → convert to bytes
-    return pdf.output(dest="S").encode("latin-1")
+    # ✅ Return BytesIO for Streamlit
+    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+    return BytesIO(pdf_bytes)
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
@@ -263,3 +257,4 @@ if answered == total_qs:
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
+
