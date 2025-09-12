@@ -75,6 +75,23 @@ archetypes = {
     }
 }
 
+# ---------- HELPER ----------
+def safe_text(text: str) -> str:
+    """
+    Convert text to plain ASCII for FPDF.
+    - Replace dashes/quotes with ASCII equivalents
+    - Drop emojis and unsupported symbols
+    """
+    replacements = {
+        "–": "-", "—": "-",
+        "“": '"', "”": '"',
+        "‘": "'", "’": "'",
+    }
+    for bad, good in replacements.items():
+        text = text.replace(bad, good)
+
+    return text.encode("latin-1", "ignore").decode("latin-1")
+
 # ---------- FUNCTIONS ----------
 def radar_chart(scores):
     labels = list(scores.keys())
@@ -126,27 +143,29 @@ def create_pdf(scores, archetype, chart_buf):
     with open(chart_path, "wb") as f:
         f.write(chart_buf.getbuffer())
 
-    safe_width = pdf.w - 20  # usable width (avoid overflow)
+    safe_width = pdf.w - 20  # usable width
 
     # Page 1: Chart
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 20)
-    pdf.cell(0, 10, "Creative Identity Profile", ln=True, align="C")
+    pdf.cell(0, 10, safe_text("Creative Identity Profile"), ln=True, align="C")
     pdf.ln(10)
     pdf.image(chart_path, x=30, y=40, w=150)
 
     # Page 2: Archetype
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "Your Creative Archetype", ln=True)
+    pdf.cell(0, 10, safe_text("Your Creative Archetype"), ln=True)
     pdf.ln(5)
 
     pdf.set_font("Helvetica", "", 12)
     pdf.multi_cell(
         safe_width,
         10,
-        f"Main Archetype: {archetypes[archetype]['name']}\n\n"
-        f"{archetypes[archetype]['description']}"
+        safe_text(
+            f"Main Archetype: {archetypes[archetype]['name']}\n\n"
+            f"{archetypes[archetype]['description']}"
+        )
     )
 
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
@@ -156,14 +175,16 @@ def create_pdf(scores, archetype, chart_buf):
         pdf.multi_cell(
             safe_width,
             10,
-            f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
-            f"{archetypes[sub_trait]['description']}"
+            safe_text(
+                f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
+                f"{archetypes[sub_trait]['description']}"
+            )
         )
 
     # Page 3: Trait Insights
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "Trait Insights", ln=True)
+    pdf.cell(0, 10, safe_text("Trait Insights"), ln=True)
     pdf.ln(5)
 
     pdf.set_font("Helvetica", "", 12)
@@ -175,11 +196,8 @@ def create_pdf(scores, archetype, chart_buf):
         else:
             level = "Low"
 
-        pdf.multi_cell(
-            safe_width,
-            8,
-            f"{trait} ({level}) – {score:.2f}/5"
-        )
+        line = f"{trait} ({level}) - {score:.2f}/5"
+        pdf.multi_cell(safe_width, 8, safe_text(line))
         pdf.ln(2)
 
     return pdf.output(dest="S").encode("latin-1", "ignore")
