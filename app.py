@@ -231,7 +231,7 @@ if answered == total_qs:
     img_bytes = BytesIO()
     image.save(img_bytes, format="PNG")
     img_bytes.seek(0)
-    st.image(img_bytes, caption="Your Creative Trait Profile", use_container_width=True)
+    st.image(img_bytes.getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
 
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
