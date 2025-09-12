@@ -78,8 +78,8 @@ if not st.session_state.completed:
                 horizontal=True,
                 key=f"{trait}_{i}",
             )
-
-    if st.button("Finish"):
+            
+if st.button("Finish"):
     # Check unanswered
     unanswered = [i+1 for i, ans in responses.items() if ans is None]
     if unanswered:
@@ -96,6 +96,7 @@ if not st.session_state.completed:
             except Exception as e:
                 st.error("Unable to rerun automatically. Please refresh the page.")
                 raise e
+
 
 
 # ---------------------------
