@@ -172,9 +172,10 @@ def create_pdf(scores, archetype, chart_buf):
             level = "Medium"
         else:
             level = "Low"
-        pdf.multi_cell(safe_width, 8, f"{trait} ({level}): {score:.2f}/5")
+        ppdf.multi_cell(safe_width, 8, f"{trait} ({level}): {score:.2f}/5")
 
-    return pdf.output(dest="S").encode("latin-1")
+    # ✅ fpdf2 already returns bytes
+    return pdf.output(dest="S")
 
 
 # ---------- STREAMLIT APP ----------
