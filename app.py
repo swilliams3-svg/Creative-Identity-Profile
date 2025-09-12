@@ -231,7 +231,8 @@ if answered == total_qs:
         scores[trait] /= counts[trait]
 
     chart_buf = radar_chart(scores)
-    st.image(chart_buf, caption="Your Creative Trait Profile", use_container_width=True)
+    # ✅ FIX: use .getvalue() so st.image gets bytes
+    st.image(chart_buf.getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
 
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
@@ -257,4 +258,5 @@ if answered == total_qs:
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
+
 
