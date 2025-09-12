@@ -171,7 +171,7 @@ def create_pdf(scores, archetype, chart_buf):
         pdf.multi_cell(page_width, 10, safe_text)
 
     # ✅ fpdf2 already returns bytes-like object with dest="S"
-    return pdf.output(dest="S").getvalue()
+    return pdf.output(dest="S")
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
