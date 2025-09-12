@@ -218,9 +218,6 @@ for i, (trait, question) in enumerate(all_questions, 1):
         answered += 1
 
 
-progress = answered / total_qs
-st.progress(progress)
-
 # ---------- RESULTS ----------
 if answered == total_qs:
     st.success("✅ Questionnaire complete! See your results below:")
