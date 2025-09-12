@@ -135,63 +135,69 @@ def create_chart(scores):
     return buf
 
 from fpdf import FPDF
+import os
 
 def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.add_page()
 
-    # Add a Unicode font (DejaVuSans works well with fpdf2)
-    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
-    pdf.set_font("DejaVu", size=16)
+    # Try to use DejaVuSans, fallback to Helvetica if missing
+    if os.path.exists("DejaVuSans.ttf"):
+        pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+        font_family = "DejaVu"
+    else:
+        font_family = "Helvetica"
+
+    pdf.set_font(font_family, size=16)
 
     # Title
     pdf.set_fill_color(50, 50, 200)
     pdf.set_text_color(255, 255, 255)
     pdf.cell(0, 15, "🌟 Creative Identity Profile", ln=True, align="C", fill=True)
 
-    # Reset text color for content
+    # Reset text color
     pdf.set_text_color(0, 0, 0)
     pdf.ln(10)
 
     # Archetype section
-    pdf.set_font("DejaVu", size=14)
+    pdf.set_font(font_family, size=14)
     pdf.multi_cell(0, 10, f"Main Archetype: {archetype}")
     pdf.ln(5)
 
-    # Insert chart (saved as PNG from buffer)
+    # Insert chart
     chart_file = "chart.png"
     with open(chart_file, "wb") as f:
         f.write(chart_buf.getbuffer())
-    pdf.image(chart_file, x=30, y=None, w=150)
+    pdf.image(chart_file, x=30, w=150)
     pdf.ln(90)
 
     # Trait scores
-    pdf.set_font("DejaVu", size=12)
+    pdf.set_font(font_family, size=12)
     pdf.multi_cell(0, 10, "Trait Scores:")
     for trait, value in scores.items():
         pdf.multi_cell(0, 8, f"{trait}: {value}/5")
     pdf.ln(5)
 
-    # Add growth tips page
+    # Growth tips page
     pdf.add_page()
-    pdf.set_font("DejaVu", size=14)
+    pdf.set_font(font_family, size=14)
     pdf.multi_cell(0, 10, "🌱 Growth Tips")
     pdf.ln(5)
 
     for trait, value in scores.items():
-        pdf.set_font("DejaVu", size=12)
+        pdf.set_font(font_family, size=12)
         pdf.multi_cell(0, 8, f"{trait}: {value}/5")
-        pdf.set_font("DejaVu", size=11)
+        pdf.set_font(font_family, size=11)
         if value <= 2:
-            pdf.multi_cell(0, 8, f"➡️ Consider developing {trait} further by practicing small, safe experiments.")
+            pdf.multi_cell(0, 8, f"➡️ Consider developing {trait} by practicing small, safe experiments.")
         elif value == 3:
             pdf.multi_cell(0, 8, f"➡️ You show balance in {trait}. Try stretching this trait in new settings.")
         else:
             pdf.multi_cell(0, 8, f"➡️ Your strength in {trait} is clear. Use it to inspire and support others.")
         pdf.ln(4)
 
-    # Output as bytes for download
     return pdf.output(dest="S").encode("latin-1", "ignore")
+
 
 
 # --- APP LOGIC ---
