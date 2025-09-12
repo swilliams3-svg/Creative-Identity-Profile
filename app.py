@@ -145,4 +145,110 @@ def create_pdf(scores, archetype, chart_buf):
         sub_trait = sorted_traits[1][0]
         pdf.ln(5)
         pdf.multi_cell(0, 10,
+                       f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
+                       f"{archetypes[sub_trait]['description']}")
+
+    # Page 3: Trait Insights
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "Trait Insights", ln=True)
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "", 12)
+    for trait, score in scores.items():
+        if score >= 4:
+            level = "High"
+        elif score >= 2.5:
+            level = "Medium"
+        else:
+            level = "Low"
+        pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
+
+    return pdf.output(dest="S").encode("latin-1", "ignore")
+
+# ---------- STREAMLIT APP ----------
+st.title("🌟 Creative Identity Profile")
+st.write("Discover your creative traits, archetype, and ways to grow your creative potential.")
+
+st.markdown("### How to answer")
+st.info("Please respond to each statement on a **1–5 scale**:\n\n"
+        "1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree.")
+
+# Randomize questions once
+if "all_questions" not in st.session_state:
+    all_questions = []
+    for trait, qs in traits.items():
+        for q in qs:
+            all_questions.append((trait, q))
+    random.shuffle(all_questions)
+    st.session_state.all_questions = all_questions
+
+all_questions = st.session_state.all_questions
+
+if "responses" not in st.session_state:
+    st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
+
+responses = st.session_state.responses
+total_qs = len(all_questions)
+
+st.markdown("### Questionnaire")
+
+answered = 0
+for i, (trait, question) in enumerate(all_questions, 1):
+    key = f"{trait}_{i}"
+
+    responses[key] = st.radio(
+        f"Q{i}/{total_qs}: {question}",
+        [1, 2, 3, 4, 5],
+        horizontal=True,
+        index=None if responses[key] is None else [1, 2, 3, 4, 5].index(responses[key]),
+        key=key
+    )
+
+    if responses[key] is not None:
+        answered += 1
+
+progress = answered / total_qs
+st.progress(progress)
+
+# ---------- RESULTS ----------
+if answered == total_qs:
+    st.success("✅ Questionnaire complete! See your results below:")
+
+    scores = {trait: 0 for trait in traits}
+    counts = {trait: 0 for trait in traits}
+    for key, val in responses.items():
+        if val:
+            trait = key.split("_")[0]
+            scores[trait] += val
+            counts[trait] += 1
+    for trait in scores:
+        scores[trait] /= counts[trait]
+
+    chart_buf = radar_chart(scores)
+    st.image(chart_buf, caption="Your Creative Trait Profile", use_container_width=True)
+
+    sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    main_trait = sorted_traits[0][0]
+    sub_trait = sorted_traits[1][0]
+
+    st.subheader("🎭 Your Creative Archetype")
+    st.write(f"**Main Archetype: {archetypes[main_trait]['name']}**")
+    st.write(archetypes[main_trait]['description'])
+    st.write(f"**Sub-Archetype: {archetypes[sub_trait]['name']}**")
+    st.write(archetypes[sub_trait]['description'])
+
+    st.subheader("📊 Trait Insights")
+    for trait, score in scores.items():
+        if score >= 4:
+            level = "High"
+        elif score >= 2.5:
+            level = "Medium"
+        else:
+            level = "Low"
+        st.write(f"**{trait} ({level})** – {score:.2f}/5")
+
+    pdf_bytes = create_pdf(scores, main_trait, chart_buf)
+    st.download_button("📥 Download Your Personalised PDF Report",
+                       data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
+                       mime="application/pdf")
 
