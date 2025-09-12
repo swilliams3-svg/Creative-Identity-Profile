@@ -159,7 +159,7 @@ def create_pdf(scores, archetype, chart_buf):
                        f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
                        f"{archetypes[sub_trait]['description']}")
 
-    # Page 3: Trait Insights
+        # Page 3: Trait Insights
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Trait Insights", ln=True)
@@ -172,10 +172,10 @@ def create_pdf(scores, archetype, chart_buf):
             level = "Medium"
         else:
             level = "Low"
-        ppdf.multi_cell(safe_width, 8, f"{trait} ({level}): {score:.2f}/5")
+        pdf.multi_cell(safe_width, 8, f"{trait} ({level}): {score:.2f}/5")
 
-    # ✅ fpdf2 already returns bytes
     return pdf.output(dest="S")
+
 
 
 # ---------- STREAMLIT APP ----------
