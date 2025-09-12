@@ -1,8 +1,4 @@
 streamlit
+fpdf==1.7.2
 matplotlib
 numpy
-fpdf2
-Pillow
-
-
-
