@@ -176,8 +176,8 @@ def create_pdf(scores, archetype, chart_buf):
         safe_text = text.encode("latin-1", "replace").decode("latin-1")
         pdf.multi_cell(page_width, 10, safe_text)
 
-    # ✅ fpdf2 returns bytes directly
-    return pdf.output(dest="S")
+    # ✅ fpdf2 returns str → convert to bytes
+    return pdf.output(dest="S").encode("latin-1")
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
