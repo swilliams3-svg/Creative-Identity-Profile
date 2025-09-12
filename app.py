@@ -170,7 +170,8 @@ def create_pdf(scores, archetype, chart_buf):
         safe_text = text.encode("latin-1", "replace").decode("latin-1")
         pdf.multi_cell(page_width, 10, safe_text)
 
-    return pdf.output(dest="S").encode("latin-1", "ignore")
+    # ✅ fpdf2 already returns bytes-like object with dest="S"
+    return pdf.output(dest="S").getvalue()
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
@@ -256,6 +257,7 @@ if answered == total_qs:
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
+
 
 
 
