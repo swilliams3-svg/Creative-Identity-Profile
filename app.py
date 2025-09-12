@@ -105,7 +105,7 @@ def create_pdf(scores, archetype, chart_buf):
             level = "Low"
         pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
 
-    # ✅ FIXED for fpdf 1.x
+    # ✅ FIXED for fpdf (v1.x)
     return pdf.output(dest="S").encode("latin-1")
 
 # -----------------------
@@ -118,18 +118,15 @@ st.write("Answer the questions to discover your creative archetype.")
 
 # Questionnaire
 responses = {}
-with st.form("questionnaire"):
-    for trait, qs in questions.items():
-        st.subheader(trait)
-        trait_scores = []
-        for q in qs:
-            score = st.radio(q, [1, 2, 3, 4, 5], horizontal=True, key=f"{trait}_{q}")
-            trait_scores.append(score)
-        responses[trait] = trait_scores
-    submitted = st.form_submit_button("Submit")
+for trait, qs in questions.items():
+    st.subheader(trait)
+    trait_scores = []
+    for q in qs:
+        score = st.radio(q, [1, 2, 3, 4, 5], horizontal=True, key=f"{trait}_{q}")
+        trait_scores.append(score)
+    responses[trait] = trait_scores
 
-# Results
-if submitted:
+if st.button("Submit"):
     scores = {trait: sum(vals) / len(vals) for trait, vals in responses.items()}
     main_trait = max(scores, key=scores.get)
 
@@ -165,3 +162,4 @@ if submitted:
         file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
+
