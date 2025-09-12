@@ -51,7 +51,7 @@ with st.form("creative_form"):
     for trait, qs in questions.items():
         st.subheader(trait)
         for q in qs:
-            responses[q] = st.slider(q, 1, 5, 3)
+            responses[q] = st.slider(q, 1, 5, 3, key=q)
     submitted = st.form_submit_button("See My Creative Profile")
 
 # --------------------------
@@ -68,21 +68,8 @@ def radar_chart(scores):
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
 
-    colors = {
-        "Openness": "tab:blue",
-        "Risk-taking": "tab:red",
-        "Resilience": "tab:green",
-        "Collaboration": "tab:purple",
-        "Divergent Thinking": "tab:orange",
-        "Convergent Thinking": "tab:brown"
-    }
-
     ax.plot(angles, values, color="black", linewidth=1)
     ax.fill(angles, values, color="grey", alpha=0.1)
-
-    for i, label in enumerate(labels):
-        ax.plot(angles[i:i+2], values[i:i+2], color=colors[label], linewidth=2)
-        ax.fill(angles[i:i+2], values[i:i+2], color=colors[label], alpha=0.25)
 
     ax.set_yticks([1, 2, 3, 4, 5])
     ax.set_ylim(0, 5)
@@ -91,16 +78,14 @@ def radar_chart(scores):
 
     plt.tight_layout(rect=[0, 0.05, 1, 1])
 
-    # Save to buffer
     buf = io.BytesIO()
     plt.savefig(buf, format="PNG")
     buf.seek(0)
     plt.close(fig)
 
-    # Create numpy array for Streamlit
+    # Two outputs: numpy array for Streamlit, buffer for PDF
     img_array = np.array(Image.open(buf))
     buf.seek(0)
-
     return img_array, buf
 
 # --------------------------
@@ -129,15 +114,18 @@ def create_pdf(scores, main_trait, chart_buf):
 # Results
 # --------------------------
 if submitted:
+    # Calculate trait averages
     trait_scores = {trait: np.mean([responses[q] for q in qs]) for trait, qs in questions.items()}
     main_trait = max(trait_scores, key=trait_scores.get)
 
     st.subheader("Your Results")
     st.write(f"🌟 Your dominant creative trait is **{main_trait}**")
 
+    # Chart
     img_array, chart_buf = radar_chart(trait_scores)
     st.image(img_array, caption="Your Creative Trait Profile", use_container_width=True)
 
+    # PDF
     pdf_bytes = create_pdf(trait_scores, main_trait, chart_buf)
     st.download_button(
         "📥 Download Your Personalised PDF Report",
@@ -145,4 +133,5 @@ if submitted:
         file_name="Creative_Identity_Report.pdf",
         mime="application/pdf"
     )
+
 
