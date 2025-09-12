@@ -80,18 +80,23 @@ if not st.session_state.completed:
             )
 
     if st.button("Finish"):
-        # Check unanswered
-        unanswered = []
-        for trait, ans_list in st.session_state.responses.items():
-            for i, ans in enumerate(ans_list):
-                if ans is None:
-                    unanswered.append((trait, i+1))
+    # Check unanswered
+    unanswered = [i+1 for i, ans in responses.items() if ans is None]
+    if unanswered:
+        st.warning(f"⚠️ You still have unanswered questions: {unanswered}. Please complete all before continuing.")
+    else:
+        st.session_state.completed = True
+        # Use st.rerun() (or safe_rerun() if you added the helper)
+        try:
+            st.rerun()
+        except Exception:
+            # fallback for older Streamlit versions
+            try:
+                st.experimental_rerun()
+            except Exception as e:
+                st.error("Unable to rerun automatically. Please refresh the page.")
+                raise e
 
-        if unanswered:
-            st.warning(f"⚠️ You still have unanswered questions: {unanswered}. Please complete all before continuing.")
-        else:
-            st.session_state.completed = True
-            st.experimental_rerun()
 
 # ---------------------------
 # RESULTS
