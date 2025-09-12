@@ -144,14 +144,18 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.cell(0, 10, "Your Creative Archetype", ln=True)
     pdf.ln(5)
     pdf.set_font("Helvetica", "", 12)
-    pdf.multi_cell(0, 10,
+
+    safe_width = pdf.w - 2 * pdf.l_margin  # usable page width
+
+    pdf.multi_cell(safe_width, 10,
                    f"Main Archetype: {archetypes[archetype]['name']}\n\n"
                    f"{archetypes[archetype]['description']}")
+
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     if len(sorted_traits) > 1:
         sub_trait = sorted_traits[1][0]
         pdf.ln(5)
-        pdf.multi_cell(0, 10,
+        pdf.multi_cell(safe_width, 10,
                        f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
                        f"{archetypes[sub_trait]['description']}")
 
@@ -168,9 +172,10 @@ def create_pdf(scores, archetype, chart_buf):
             level = "Medium"
         else:
             level = "Low"
-        pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
+        pdf.multi_cell(safe_width, 8, f"{trait} ({level}): {score:.2f}/5")
 
     return pdf.output(dest="S").encode("latin-1")
+
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
