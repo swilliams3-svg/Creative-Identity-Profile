@@ -200,7 +200,7 @@ def create_pdf(scores, archetype, chart_buf):
         pdf.multi_cell(safe_width, 8, safe_text(line))
         pdf.ln(2)
 
-    return pdf.output(dest="S").encode("latin-1")
+       return pdf.output(dest="S", as_bytes=True)
 
 
 # ---------- STREAMLIT APP ----------
