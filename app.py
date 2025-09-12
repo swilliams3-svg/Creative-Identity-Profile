@@ -78,7 +78,7 @@ def radar_chart(scores):
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
-    buf.seek(0)
+    buf.seek(0)  # ✅ make sure buffer is rewinded
     plt.close(fig)
     return buf
 
@@ -93,14 +93,14 @@ def create_pdf(scores, archetype, chart_buf):
     with open(chart_path, "wb") as f:
         f.write(chart_buf.getbuffer())
 
-    # Page 1: Chart
+    # Page 1
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 20)
     pdf.cell(0, 10, "Creative Identity Profile", ln=True, align="C")
     pdf.ln(10)
     pdf.image(chart_path, x=30, y=40, w=150)
 
-    # Page 2: Archetype
+    # Page 2
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Your Creative Archetype", ln=True)
@@ -117,7 +117,7 @@ def create_pdf(scores, archetype, chart_buf):
                        f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
                        f"{archetypes[sub_trait]['description']}")
 
-    # Page 3: Trait Insights
+    # Page 3
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Trait Insights", ln=True)
@@ -132,7 +132,6 @@ def create_pdf(scores, archetype, chart_buf):
             level = "Low"
         pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
 
-    # ✅ fixed for fpdf v1.x
     return pdf.output(dest="S").encode("latin-1")
 
 # -----------------------
@@ -143,7 +142,7 @@ st.write("Discover your creative traits, archetype, and ways to grow your creati
 
 st.info("Answer each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree.")
 
-# Randomize questions once
+# Shuffle questions once
 if "all_questions" not in st.session_state:
     all_questions = []
     for trait, qs in traits.items():
@@ -176,7 +175,7 @@ for i, (trait, question) in enumerate(all_questions, 1):
 progress = answered / total_qs
 st.progress(progress)
 
-# Show results when complete
+# Results
 if answered == total_qs:
     st.success("✅ Questionnaire complete! See your results below:")
 
@@ -190,9 +189,11 @@ if answered == total_qs:
     for trait in scores:
         scores[trait] /= counts[trait]
 
+    # Chart
     chart_buf = radar_chart(scores)
     st.image(chart_buf, caption="Your Creative Trait Profile", use_container_width=True)
 
+    # Archetypes
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
     sub_trait = sorted_traits[1][0]
@@ -203,6 +204,7 @@ if answered == total_qs:
     st.write(f"**Sub-Archetype: {archetypes[sub_trait]['name']}**")
     st.write(archetypes[sub_trait]['description'])
 
+    # Insights
     st.subheader("📊 Trait Insights")
     for trait, score in scores.items():
         if score >= 4:
@@ -213,8 +215,8 @@ if answered == total_qs:
             level = "Low"
         st.write(f"**{trait} ({level})** – {score:.2f}/5")
 
+    # PDF
     pdf_bytes = create_pdf(scores, main_trait, chart_buf)
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
-
