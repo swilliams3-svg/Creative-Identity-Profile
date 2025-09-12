@@ -136,38 +136,34 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Your Creative Archetype", ln=True)
     pdf.ln(5)
-
     pdf.set_font("Helvetica", "", 12)
-    safe_width = pdf.w - 20  # usable width, avoids overflow
-
-    pdf.multi_cell(
-        safe_width,
-        10,
-        f"Main Archetype: {archetypes[archetype]['name']}\n\n"
-        f"{archetypes[archetype]['description']}"
-    )
-
+    pdf.multi_cell(0, 10,
+                   f"Main Archetype: {archetypes[archetype]['name']}\n\n"
+                   f"{archetypes[archetype]['description']}")
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     if len(sorted_traits) > 1:
         sub_trait = sorted_traits[1][0]
         pdf.ln(5)
-        pdf.multi_cell(
-            safe_width,
-            10,
-            f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
-            f"{archetypes[sub_trait]['description']}"
-        )
+        pdf.multi_cell(0, 10,
+                       f"Sub-Archetype: {archetypes[sub_trait]['name']}\n\n"
+                       f"{archetypes[sub_trait]['description']}")
 
     # Page 3: Trait Insights
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Trait Insights", ln=True)
     pdf.ln(5)
-
     pdf.set_font("Helvetica", "", 12)
     for trait, score in scores.items():
-        if sc
+        if score >= 4:
+            level = "High"
+        elif score >= 2.5:
+            level = "Medium"
+        else:
+            level = "Low"
+        pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
 
+    return pdf.output(dest="S").encode("latin-1", "ignore")
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
@@ -255,4 +251,5 @@ if answered == total_qs:
     st.download_button("📥 Download Your Personalised PDF Report",
                        data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
                        mime="application/pdf")
+
 
