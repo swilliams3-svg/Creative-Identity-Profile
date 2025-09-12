@@ -134,40 +134,65 @@ def create_chart(scores):
     buf.seek(0)
     return buf
 
-def create_pdf(scores, main_trait, chart_buf):
+from fpdf import FPDF
+
+def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
     pdf.add_page()
 
-    # Title banner
-    pdf.set_fill_color(50, 90, 180)
+    # Add a Unicode font (DejaVuSans works well with fpdf2)
+    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+    pdf.set_font("DejaVu", size=16)
+
+    # Title
+    pdf.set_fill_color(50, 50, 200)
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 12, "⭐ Creative Identity Profile ⭐", ln=True, align="C", fill=True)
+    pdf.cell(0, 15, "🌟 Creative Identity Profile", ln=True, align="C", fill=True)
 
-    pdf.ln(10)
+    # Reset text color for content
     pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(0, 8, f"Your strongest creative archetype is: {main_trait}.\n\n{archetype_texts[main_trait]}")
+    pdf.ln(10)
 
-    # Only add growth tips for main trait
+    # Archetype section
+    pdf.set_font("DejaVu", size=14)
+    pdf.multi_cell(0, 10, f"Main Archetype: {archetype}")
     pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, "Growth Suggestions:", ln=True)
-    pdf.set_font("Arial", '', 10)
-    for tip in growth_tips[main_trait]:
-        pdf.multi_cell(0, 6, f"• {tip}")
 
-    # Chart on a new page
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "Creative Traits Chart", ln=True, align="C")
-
+    # Insert chart (saved as PNG from buffer)
     chart_file = "chart.png"
     with open(chart_file, "wb") as f:
-        f.write(chart_buf.read())
-    pdf.image(chart_file, x=25, y=30, w=160)
+        f.write(chart_buf.getbuffer())
+    pdf.image(chart_file, x=30, y=None, w=150)
+    pdf.ln(90)
 
+    # Trait scores
+    pdf.set_font("DejaVu", size=12)
+    pdf.multi_cell(0, 10, "Trait Scores:")
+    for trait, value in scores.items():
+        pdf.multi_cell(0, 8, f"{trait}: {value}/5")
+    pdf.ln(5)
+
+    # Add growth tips page
+    pdf.add_page()
+    pdf.set_font("DejaVu", size=14)
+    pdf.multi_cell(0, 10, "🌱 Growth Tips")
+    pdf.ln(5)
+
+    for trait, value in scores.items():
+        pdf.set_font("DejaVu", size=12)
+        pdf.multi_cell(0, 8, f"{trait}: {value}/5")
+        pdf.set_font("DejaVu", size=11)
+        if value <= 2:
+            pdf.multi_cell(0, 8, f"➡️ Consider developing {trait} further by practicing small, safe experiments.")
+        elif value == 3:
+            pdf.multi_cell(0, 8, f"➡️ You show balance in {trait}. Try stretching this trait in new settings.")
+        else:
+            pdf.multi_cell(0, 8, f"➡️ Your strength in {trait} is clear. Use it to inspire and support others.")
+        pdf.ln(4)
+
+    # Output as bytes for download
     return pdf.output(dest="S").encode("latin-1", "ignore")
+
 
 # --- APP LOGIC ---
 st.title("⭐ Creative Identity Profile ⭐")
