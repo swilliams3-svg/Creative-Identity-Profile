@@ -1,264 +1,162 @@
 import streamlit as st
 import random
 import matplotlib.pyplot as plt
-import io
+import numpy as np
 from fpdf import FPDF
-
-st.set_page_config(page_title="Creative Identity Profile", layout="centered")
+import io
 
 # --- TRAITS & QUESTIONS ---
 traits = {
-    "Openness": [
-        "I enjoy exploring new ideas or experiences.",
-        "I like to challenge traditional ways of thinking.",
-        "I actively seek out novel information.",
-        "I enjoy experimenting with unfamiliar activities."
-    ],
-    "Flexibility": [
-        "I can adapt quickly to unexpected changes.",
-        "I find it easy to change my perspective.",
-        "I can consider multiple solutions to a problem.",
-        "I enjoy shifting between different tasks or ideas."
+    "Curiosity": [
+        "I enjoy exploring new ideas even if they seem unusual.",
+        "I ask a lot of questions about how things work.",
+        "I actively seek out new experiences.",
+        "I like to investigate problems from multiple angles."
     ],
     "Imagination": [
-        "I often create mental pictures or scenarios.",
-        "I enjoy daydreaming about possibilities.",
-        "I invent stories or ideas in my mind.",
-        "I can easily visualize outcomes."
+        "I often think in mental images or stories.",
+        "I enjoy coming up with unusual uses for common things.",
+        "I can easily picture alternatives in my mind.",
+        "I like daydreaming about possibilities."
     ],
     "Risk-Taking": [
-        "I am willing to try new things even if I might fail.",
-        "I take on challenges outside my comfort zone.",
-        "I don’t mind uncertainty when exploring ideas.",
-        "I would describe myself as adventurous."
-    ],
-    "Curiosity": [
-        "I ask questions to deepen my understanding.",
-        "I explore topics just for the joy of learning.",
-        "I enjoy investigating how things work.",
-        "I like discovering new fields of knowledge."
+        "I’m comfortable with uncertainty when trying new things.",
+        "I take risks in my work or hobbies to test ideas.",
+        "I see mistakes as part of experimentation.",
+        "I like challenging conventional wisdom."
     ],
     "Persistence": [
-        "I continue working on problems even when difficult.",
-        "I set goals and work steadily to achieve them.",
-        "I try again after experiencing setbacks.",
-        "I stay motivated to finish creative tasks."
+        "I keep working on ideas even when they get difficult.",
+        "I don’t give up easily when problems arise.",
+        "I’m motivated to finish projects I start.",
+        "I see obstacles as challenges to overcome."
     ],
-    "Sensitivity": [
-        "I notice details that others may overlook.",
-        "I am strongly affected by art, music, or nature.",
-        "I am aware of emotions in myself and others.",
-        "I value beauty and expression."
-    ],
-    "Playfulness": [
-        "I enjoy humor and lighthearted thinking.",
-        "I like to make tasks fun through creativity.",
-        "I can be silly or playful when solving problems.",
-        "I use imagination to make everyday life enjoyable."
+    "Openness": [
+        "I value opinions that differ from my own.",
+        "I’m receptive to unusual or novel approaches.",
+        "I like collaborating with people who think differently.",
+        "I enjoy trying things outside of my comfort zone."
     ]
 }
 
-# Archetype descriptions
-archetype_texts = {
-    "Openness": "The Explorer – thrives on new ideas and experiences, always searching for novelty.",
-    "Flexibility": "The Adapter – comfortable with change and multiple perspectives.",
-    "Imagination": "The Visionary – sees possibilities and worlds beyond the present.",
-    "Risk-Taking": "The Adventurer – courageous, bold, and not afraid of failure.",
-    "Curiosity": "The Seeker – driven by endless questions and the desire to learn.",
-    "Persistence": "The Builder – steady, resilient, and committed to completing challenges.",
-    "Sensitivity": "The Empath – tuned into emotions, aesthetics, and subtle details.",
-    "Playfulness": "The Jester – brings joy, humor, and lightness into creativity."
-}
-
-# Growth tips
 growth_tips = {
-    "Openness": [
-        "Try new art forms, cuisines, or travel experiences regularly.",
-        "Practice divergent thinking with 'what if?' scenarios.",
-        "Keep a dream or idea journal to capture spontaneous inspiration."
-    ],
-    "Flexibility": [
-        "Find multiple solutions to the same problem deliberately.",
-        "Play improvisational games or role-play different perspectives.",
-        "Rotate routines to build adaptive thinking."
-    ],
-    "Imagination": [
-        "Explore speculative fiction or create 'future world' scenarios.",
-        "Use sketches or mind-maps to expand ideas.",
-        "Practice visualization exercises daily."
-    ],
-    "Risk-Taking": [
-        "Start with small risks and scale up gradually.",
-        "Reframe failure as feedback or data collection.",
-        "Study innovators' risk-taking journeys for inspiration."
-    ],
-    "Curiosity": [
-        "Follow 'rabbit holes' and let one question spark another.",
-        "Keep a questions journal instead of focusing only on answers.",
-        "Approach familiar topics with a beginner's mindset."
-    ],
-    "Persistence": [
-        "Break big creative goals into smaller milestones.",
-        "Celebrate progress, not just outcomes.",
-        "Work with accountability partners or creative communities."
-    ],
-    "Sensitivity": [
-        "Notice and reflect on emotional or artistic patterns.",
-        "Practice deep listening before responding.",
-        "Translate personal experiences into creative expression."
-    ],
-    "Playfulness": [
-        "Set aside time for unstructured 'sandbox' creativity.",
-        "Engage in puzzles, wordplay, or humor writing.",
-        "Use absurdity and humor to reframe challenges."
-    ]
+    "Curiosity": "Practice asking 'why' and 'what if' questions daily.",
+    "Imagination": "Try free writing or sketching to spark new ideas.",
+    "Risk-Taking": "Start with small experiments outside your comfort zone.",
+    "Persistence": "Break projects into small milestones to stay motivated.",
+    "Openness": "Seek feedback from people with different perspectives."
 }
 
-# --- FUNCTIONS ---
+# --- RANDOMIZE QUESTIONS ---
+all_questions = []
+for trait, qs in traits.items():
+    for q in qs:
+        all_questions.append((trait, q))
+random.shuffle(all_questions)
 
-def create_chart(scores):
-    fig, ax = plt.subplots(figsize=(8, 5))
-    traits_list = list(scores.keys())
-    values = list(scores.values())
-    colors = plt.cm.tab20.colors[:len(traits_list)]
-
-    ax.bar(traits_list, values, color=colors)
-    ax.set_ylim(0, 20)
-    ax.set_ylabel("Score (out of 20)")
-    ax.set_title("Creative Traits Profile", fontsize=14)
-    plt.xticks(rotation=45, ha="right")
-
-    buf = io.BytesIO()
-    plt.tight_layout()
-    plt.savefig(buf, format="png")
-    buf.seek(0)
-    return buf
-
-from fpdf import FPDF
-import os
-
-def create_pdf(scores, archetype, chart_buf):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-
-    # Try custom font (DejaVuSans) or fallback
-    if os.path.exists("DejaVuSans.ttf"):
-        pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
-        font_family = "DejaVu"
-    else:
-        font_family = "Helvetica"
-
-    # Title
-    pdf.set_font(font_family, size=16)
-    pdf.set_fill_color(50, 50, 200)
-    pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 15, "🌟 Creative Identity Profile", ln=True, align="C", fill=True)
-
-    pdf.set_text_color(0, 0, 0)
-    pdf.ln(10)
-
-    # Archetype section
-    pdf.set_font(font_family, size=14)
-    pdf.multi_cell(190, 10, f"Main Archetype: {archetype}")
-    pdf.ln(5)
-
-    # Insert chart (save then embed to avoid memory issue)
-    chart_file = "chart.png"
-    with open(chart_file, "wb") as f:
-        f.write(chart_buf.getbuffer())
-    pdf.image(chart_file, x=20, w=170)  # smaller so legend fits
-    pdf.ln(95)
-
-    # Trait scores
-    pdf.set_font(font_family, size=12)
-    pdf.multi_cell(190, 10, "Trait Scores:")
-    for trait, value in scores.items():
-        pdf.multi_cell(190, 8, f"{trait}: {value}/5")
-    pdf.ln(5)
-
-    # Growth tips page
-    pdf.add_page()
-    pdf.set_font(font_family, size=14)
-    pdf.multi_cell(190, 10, "🌱 Growth Tips")
-    pdf.ln(5)
-
-    for trait, value in scores.items():
-        pdf.set_font(font_family, size=12)
-        pdf.multi_cell(190, 8, f"{trait}: {value}/5")
-        pdf.set_font(font_family, size=11)
-        if value <= 2:
-            pdf.multi_cell(190, 8, f"➡️ Consider developing {trait} by practicing small, safe experiments.")
-        elif value == 3:
-            pdf.multi_cell(190, 8, f"➡️ You show balance in {trait}. Try stretching this trait in new settings.")
-        else:
-            pdf.multi_cell(190, 8, f"➡️ Your strength in {trait} is clear. Use it to inspire and support others.")
-        pdf.ln(4)
-
-    return pdf.output(dest="S").encode("latin-1", "ignore")
-
-
-
-
-# --- APP LOGIC ---
-st.title("⭐ Creative Identity Profile ⭐")
-st.write("Welcome! Rate each statement on a scale of 1–5, where **1 = Strongly Disagree** and **5 = Strongly Agree**.")
-
-# Randomize once and store in session_state
-if "all_questions" not in st.session_state:
-    st.session_state.all_questions = [(trait, q) for trait, qs in traits.items() for q in qs]
-    random.shuffle(st.session_state.all_questions)
-
-responses = {}
-total_qs = len(st.session_state.all_questions)
-answered = 0
-
-for i, (trait, question) in enumerate(st.session_state.all_questions, 1):
-    key = f"{trait}_{i}"
-    responses[key] = st.radio(
-        f"Q{i}/{total_qs}: {question}",
-        [1, 2, 3, 4, 5],
-        horizontal=True,
-        index=None,
-        key=key
-    )
-    if st.session_state[key] is not None:
-        answered += 1
+# --- STREAMLIT UI ---
+st.title("🌟 Creative Identity Profile")
+st.write("Rate each statement on a scale of 1–5: **1 = strongly disagree, 5 = strongly agree**")
 
 # Progress bar
-progress = answered / total_qs
-st.progress(progress)
+responses = {}
+progress = 0
+for i, (trait, q) in enumerate(all_questions, 1):
+    responses[f"q{i}"] = st.radio(
+        f"Q{i}. {q}",
+        options=[1, 2, 3, 4, 5],
+        horizontal=True,
+        key=f"q{i}"
+    )
+    progress = i / len(all_questions)
+    st.progress(progress)
 
-if answered == total_qs:
-    st.success("✅ Questionnaire complete!")
+# --- RESULTS ---
+if len(responses) == len(all_questions):
+    st.subheader("✅ Questionnaire Complete")
 
-    # Calculate scores
+    # Calculate trait averages
     scores = {trait: 0 for trait in traits}
-    for key, value in responses.items():
-        if value:
-            trait = key.split("_")[0]
-            scores[trait] += value
+    counts = {trait: 0 for trait in traits}
+    for (trait, _), key in zip(all_questions, responses.keys()):
+        scores[trait] += responses[key]
+        counts[trait] += 1
+    for trait in scores:
+        scores[trait] /= counts[trait]
 
+    # Identify top trait
     main_trait = max(scores, key=scores.get)
 
-    st.subheader(f"Your Creative Archetype: {main_trait}")
-    st.write(archetype_texts[main_trait])
+    st.write(f"**Your leading creative trait is:** 🌟 {main_trait}")
+    st.write(f"💡 Growth Tip: {growth_tips[main_trait]}")
 
-    # Show growth tips for top trait
-    st.markdown("### 🌱 Growth Suggestions")
-    for tip in growth_tips[main_trait]:
-        st.markdown(f"- {tip}")
+    # --- Radar Chart ---
+    fig1, ax1 = plt.subplots(figsize=(5,5), subplot_kw={'polar': True})
+    categories = list(scores.keys())
+    values = list(scores.values())
+    angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
+    values += values[:1]
+    angles += angles[:1]
+    ax1.plot(angles, values, "o-", linewidth=2, label="Scores")
+    ax1.fill(angles, values, alpha=0.25)
+    ax1.set_xticks(angles[:-1])
+    ax1.set_xticklabels(categories)
+    ax1.set_yticks([1, 2, 3, 4, 5])
+    st.pyplot(fig1)
 
-    # Chart
-    chart_buf = create_chart(scores)
-    st.image(chart_buf, caption="Your Creative Profile", use_container_width=True)
+    # --- Bar Chart ---
+    fig2, ax2 = plt.subplots(figsize=(6,4))
+    ax2.bar(scores.keys(), scores.values(), color="skyblue")
+    ax2.set_ylim(0,5)
+    ax2.set_ylabel("Average Score")
+    st.pyplot(fig2)
 
-    # Downloadable PDF
-    pdf_bytes = create_pdf(scores, main_trait, chart_buf)
-    st.download_button(
-        label="📥 Download Your Personalised PDF Report",
-        data=pdf_bytes,
-        file_name="creative_identity_profile.pdf",
-        mime="application/pdf"
-    )
+    # --- PDF CREATION ---
+    def create_pdf(scores, main_trait, chart_bufs):
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+
+        # Page 1: Radar Chart
+        pdf.add_page()
+        pdf.set_font("Helvetica", 'B', 16)
+        pdf.cell(0, 10, "Creative Identity Profile", ln=True, align="C")
+        pdf.ln(10)
+        pdf.image(chart_bufs[0], x=30, y=40, w=150)
+
+        # Page 2: Bar Chart
+        pdf.add_page()
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, "Trait Scores", ln=True, align="C")
+        pdf.ln(10)
+        pdf.image(chart_bufs[1], x=30, y=40, w=150)
+
+        # Page 3: Results & Growth
+        pdf.add_page()
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, f"Your Leading Trait: {main_trait}", ln=True)
+        pdf.set_font("Helvetica", '', 12)
+        pdf.multi_cell(0, 8, f"Growth Tip: {growth_tips[main_trait]}")
+        pdf.ln(10)
+        for trait, value in scores.items():
+            pdf.multi_cell(0, 8, f"{trait}: {value:.2f}/5")
+            pdf.multi_cell(0, 8, f"Tip: {growth_tips[trait]}")
+            pdf.ln(5)
+
+        return bytes(pdf.output(dest="S"))
+
+    # Save both charts as buffers
+    radar_buf = io.BytesIO()
+    fig1.savefig(radar_buf, format="PNG")
+    radar_buf.seek(0)
+
+    bar_buf = io.BytesIO()
+    fig2.savefig(bar_buf, format="PNG")
+    bar_buf.seek(0)
+
+    # Create PDF
+    pdf_bytes = create_pdf(scores, main_trait, [radar_buf, bar_buf])
+    st.download_button("📥 Download Your Creative Identity Report",
+                       data=pdf_bytes,
+                       file_name="creative_identity.pdf",
+                       mime="application/pdf")
 
