@@ -149,19 +149,27 @@ def create_pdf(scores, archetype, chart_buf):
                        f"{archetypes[sub_trait]['description']}")
 
     # Page 3: Trait Insights
-    pdf.add_page()
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "Trait Insights", ln=True)
-    pdf.ln(5)
-    pdf.set_font("Helvetica", "", 12)
-    for trait, score in scores.items():
-        if score >= 4:
-            level = "High"
-        elif score >= 2.5:
-            level = "Medium"
-        else:
-            level = "Low"
-        pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
+pdf.add_page()
+pdf.set_font("Helvetica", "B", 16)
+pdf.cell(0, 10, "Trait Insights", ln=True)
+pdf.ln(5)
+pdf.set_font("Helvetica", "", 12)
+
+page_width = pdf.w - 2 * pdf.l_margin  # usable width
+
+for trait, score in scores.items():
+    if score >= 4:
+        level = "High"
+    elif score >= 2.5:
+        level = "Medium"
+    else:
+        level = "Low"
+
+    text = f"{trait} ({level}): {score:.2f}/5"
+    # Replace unsupported characters just in case
+    safe_text = text.encode("latin-1", "replace").decode("latin-1")
+    pdf.multi_cell(page_width, 10, safe_text)
+
 
     return pdf.output(dest="S").encode("latin-1", "ignore")
 
