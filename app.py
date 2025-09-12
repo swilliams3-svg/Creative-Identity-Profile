@@ -6,7 +6,7 @@ from io import BytesIO
 from PIL import Image
 
 # ---------------------------
-# Your create_pdf function
+# PDF creation
 # ---------------------------
 def create_pdf(scores, main_trait, chart_buf):
     pdf = FPDF()
@@ -23,7 +23,7 @@ def create_pdf(scores, main_trait, chart_buf):
     for trait, (score, level) in scores.items():
         pdf.multi_cell(0, 10, f"{trait} ({level}): {score:.2f}/5")
 
-    # Add chart image
+    # Add chart image to PDF
     chart_buf.seek(0)
     image = Image.open(chart_buf)
     img_bytes = BytesIO()
@@ -35,7 +35,7 @@ def create_pdf(scores, main_trait, chart_buf):
 
 
 # ---------------------------
-# Example scores + chart
+# Example data
 # ---------------------------
 scores = {
     "Curiosity": (4.2, "High"),
@@ -45,7 +45,9 @@ scores = {
 }
 main_trait = "Persistence"
 
+# ---------------------------
 # Make chart
+# ---------------------------
 fig, ax = plt.subplots()
 traits = list(scores.keys())
 values = [s[0] for s in scores.values()]
@@ -59,26 +61,19 @@ plt.savefig(chart_buf, format="png")
 plt.close(fig)
 
 # ---------------------------
-# Streamlit app
+# Streamlit UI
 # ---------------------------
 st.title("Creative Identity Profile")
 
-# ✅ Safest way to show chart in Streamlit
+# ✅ Display chart safely
 chart_buf.seek(0)
 image = Image.open(chart_buf)
-img_bytes = BytesIO()
-image.save(img_bytes, format="PNG")
-img_bytes.seek(0)
-st.image(img_bytes.getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
+st.image(image, caption="Your Creative Trait Profile", use_container_width=True)
 
-# Generate PDF
+# ✅ Generate PDF
 pdf_bytes = create_pdf(scores, main_trait, chart_buf)
 
-# Download button
-st.download_button(
-    "📥 Download Your Personalised PDF Report",
-    data=pdf_bytes,
-    file_name="Creative_Identity_Report.pdf",
-    mime="application/pdf"
-)
+# ✅ Download button
+st.download_butto_
+
 
