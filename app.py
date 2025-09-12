@@ -164,7 +164,8 @@ def create_pdf(scores, archetype, chart_buf):
         # FIX: use cell instead of multi_cell
         pdf.cell(0, 10, f"{trait} ({level}): {score:.2f}/5", ln=True)
 
-    return pdf.output(dest="S").encode("latin-1")
+    out = pdf.output(dest="S")
+
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
