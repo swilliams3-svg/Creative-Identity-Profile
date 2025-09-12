@@ -149,21 +149,13 @@ def create_pdf(scores, main_trait, chart_buf):
     pdf.set_font("Arial", '', 12)
     pdf.multi_cell(0, 8, f"Your strongest creative archetype is: {main_trait}.\n\n{archetype_texts[main_trait]}")
 
-    # Add scores and growth tips
+    # Only add growth tips for main trait
     pdf.ln(5)
-    for trait, score in scores.items():
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 8, f"{trait}: {score}/20", ln=True)
-        pdf.set_font("Arial", '', 10)
-        pdf.multi_cell(0, 6, archetype_texts[trait])
-
-        if trait in growth_tips:
-            pdf.set_font("Arial", 'I', 10)
-            pdf.cell(0, 6, "Growth Suggestions:", ln=True)
-            pdf.set_font("Arial", '', 10)
-            for tip in growth_tips[trait]:
-                pdf.multi_cell(0, 6, f"• {tip}")
-        pdf.ln(3)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 8, "Growth Suggestions:", ln=True)
+    pdf.set_font("Arial", '', 10)
+    for tip in growth_tips[main_trait]:
+        pdf.multi_cell(0, 6, f"• {tip}")
 
     # Chart on a new page
     pdf.add_page()
@@ -181,24 +173,28 @@ def create_pdf(scores, main_trait, chart_buf):
 st.title("⭐ Creative Identity Profile ⭐")
 st.write("Welcome! Rate each statement on a scale of 1–5, where **1 = Strongly Disagree** and **5 = Strongly Agree**.")
 
-# Randomize questions
-all_questions = [(trait, q) for trait, qs in traits.items() for q in qs]
-random.shuffle(all_questions)
+# Randomize once and store in session_state
+if "all_questions" not in st.session_state:
+    st.session_state.all_questions = [(trait, q) for trait, qs in traits.items() for q in qs]
+    random.shuffle(st.session_state.all_questions)
 
 responses = {}
-total_qs = len(all_questions)
+total_qs = len(st.session_state.all_questions)
 answered = 0
 
-for i, (trait, question) in enumerate(all_questions, 1):
+for i, (trait, question) in enumerate(st.session_state.all_questions, 1):
     key = f"{trait}_{i}"
+    if key not in st.session_state:
+        st.session_state[key] = None
     responses[key] = st.radio(
         f"Q{i}/{total_qs}: {question}",
         [1, 2, 3, 4, 5],
         horizontal=True,
-        index=None,
+        index=(st.session_state[key]-1) if st.session_state[key] else None,
         key=key
     )
     if responses[key] is not None:
+        st.session_state[key] = responses[key]
         answered += 1
 
 # Progress bar
@@ -220,6 +216,11 @@ if answered == total_qs:
     st.subheader(f"Your Creative Archetype: {main_trait}")
     st.write(archetype_texts[main_trait])
 
+    # Show growth tips for top trait
+    st.markdown("### 🌱 Growth Suggestions")
+    for tip in growth_tips[main_trait]:
+        st.markdown(f"- {tip}")
+
     # Chart
     chart_buf = create_chart(scores)
     st.image(chart_buf, caption="Your Creative Profile", use_container_width=True)
@@ -232,5 +233,4 @@ if answered == total_qs:
         file_name="creative_identity_profile.pdf",
         mime="application/pdf"
     )
-
 
