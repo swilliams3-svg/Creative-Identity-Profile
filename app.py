@@ -47,7 +47,7 @@ traits = {
     ]
 }
 
-# ---------- ARCHETYPE DEFINITIONS ----------
+# ---------- ARCHETYPES ----------
 archetypes = {
     "Openness": {
         "name": "The Explorer",
@@ -75,13 +75,9 @@ archetypes = {
     }
 }
 
-# ---------- HELPER ----------
+# ---------- HELPERS ----------
 def safe_text(text: str) -> str:
-    """
-    Convert text to plain ASCII for FPDF.
-    - Replace dashes/quotes with ASCII equivalents
-    - Drop emojis and unsupported symbols
-    """
+    """Convert text to plain ASCII for FPDF (remove emojis/unicode)."""
     replacements = {
         "–": "-", "—": "-",
         "“": '"', "”": '"',
@@ -89,16 +85,13 @@ def safe_text(text: str) -> str:
     }
     for bad, good in replacements.items():
         text = text.replace(bad, good)
-
     return text.encode("latin-1", "ignore").decode("latin-1")
 
-# ---------- FUNCTIONS ----------
 def radar_chart(scores):
     labels = list(scores.keys())
     values = list(scores.values())
     num_vars = len(labels)
 
-    # Repeat first value to close radar
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     values += values[:1]
     angles += angles[:1]
@@ -114,26 +107,21 @@ def radar_chart(scores):
         "Convergent Thinking": "tab:brown"
     }
 
-    for i, label in enumerate(labels):
-        ax.plot(angles[i:i+2], values[i:i+2], color=colors[label], linewidth=2)
-        ax.fill(angles[i:i+2], values[i:i+2], color=colors[label], alpha=0.25)
+    ax.plot(angles, values, linewidth=2, color="black")
+    ax.fill(angles, values, color="skyblue", alpha=0.25)
 
     ax.set_yticks([1, 2, 3, 4, 5])
     ax.set_ylim(0, 5)
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
 
-    ax.legend(labels, loc="lower center", bbox_to_anchor=(0.5, -0.25),
-              ncol=3, frameon=False)
-
-    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.tight_layout()
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
     buf.seek(0)
     plt.close(fig)
     return buf
-
 
 def create_pdf(scores, archetype, chart_buf):
     pdf = FPDF()
@@ -143,7 +131,7 @@ def create_pdf(scores, archetype, chart_buf):
     with open(chart_path, "wb") as f:
         f.write(chart_buf.getbuffer())
 
-    safe_width = pdf.w - 20  # usable width
+    safe_width = pdf.w - 20
 
     # Page 1: Chart
     pdf.add_page()
@@ -152,7 +140,7 @@ def create_pdf(scores, archetype, chart_buf):
     pdf.ln(10)
     pdf.image(chart_path, x=30, y=40, w=150)
 
-    # Page 2: Archetype
+    # Page 2: Archetypes
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, safe_text("Your Creative Archetype"), ln=True)
@@ -200,8 +188,7 @@ def create_pdf(scores, archetype, chart_buf):
         pdf.multi_cell(safe_width, 8, safe_text(line))
         pdf.ln(2)
 
-       return pdf.output(dest="S", as_bytes=True)
-
+    return pdf.output(dest="S", as_bytes=True)
 
 # ---------- STREAMLIT APP ----------
 st.title("🌟 Creative Identity Profile")
@@ -222,28 +209,24 @@ if "all_questions" not in st.session_state:
 
 all_questions = st.session_state.all_questions
 
-# Track responses
 if "responses" not in st.session_state:
     st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
 
 responses = st.session_state.responses
 total_qs = len(all_questions)
 
-# Questionnaire
 st.markdown("### Questionnaire")
 
 answered = 0
 for i, (trait, question) in enumerate(all_questions, 1):
     key = f"{trait}_{i}"
-
     responses[key] = st.radio(
         f"Q{i}/{total_qs}: {question}",
         [1, 2, 3, 4, 5],
         horizontal=True,
-        index=None if responses[key] is None else [1, 2, 3, 4, 5].index(responses[key]),
+        index=None,  # <-- No default
         key=key
     )
-
     if responses[key] is not None:
         answered += 1
 
@@ -254,7 +237,6 @@ st.progress(progress)
 if answered == total_qs:
     st.success("✅ Questionnaire complete! See your results below:")
 
-    # Calculate scores
     scores = {trait: 0 for trait in traits}
     counts = {trait: 0 for trait in traits}
     for key, val in responses.items():
@@ -265,11 +247,9 @@ if answered == total_qs:
     for trait in scores:
         scores[trait] /= counts[trait]
 
-    # Radar chart
     chart_buf = radar_chart(scores)
     st.image(chart_buf, caption="Your Creative Trait Profile", use_container_width=True)
 
-    # Archetypes
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
     sub_trait = sorted_traits[1][0]
@@ -280,7 +260,6 @@ if answered == total_qs:
     st.write(f"**Sub-Archetype: {archetypes[sub_trait]['name']}**")
     st.write(archetypes[sub_trait]['description'])
 
-    # Trait insights
     st.subheader("📊 Trait Insights")
     for trait, score in scores.items():
         if score >= 4:
@@ -291,9 +270,12 @@ if answered == total_qs:
             level = "Low"
         st.write(f"**{trait} ({level})** – {score:.2f}/5")
 
-    # PDF download
     pdf_bytes = create_pdf(scores, main_trait, chart_buf)
-    st.download_button("📥 Download Your Personalised PDF Report",
-                       data=pdf_bytes, file_name="Creative_Identity_Report.pdf",
-                       mime="application/pdf")
+    st.download_button(
+        "📥 Download Your Personalised PDF Report",
+        data=pdf_bytes,
+        file_name="Creative_Identity_Report.pdf",
+        mime="application/pdf"
+    )
+
 
