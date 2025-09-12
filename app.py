@@ -195,15 +195,28 @@ st.markdown("### Questionnaire")
 answered = 0
 for i, (trait, question) in enumerate(all_questions, 1):
     key = f"{trait}_{i}"
-    responses[key] = st.radio(
-        f"Q{i}/{total_qs}: {question}",
-        [1, 2, 3, 4, 5],
-        horizontal=True,
-        index=(responses[key] - 1) if responses[key] else None,
-        key=key
-    )
+
+    # If not answered yet, show with no default selection
+    if responses[key] is None:
+        responses[key] = st.radio(
+            f"Q{i}/{total_qs}: {question}",
+            [1, 2, 3, 4, 5],
+            horizontal=True,
+            key=key
+        )
+    else:
+        # If already answered, set the value directly from session state
+        responses[key] = st.radio(
+            f"Q{i}/{total_qs}: {question}",
+            [1, 2, 3, 4, 5],
+            horizontal=True,
+            index=responses[key] - 1,
+            key=key
+        )
+
     if responses[key] is not None:
         answered += 1
+
 
 progress = answered / total_qs
 st.progress(progress)
