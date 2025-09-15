@@ -236,6 +236,11 @@ def radar_chart(scores: dict, colors: dict, title: str = "") -> io.BytesIO:
     buf.seek(0)
     plt.close(fig)
     return buf
+      },
+}
+
+# --------------------------
+    
     PDF Generator
 # --------------------------
 def create_pdf(creative_scores, big5_scores, archetypes_data,
