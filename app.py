@@ -421,7 +421,7 @@ total_qs = len(all_questions)
 # --------------------------
 if current_q < total_qs:
     if current_q == 0:
-        st.markdown("## Welcome to the Creative Identity Quiz 🎨")
+        st.markdown("## Welcome to the Creative Identity Quiz")
         st.markdown(
             "This quiz explores your **creative traits** and **personality dimensions**. "
             "Please rate each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree. "
