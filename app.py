@@ -10,7 +10,7 @@ st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 # Trait dictionaries (3 questions each)
 # --------------------------
 creative_traits = {
-    "Openness": [
+    "Openness (Creative)": [
         "I enjoy exploring new ideas and experiences.",
         "I have a vivid imagination.",
         "I often imagine possibilities that others don’t."
@@ -69,7 +69,7 @@ big5_traits = {
 # Colours
 # --------------------------
 creative_colors = {
-    "Openness": "#17becf",
+    "Openness (Creative)": "#17becf",
     "Risk-taking": "#e377c2",
     "Resilience": "#bcbd22",
     "Collaboration": "#8c564b",
@@ -88,7 +88,7 @@ big5_colors = {
 # Archetypes (based on creative traits)
 # --------------------------
 archetypes = {
-    "Openness": {
+    "Openness (Creative)": {
         "name": "The Explorer",
         "description": "You thrive on curiosity and imagination. Explorers see possibilities everywhere, though sometimes risk being unfocused.",
         "improvement": "Try allocating short, focused 'exploration sprints' followed by a pause to capture the best ideas."
@@ -144,7 +144,6 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     ax.plot(angles, values, linewidth=2, color="black")
     ax.fill(angles, values, alpha=0.25, color="gray")
 
-    # color the labels
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=9)
     for label, color in zip(ax.get_xticklabels(), [colors[t] for t in labels]):
@@ -164,12 +163,12 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
 def bar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     values = list(scores.values())
-    fig, ax = plt.subplots(figsize=(5,4))
+    fig, ax = plt.subplots(figsize=(6,4))
     ax.bar(labels, values, color=[colors[t] for t in labels])
     ax.set_ylim(0,5)
     ax.set_ylabel("Average Score")
     ax.set_title(title, weight="bold")
-    plt.xticks(rotation=30, ha="right")
+    plt.xticks(rotation=30, ha="right", fontsize=8)
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
@@ -212,6 +211,7 @@ for i, (trait, question) in enumerate(all_questions, 1):
         answered += 1
 
 st.progress(answered / total_qs)
+st.write(f"{answered}/{total_qs} answered")
 
 # Results
 if answered == total_qs:
@@ -222,7 +222,7 @@ if answered == total_qs:
     creative_counts = {t:0 for t in creative_traits}
     for key, val in responses.items():
         if val:
-            trait = key.split("_")[0]
+            trait = key.rsplit("_", 1)[0]  # FIX: keep full trait name
             if trait in creative_scores:
                 creative_scores[trait] += val
                 creative_counts[trait] += 1
@@ -234,7 +234,7 @@ if answered == total_qs:
     big5_counts = {t:0 for t in big5_traits}
     for key, val in responses.items():
         if val:
-            trait = key.split("_")[0]
+            trait = key.rsplit("_", 1)[0]
             if trait in big5_scores:
                 big5_scores[trait] += val
                 big5_counts[trait] += 1
@@ -253,18 +253,75 @@ if answered == total_qs:
     main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
     st.subheader("Your Creative Archetypes")
-    st.write(f"**Main Archetype: {archetypes[main_trait]['name']}** — {archetypes[main_trait]['description']}")
-    st.write(f"**Sub-Archetype: {archetypes[sub_trait]['name']}** — {archetypes[sub_trait]['description']}")
-    st.write(f"**Growth Area ({weakest_trait})** — {archetypes[weakest_trait]['improvement']}")
+
+    def archetype_card(title, trait, role, description):
+        st.markdown(
+            f"""
+            <div style="background-color:#f9f9f9; padding:1rem; border-radius:12px; 
+                        margin-bottom:1rem; border: 1px solid #ddd;">
+                <h4 style="color:{creative_colors[trait]}; margin:0;">{role}: {archetypes[trait]['name']}</h4>
+                <p style="margin:0.5rem 0 0 0;"><b>{trait}</b> — {description}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    archetype_card("Main", main_trait, "Main Archetype", archetypes[main_trait]['description'])
+    archetype_card("Sub", sub_trait, "Sub-Archetype", archetypes[sub_trait]['description'])
+    archetype_card("Growth", weakest_trait, "Growth Area", archetypes[weakest_trait]['improvement'])
+
+    # Summary Box with trait colors
+    main_color = creative_colors[main_trait]
+    st.markdown(
+        f"""
+        <div style="background-color:{main_color}20; padding:1rem; border-radius:12px; 
+                    margin-top:1rem; border: 2px solid {main_color};">
+            <h4 style="margin:0; color:{main_color};">Summary</h4>
+            <p style="margin:0.5rem 0 0 0;">
+                <span style="color:{creative_colors[main_trait]};">
+                    <b>Main Archetype:</b> {archetypes[main_trait]['name']} ({main_trait})
+                </span><br>
+                <span style="color:{creative_colors[sub_trait]};">
+                    <b>Sub-Archetype:</b> {archetypes[sub_trait]['name']} ({sub_trait})
+                </span><br>
+                <span style="color:{creative_colors[weakest_trait]};">
+                    <b>Growth Area:</b> {weakest_trait} — {archetypes[weakest_trait]['improvement']}
+                </span>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # Trait Insights
     st.subheader("Trait Insights")
     st.markdown("**Creative Traits**")
     for trait, score in creative_scores.items():
         level = get_level(score)
-        st.markdown(f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style="background-color:{creative_colors[trait]}20; 
+                        padding:0.5rem; border-radius:8px; margin:0.3rem 0;">
+                <span style="color:{creative_colors[trait]}; font-weight:bold">
+                    {trait} ({level})
+                </span> — {score:.2f}/5
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     st.markdown("**Big Five Traits**")
     for trait, score in big5_scores.items():
         level = get_level(score)
-        st.markdown(f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style="background-color:{big5_colors[trait]}20; 
+                        padding:0.5rem; border-radius:8px; margin:0.3rem 0;">
+                <span style="color:{big5_colors[trait]}; font-weight:bold">
+                    {trait} ({level})
+                </span> — {score:.2f}/5
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
