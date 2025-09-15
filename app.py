@@ -508,15 +508,32 @@ else:
     # --------------------------
     # Generate the PDF
     # --------------------------
-    pdf_buf = create_pdf(
-        creative_scores, big5_scores,
-        {
-            "Main Archetype": (main_trait, archetypes[main_trait]),
-            "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
-            "Growth Area": (weakest_trait, archetypes[weakest_trait]),
-        },
-        creative_summaries, big5_summaries,
-        chart_buf_creative, chart_buf_big5
+    # --- Generate PDF ---
+pdf_buf = create_pdf(
+    creative_scores,
+    big5_scores,
+    archetypes_results,
+    creative_summaries,
+    big5_summaries,
+    chart_buf_creative,
+    chart_buf_big5
+)
+
+# --- Collapsible Section for Report ---
+with st.expander("📄 View Your Full Report", expanded=False):
+    st.write(
+        "Here is your personalised **Creative Identity Profile**. "
+        "You can preview the content below or download a professional PDF report."
+    )
+
+    # PDF download button
+    st.download_button(
+        label="📥 Download Your Report",
+        data=pdf_buf,  # pdf_buf is already bytes
+        file_name="creative_identity_profile.pdf",
+        mime="application/pdf",
+    )
+
     )
 
     # --------------------------
