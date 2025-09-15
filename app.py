@@ -2,9 +2,12 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import io
+import random
+
+st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Creative Traits & Colors
+# Creative Traits
 # --------------------------
 creative_traits = {
     "Openness": [
@@ -82,6 +85,42 @@ creative_summaries = {
 }
 
 # --------------------------
+# Archetypes
+# --------------------------
+archetypes = {
+    "Openness": {
+        "name": "The Explorer",
+        "description": "You thrive on curiosity and imagination. Explorers see possibilities everywhere, though sometimes risk being unfocused.",
+        "improvement": "Try short 'exploration sprints' followed by reflection to capture the best ideas."
+    },
+    "Risk-taking": {
+        "name": "The Adventurer",
+        "description": "You embrace uncertainty and push boundaries, though sometimes risk overexposure.",
+        "improvement": "Test risky ideas with small experiments before big commitments."
+    },
+    "Resilience": {
+        "name": "The Perseverer",
+        "description": "You persist through challenges and learn from failure.",
+        "improvement": "After setbacks, reflect on lessons and note small wins to keep momentum."
+    },
+    "Collaboration": {
+        "name": "The Connector",
+        "description": "You spark ideas in groups and value diverse perspectives.",
+        "improvement": "Balance collaboration with solo time to develop your own voice."
+    },
+    "Divergent Thinking": {
+        "name": "The Visionary",
+        "description": "You generate many original ideas and unusual connections.",
+        "improvement": "Use ranking criteria to pick the most promising ideas to develop further."
+    },
+    "Convergent Thinking": {
+        "name": "The Strategist",
+        "description": "You refine and structure ideas into action.",
+        "improvement": "Occasionally loosen constraints to allow more unusual ideas."
+    }
+}
+
+# --------------------------
 # Big Five Traits
 # --------------------------
 big5_traits = {
@@ -149,8 +188,16 @@ big5_summaries = {
 }
 
 # --------------------------
-# Radar Chart (fixed with colors per trait segment)
+# Helpers
 # --------------------------
+def get_level(score: float) -> str:
+    if score >= 4:
+        return "High"
+    elif score >= 2.5:
+        return "Medium"
+    else:
+        return "Low"
+
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     num_vars = len(labels)
@@ -159,15 +206,14 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
-
     values = list(scores.values())
     values += values[:1]
 
-    # Draw polygon outline
-    ax.plot(angles, values, linewidth=2, color="black")
+    # background polygon
+    ax.plot(angles, values, linewidth=1.5, color="black")
     ax.fill(angles, values, alpha=0.05, color="gray")
 
-    # Color each segment + marker
+    # each trait segment colored
     for i, (trait, score) in enumerate(scores.items()):
         ax.plot([angles[i], angles[i+1]], [score, values[i+1]],
                 color=colors[trait], linewidth=3)
@@ -191,33 +237,91 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
 # Streamlit App
 # --------------------------
 st.title("Creative Identity & Personality Profile")
+st.write("Please rate each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree.")
 
-st.header("Creative Traits")
-creative_scores = {}
-for trait, questions in creative_traits.items():
-    st.subheader(trait)
-    total = 0
-    for q in questions:
-        total += st.slider(q, 1, 5, 3, key=f"{trait}_{q}")
-    creative_scores[trait] = total / len(questions)
+# Shuffle questions once
+if "all_questions" not in st.session_state:
+    all_questions = []
+    for trait, qs in {**creative_traits, **big5_traits}.items():
+        for q in qs:
+            all_questions.append((trait, q))
+    random.shuffle(all_questions)
+    st.session_state.all_questions = all_questions
 
-st.header("Big Five Personality Traits")
-big5_scores = {}
-for trait, questions in big5_traits.items():
-    st.subheader(trait)
-    total = 0
-    for q in questions:
-        total += st.slider(q, 1, 5, 3, key=f"{trait}_{q}")
-    big5_scores[trait] = total / len(questions)
+all_questions = st.session_state.all_questions
 
-if st.button("Generate Profile"):
-    st.subheader("Radar Charts")
-    st.image(radar_chart(creative_scores, creative_colors, "Creative Traits"))
-    st.image(radar_chart(big5_scores, big5_colors, "Big Five Traits"))
+if "responses" not in st.session_state:
+    st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
 
-    st.subheader("Trait Insights (Creative)")
+responses = st.session_state.responses
+total_qs = len(all_questions)
+answered = 0
+
+st.markdown("**Scale reference:** 1 = Strongly Disagree · 2 = Disagree · 3 = Neutral · 4 = Agree · 5 = Strongly Agree")
+
+# Display questions
+for i, (trait, question) in enumerate(all_questions, 1):
+    key = f"{trait}_{i}"
+    index_val = (responses[key] - 1) if responses[key] else None
+    responses[key] = st.radio(f"Q{i}/{total_qs}: {question}", [1,2,3,4,5],
+                              horizontal=True, index=index_val, key=key)
+    if responses[key] is not None:
+        answered += 1
+
+st.progress(answered / total_qs)
+
+# Results
+if answered == total_qs:
+    st.success("All questions complete — here are your results!")
+
+    # Scores
+    creative_scores = {t:0 for t in creative_traits}
+    creative_counts = {t:0 for t in creative_traits}
+    big5_scores = {t:0 for t in big5_traits}
+    big5_counts = {t:0 for t in big5_traits}
+
+    for key, val in responses.items():
+        if val:
+            trait = key.split("_")[0]
+            if trait in creative_scores:
+                creative_scores[trait] += val
+                creative_counts[trait] += 1
+            if trait in big5_scores:
+                big5_scores[trait] += val
+                big5_counts[trait] += 1
+
+    for t in creative_scores:
+        creative_scores[t] /= creative_counts[t]
+    for t in big5_scores:
+        big5_scores[t] /= big5_counts[t]
+
+    # Charts
+    c1, c2 = st.columns(2)
+    with c1:
+        st.image(radar_chart(creative_scores, creative_colors, "Creative Traits"), use_container_width=True)
+    with c2:
+        st.image(radar_chart(big5_scores, big5_colors, "Big Five Traits"), use_container_width=True)
+
+    # Archetypes
+    sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
+    main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+
+    st.subheader("Your Creative Archetypes")
+    for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
+        if label == "Growth Area":
+            content = archetypes[trait]["improvement"]
+        else:
+            content = archetypes[trait]["description"]
+        st.markdown(
+            f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
+            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{label}: {archetypes[trait]['name']}</span><br>"
+            f"<i>{content}</i></div>", unsafe_allow_html=True
+        )
+
+    # Summaries
+    st.subheader("Creative Trait Insights")
     for trait, score in creative_scores.items():
-        level = "High" if score >= 4 else "Medium" if score >= 2.5 else "Low"
+        level = get_level(score)
         summary = creative_summaries[trait][level]
         st.markdown(
             f"<div style='background-color:{creative_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
@@ -225,9 +329,9 @@ if st.button("Generate Profile"):
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    st.subheader("Trait Insights (Big Five)")
+    st.subheader("Big Five Trait Insights")
     for trait, score in big5_scores.items():
-        level = "High" if score >= 4 else "Medium" if score >= 2.5 else "Low"
+        level = get_level(score)
         summary = big5_summaries[trait][level]
         st.markdown(
             f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
