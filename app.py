@@ -3,13 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import io
 import random
-from fpdf import FPDF
-import os
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Traits (original 6) with questions
+# Traits with questions
 # --------------------------
 traits = {
     "Openness": [
@@ -50,17 +48,7 @@ traits = {
     ]
 }
 
-# Colours for each trait
-trait_colors = {
-    "Openness": "tab:blue",
-    "Risk-taking": "tab:red",
-    "Resilience": "tab:green",
-    "Collaboration": "tab:orange",
-    "Divergent Thinking": "tab:purple",
-    "Convergent Thinking": "tab:brown"
-}
-
-# Archetype metadata + suggestions for growth
+# Archetypes
 archetypes = {
     "Openness": {
         "name": "The Explorer",
@@ -94,14 +82,19 @@ archetypes = {
     }
 }
 
-# --------------------------
-# Utilities
-# --------------------------
-def clean_text(text: str) -> str:
-    if text is None:
-        return ""
-    return str(text).encode("latin-1", "replace").decode("latin-1")
+# Trait colours
+trait_colors = {
+    "Openness": "tab:blue",
+    "Risk-taking": "tab:red",
+    "Resilience": "tab:green",
+    "Collaboration": "tab:orange",
+    "Divergent Thinking": "tab:purple",
+    "Convergent Thinking": "tab:brown"
+}
 
+# --------------------------
+# Helpers
+# --------------------------
 def get_level(score: float) -> str:
     if score >= 4:
         return "High"
@@ -110,9 +103,7 @@ def get_level(score: float) -> str:
     else:
         return "Low"
 
-# --------------------------
-# Radar chart (multi-colour)
-# --------------------------
+# Radar chart
 def radar_chart(scores: dict) -> io.BytesIO:
     labels = list(scores.keys())
     values = list(scores.values())
@@ -124,16 +115,11 @@ def radar_chart(scores: dict) -> io.BytesIO:
 
     fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
 
-    # draw each trait segment in its colour
     for i, trait in enumerate(labels):
-        start_angle = angles[i]
-        end_angle = angles[i+1]
-        ax.plot([start_angle, end_angle],
-                [values[i], values[i+1]],
-                color=trait_colors[trait], linewidth=3)
-        ax.fill([start_angle, end_angle, end_angle, start_angle],
-                [0, 0, values[i+1], values[i]],
-                alpha=0.2, color=trait_colors[trait])
+        val_pair = [values[i], values[i+1]] if i < len(labels)-1 else [values[i], values[0]]
+        angle_pair = [angles[i], angles[i+1]] if i < len(labels)-1 else [angles[i], angles[0]]
+        ax.plot(angle_pair, val_pair, color=trait_colors[trait], linewidth=3)
+        ax.fill(angle_pair, val_pair, alpha=0.2, color=trait_colors[trait])
 
     ax.set_ylim(0,5)
     ax.set_xticks(angles[:-1])
@@ -141,97 +127,36 @@ def radar_chart(scores: dict) -> io.BytesIO:
     ax.set_yticks([1,2,3,4,5])
     ax.set_yticklabels(["1","2","3","4","5"])
 
-    plt.tight_layout()
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close(fig)
     return buf
 
-# --------------------------
 # Bar chart
-# --------------------------
 def bar_chart(scores: dict) -> io.BytesIO:
     fig, ax = plt.subplots(figsize=(6,4))
-    traits = list(scores.keys())
+    traits_list = list(scores.keys())
     values = list(scores.values())
-    ax.bar(traits, values, color=[trait_colors[t] for t in traits])
+    ax.bar(traits_list, values, color=[trait_colors[t] for t in traits_list])
     ax.set_ylim(0,5)
     ax.set_ylabel("Score")
     ax.set_title("Trait Scores")
     plt.xticks(rotation=45, ha="right")
+
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close(fig)
     return buf
-
-# --------------------------
-# PDF creation
-# --------------------------
-def create_pdf(scores: dict, main_trait: str, chart_buf: io.BytesIO, bar_buf: io.BytesIO) -> bytes:
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-
-    chart_path = "chart_temp.png"
-    bar_path = "bar_temp.png"
-    with open(chart_path, "wb") as f:
-        f.write(chart_buf.getbuffer())
-    with open(bar_path, "wb") as f:
-        f.write(bar_buf.getbuffer())
-
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, clean_text("Creative Identity Profile"), ln=True, align="C")
-    pdf.ln(6)
-    try:
-        pdf.image(chart_path, x=30, y=30, w=150)
-        pdf.ln(120)
-        pdf.image(bar_path, x=30, w=150)
-    except Exception:
-        pass
-
-    sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    main = sorted_traits[0][0]
-    sub = sorted_traits[1][0]
-    weakest = sorted_traits[-1][0]
-
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, clean_text("Your Creative Archetypes"), ln=True)
-    pdf.ln(4)
-    pdf.set_font("Arial", "", 12)
-    pdf.multi_cell(0, 8, clean_text(f"Main Archetype: {archetypes[main]['name']}"))
-    pdf.multi_cell(0, 8, clean_text(archetypes[main]['description']))
-    pdf.ln(4)
-    pdf.multi_cell(0, 8, clean_text(f"Sub-Archetype: {archetypes[sub]['name']}"))
-    pdf.multi_cell(0, 8, clean_text(archetypes[sub]['description']))
-    pdf.ln(4)
-    pdf.multi_cell(0, 8, clean_text(f"To grow your weaker area ({weakest}): {archetypes[weakest]['improvement']}"))
-
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, clean_text("Trait Insights"), ln=True)
-    pdf.ln(4)
-    pdf.set_font("Arial", "", 12)
-    for trait, score in scores.items():
-        level = get_level(score)
-        pdf.multi_cell(0, 8, clean_text(f"{trait} ({level}): {score:.2f}/5"))
-
-    for path in [chart_path, bar_path]:
-        try:
-            os.remove(path)
-        except OSError:
-            pass
-
-    return pdf.output(dest="S").encode("latin-1", "replace")
 
 # --------------------------
 # Streamlit UI
 # --------------------------
 st.title("Creative Identity Profile")
-st.write("Please respond to each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree.")
+st.write("Please respond to each statement on a 1–5 scale:")
 
+# Shuffle questions once
 if "all_questions" not in st.session_state:
     all_questions = []
     for trait, qs in traits.items():
@@ -242,26 +167,43 @@ if "all_questions" not in st.session_state:
 
 all_questions = st.session_state.all_questions
 
+# Store responses
 if "responses" not in st.session_state:
     st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
 
 responses = st.session_state.responses
 total_qs = len(all_questions)
 
+# Show questions
 answered = 0
 for i, (trait, question) in enumerate(all_questions, 1):
     key = f"{trait}_{i}"
     index_val = (responses[key] - 1) if responses[key] else None
-    responses[key] = st.radio(f"Q{i}/{total_qs}: {question}", [1,2,3,4,5], horizontal=True,
-                              index=index_val, key=key)
+    st.caption("1 = Strongly Disagree · 5 = Strongly Agree")
+    responses[key] = st.radio(
+        f"Q{i}/{total_qs}: {question}",
+        [1,2,3,4,5],
+        horizontal=True,
+        index=index_val,
+        key=key
+    )
     if responses[key] is not None:
         answered += 1
 
+# Progress
+st.write(f"Progress: {answered}/{total_qs} questions answered")
 st.progress(answered / total_qs)
 
+# Warn about missed questions
+missed = [q for (trait, q), (k, v) in zip(all_questions, responses.items()) if v is None]
+if missed:
+    st.warning(f"You have {len(missed)} unanswered question(s). Scroll up to complete them before results will show.")
+
+# Results
 if answered == total_qs:
     st.success("Questionnaire complete — here are your results:")
 
+    # aggregate per-trait scores
     scores = {trait: 0.0 for trait in traits}
     counts = {trait: 0 for trait in traits}
     for key, val in responses.items():
@@ -272,21 +214,22 @@ if answered == total_qs:
     for trait in scores:
         scores[trait] = (scores[trait] / counts[trait]) if counts[trait] else 0.0
 
-    chart_buf = radar_chart(scores)
-    bar_buf = bar_chart(scores)
-    st.image(chart_buf.getvalue(), caption="Your Creative Trait Profile (Radar)", use_container_width=True)
-    st.image(bar_buf.getvalue(), caption="Your Creative Trait Scores (Bar)", use_container_width=True)
+    # Charts side by side
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(radar_chart(scores).getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
+    with col2:
+        st.image(bar_chart(scores).getvalue(), caption="Trait Scores", use_container_width=True)
 
+    # Archetypes
     sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     main_trait = sorted_traits[0][0]
     sub_trait = sorted_traits[1][0]
     weakest_trait = sorted_traits[-1][0]
 
     st.subheader("Your Creative Archetype")
-    st.write(f"Main Archetype: **{archetypes[main_trait]['name']}**")
-    st.write(archetypes[main_trait]['description'])
-    st.write(f"Sub-Archetype: **{archetypes[sub_trait]['name']}**")
-    st.write(archetypes[sub_trait]['description'])
+    st.info(f"**Main Archetype: {archetypes[main_trait]['name']}**\n\n{archetypes[main_trait]['description']}")
+    st.write(f"Sub-Archetype: **{archetypes[sub_trait]['name']}** — {archetypes[sub_trait]['description']}")
 
     st.subheader("Ways to grow")
     st.write(f"Weaker area: **{weakest_trait}** — {archetypes[weakest_trait]['improvement']}")
@@ -294,17 +237,8 @@ if answered == total_qs:
     st.subheader("Trait Insights")
     for trait, score in scores.items():
         level = get_level(score)
-        st.write(f"**{trait} ({level})** — {score:.2f}/5")
+        st.markdown(
+            f"<span style='color:{trait_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5",
+            unsafe_allow_html=True
+        )
 
-    pdf_bytes = create_pdf(scores, main_trait, chart_buf, bar_buf)
-    st.download_button(
-        "Download your personalised PDF report",
-        data=pdf_bytes,
-        file_name="Creative_Identity_Report.pdf",
-        mime="application/pdf"
-    )
-
-else:
-    missed = [q for (trait, q), (k, v) in zip(all_questions, responses.items()) if v is None]
-    if missed:
-        st.warning(f"You still have {len(missed)} unanswered questions.")
