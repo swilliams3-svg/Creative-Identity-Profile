@@ -327,10 +327,25 @@ def create_pdf(creative_scores, big5_scores, archetypes_results,
     elements.append(Paragraph("Exploring your unique blend of traits and personality", cover_tagline))
     elements.append(PageBreak())
 
-    # --- Archetype Results ---
+      # --- Archetype Results ---
     elements.append(Paragraph("Your Archetypes", section_style))
-    data = [[f"<b>{label}</b>", f"{val[0]} — {val[1]}"] for label, val in archetypes_results.items()]
-    ta
+
+    data = [["Archetype", "Description"]]  # header row
+    for label, val in archetypes_results.items():
+        data.append([f"<b>{label}</b>", f"{val[0]} — {val[1]}"])
+
+    table = Table(data, colWidths=[120, 350])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("BOX", (0, 0), (-1, -1), 1, colors.black),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+    ]))
+    elements.append(table)
+    elements.append(Spacer(1, 20))
 
 
 # --------------------------
