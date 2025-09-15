@@ -283,83 +283,96 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 
-def create_pdf(
-    creative_scores,
-    big5_scores,
-    archetypes_data,
-    creative_summaries,
-    big5_summaries,
-    chart_buf_creative,
-    chart_buf_big5
-):
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    width, height = A4
+ef create_pdf(creative_scores, big5_scores, archetypes_results,
+               creative_summaries, big5_summaries,
+               chart_buf_creative, chart_buf_big5):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                            leftMargin=50, rightMargin=50,
+                            topMargin=50, bottomMargin=50)
 
-    # Title
-    c.setFont("Helvetica-Bold", 18)
-    c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
+    styles = getSampleStyleSheet()
+    cover_title = ParagraphStyle(
+        "CoverTitle", parent=styles["Title"], fontSize=28,
+        spaceAfter=20, alignment=1
+    )
+    cover_subtitle = ParagraphStyle(
+        "CoverSubtitle", parent=styles["Heading2"], fontSize=16,
+        spaceAfter=10, alignment=1, textColor=colors.grey
+    )
+    cover_tagline = ParagraphStyle(
+        "CoverTagline", parent=styles["Normal"], fontSize=12,
+        spaceAfter=40, alignment=1, textColor=colors.HexColor("#555555"),
+        alignment=1
+    )
 
-    # Radar charts
-    img1 = ImageReader(chart_buf_creative)
-    img2 = ImageReader(chart_buf_big5)
-    chart_size = 200
-    c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size,
-                preserveAspectRatio=True, mask='auto')
-    c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size,
-                preserveAspectRatio=True, mask='auto')
+    section_style = ParagraphStyle(
+        "SectionStyle", parent=styles["Heading2"], fontSize=14,
+        spaceBefore=15, spaceAfter=10
+    )
+    body_style = ParagraphStyle(
+        "BodyStyle", parent=styles["Normal"], fontSize=11,
+        leading=15, spaceAfter=8
+    )
 
-    # Archetypes
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(40, height - 320, "Your Creative Archetypes")
-    y = height - 340
-    for label, (trait, arch) in archetypes_data.items():
-        c.setFont("Helvetica-Bold", 11)
-        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
-                                 for i in (0, 2, 4)))
-        c.drawString(50, y, f"{label}: {arch['name']}")
-        c.setFillColorRGB(0, 0, 0)
-        c.setFont("Helvetica", 9)
-        text = arch['description'] if label != "Growth Area" else arch['improvement']
-        c.drawString(60, y-12, text)
-        y -= 40
+    elements = []
 
-    # Creative Trait Insights
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColorRGB(0, 0, 0)
-    c.drawString(40, y, "Creative Trait Insights")
-    y -= 20
-    for trait, score in creative_scores.items():
-        level = get_level(score)
-        c.setFont("Helvetica-Bold", 10)
-        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
-                                 for i in (0, 2, 4)))
-        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 9)
-        c.setFillColorRGB(0, 0, 0)
-        c.drawString(60, y-12, creative_summaries[trait][level])
-        y -= 30
+    # --- Cover Page ---
+    elements.append(Spacer(1, 200))  # push content down
+    elements.append(Paragraph("Creative Identity Profile", cover_title))
+    elements.append(Paragraph("Personalised Creativity Report", cover_subtitle))
+    elements.append(Paragraph("Exploring your unique blend of traits and personality", cover_tagline))
+    elements.append(PageBreak())
 
-    # Big Five Trait Insights
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColorRGB(0, 0, 0)
-    c.drawString(40, y, "Big Five Trait Insights")
-    y -= 20
-    for trait, score in big5_scores.items():
-        level = get_level(score)
-        c.setFont("Helvetica-Bold", 10)
-        c.setFillColorRGB(*tuple(int(big5_colors[trait].lstrip("#")[i:i+2], 16)/255
-                                 for i in (0, 2, 4)))
-        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 9)
-        c.setFillColorRGB(0, 0, 0)
-        c.drawString(60, y-12, big5_summaries[trait][level])
-        y -= 30
+    # --- Archetype Results ---
+    elements.append(Paragraph("Your Archetypes", section_style))
+    data = [[f"<b>{label}</b>", f"{val[0]} — {val[1]}"] for label, val in archetypes_results.items()]
+    table = Table(data, colWidths=[120, 350])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("BOX", (0, 0), (-1, -1), 1, colors.black),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+    ]))
+    elements.append(table)
+    elements.append(Spacer(1, 20))
 
-    c.showPage()
-    c.save()
-    buf.seek(0)
-    return buf
+    # --- Charts (side by side) ---
+    elements.append(Paragraph("Radar Charts", section_style))
+    img1 = Image(chart_buf_creative, width=200, height=200)
+    img2 = Image(chart_buf_big5, width=200, height=200)
+    charts_table = Table([[img1, img2]], colWidths=[250, 250])
+    charts_table.setStyle(TableStyle([("ALIGN", (0, 0), (-1, -1), "CENTER")]))
+    elements.append(charts_table)
+    elements.append(Spacer(1, 20))
+
+    # --- Creative Traits Summary ---
+    elements.append(Paragraph("Creative Traits Summary", section_style))
+    for trait, summary in creative_summaries.items():
+        elements.append(Paragraph(f"<b>{trait}</b>: {summary}", body_style))
+
+    elements.append(Spacer(1, 15))
+
+    # --- Big Five Summary ---
+    elements.append(Paragraph("Big Five Traits Summary", section_style))
+    for trait, summary in big5_summaries.items():
+        elements.append(Paragraph(f"<b>{trait}</b>: {summary}", body_style))
+
+    # --- Footer function ---
+    def add_footer(canvas, doc):
+        canvas.saveState()
+        footer_text = f"Creative Identity Profile Report — Page {doc.page}"
+        canvas.setFont("Helvetica", 9)
+        canvas.setFillColor(colors.grey)
+        canvas.drawCentredString(A4[0] / 2.0, 25, footer_text)
+        canvas.restoreState()
+
+    # Build PDF with footer on every page
+    doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
+
+    buffer.seek(0)
+    return buffer
 
 # --------------------------
 # Streamlit App (main)
@@ -536,9 +549,9 @@ else:
     # Deeper Insights Section
     # --------------------------
     st.markdown("---")
-    st.markdown("## 🔍 Deeper Insights")
+    st.markdown("Deeper Insights")
 
-    with st.expander("📘 The Science Behind This Quiz"):
+    with st.expander("The Science Behind This Quiz"):
         st.markdown("""
         This quiz is based on decades of creativity and personality research.  
         - **Creative Traits** draw on theories of divergent and convergent thinking (Guilford, 1967).  
@@ -546,7 +559,7 @@ else:
         - Together, they provide a balanced view of your creative identity and personal style.
         """)
 
-    with st.expander("📖 Academic Foundations of the Quiz"):
+    with st.expander("Academic Foundations of the Quiz"):
         st.markdown("""
         **Key References**  
         - Guilford, J. P. (1967). *The Nature of Human Intelligence*.  
@@ -558,7 +571,7 @@ else:
         These frameworks ensure the quiz isn’t just fun, but also grounded in psychological science.
         """)
 
-    with st.expander("🌀 Divergent vs Convergent Thinking"):
+    with st.expander("Divergent vs Convergent Thinking"):
         st.markdown("This chart shows how your quiz traits map onto **divergent** and **convergent** thinking styles.")
         
         import matplotlib.pyplot as plt
