@@ -7,38 +7,38 @@ import random
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Creative Traits (6 traits x 3 questions)
+# Creative Traits
 # --------------------------
 creative_traits = {
     "Originality": [
-        "I often come up with ideas that others consider unusual.",
-        "I enjoy finding new ways to do things.",
-        "My ideas are often different from those around me."
+        "I often come up with ideas that others don’t think of.",
+        "I enjoy finding new ways to solve problems.",
+        "I like to put a unique spin on familiar things."
     ],
     "Curiosity": [
-        "I enjoy exploring new topics or activities.",
-        "I like asking questions to understand how things work.",
-        "I am eager to learn about unfamiliar subjects."
+        "I enjoy exploring new ideas and perspectives.",
+        "I like to imagine possibilities beyond what I know.",
+        "I am curious about many different things."
     ],
     "Risk Taking": [
-        "I am comfortable with uncertainty in creative work.",
-        "I try bold approaches, even if they might fail.",
-        "I take chances to push creative boundaries."
+        "I am willing to take risks in my creative work.",
+        "I don’t mind uncertainty when trying new approaches.",
+        "I experiment with ideas even if they might fail."
     ],
     "Imagination": [
-        "I enjoy picturing possibilities that don’t yet exist.",
-        "I use my imagination to come up with creative ideas.",
-        "I often create mental images of new possibilities."
+        "I often create vivid mental images or stories.",
+        "I enjoy fantasy or thinking about unreal possibilities.",
+        "I can picture things in my head easily."
     ],
     "Discipline": [
-        "I can stay focused when working on creative tasks.",
-        "I keep going until a creative project is complete.",
-        "I work consistently to develop my creative ideas."
+        "I can focus on my creative projects until they are finished.",
+        "I stick with routines that help my creativity.",
+        "I put effort into refining and improving my ideas."
     ],
     "Collaboration": [
-        "I like sharing ideas with others.",
-        "I enjoy building on other people’s ideas.",
-        "I find teamwork sparks my creativity."
+        "I enjoy sharing ideas with others.",
+        "Working with others helps me improve creatively.",
+        "I value feedback in developing my ideas."
     ]
 }
 
@@ -53,60 +53,96 @@ creative_colors = {
 
 creative_summaries = {
     "Originality": {
-        "High": "You thrive on producing unusual and fresh ideas.",
+        "High": "You thrive on bringing new and different ideas.",
         "Medium": "You balance originality with practicality.",
-        "Low": "You prefer tried-and-tested ideas over unusual ones."
+        "Low": "You prefer proven and familiar approaches."
     },
     "Curiosity": {
-        "High": "You are naturally inquisitive and love to explore.",
-        "Medium": "You enjoy learning but may not always seek it out.",
-        "Low": "You prefer familiar subjects and routines."
+        "High": "You are deeply inquisitive and open to exploring ideas.",
+        "Medium": "You show curiosity but sometimes within limits.",
+        "Low": "You prefer to stick to what you know."
     },
     "Risk Taking": {
-        "High": "You embrace uncertainty and bold approaches.",
-        "Medium": "You take risks selectively when they feel safe.",
-        "Low": "You prefer safe and predictable paths."
+        "High": "You embrace uncertainty and experimentation.",
+        "Medium": "You take chances when they feel manageable.",
+        "Low": "You prefer safe and secure approaches."
     },
     "Imagination": {
-        "High": "You often envision possibilities beyond the present.",
-        "Medium": "You can imagine new ideas but sometimes keep them practical.",
-        "Low": "You prefer concrete facts over imagination."
+        "High": "You often create vivid, creative ideas and stories.",
+        "Medium": "You sometimes picture possibilities beyond reality.",
+        "Low": "You stay grounded in realistic and practical ideas."
     },
     "Discipline": {
-        "High": "You stay committed and see projects through.",
-        "Medium": "You balance focus with flexibility.",
-        "Low": "You may struggle to sustain effort on long projects."
+        "High": "You stay focused and finish your creative projects.",
+        "Medium": "You sometimes balance discipline with flexibility.",
+        "Low": "You may struggle with consistency or follow-through."
     },
     "Collaboration": {
-        "High": "You thrive in group work and value shared creativity.",
+        "High": "You thrive in teamwork and value diverse input.",
         "Medium": "You enjoy collaboration but also work well alone.",
-        "Low": "You prefer to work independently."
+        "Low": "You prefer independence in your creative process."
     }
 }
 
 # --------------------------
-# Big Five Traits (5 traits x 3 questions)
+# Archetypes
+# --------------------------
+archetypes = {
+    "Originality": {
+        "name": "The Innovator",
+        "description": "You generate unique and unconventional ideas.",
+        "improvement": "Balance originality with practical application."
+    },
+    "Curiosity": {
+        "name": "The Explorer",
+        "description": "You thrive on curiosity and imagination.",
+        "improvement": "Focus your curiosity into projects for impact."
+    },
+    "Risk Taking": {
+        "name": "The Adventurer",
+        "description": "You embrace uncertainty and bold ideas.",
+        "improvement": "Test bold ideas in smaller steps first."
+    },
+    "Imagination": {
+        "name": "The Dreamer",
+        "description": "You think in vivid images and possibilities.",
+        "improvement": "Ground imagination with real-world testing."
+    },
+    "Discipline": {
+        "name": "The Maker",
+        "description": "You bring creative visions to life with structure.",
+        "improvement": "Balance productivity with space for play."
+    },
+    "Collaboration": {
+        "name": "The Connector",
+        "description": "You spark ideas in groups and value feedback.",
+        "improvement": "Balance collaboration with your own vision."
+    }
+}
+
+# --------------------------
+# Big Five Traits
 # --------------------------
 big5_traits = {
     "Openness": [
-        "I enjoy trying new experiences.",
+        "I enjoy trying new activities and experiences.",
         "I have a broad range of interests.",
-        "I like exploring unfamiliar ideas."
+        "I am curious about many different things."
     ],
     "Conscientiousness": [
+        "I like to keep things organized.",
         "I pay attention to details.",
-        "I like to be organized.",
-        "I follow through on commitments."
+        "I get chores done right away."
     ],
     "Extraversion": [
-        "I feel energized by social interaction.",
-        "I start conversations easily.",
-        "I am talkative around others."
+        "I feel comfortable around people.",
+        "I start conversations.",
+        "I don’t mind being the center of attention."
     ],
     "Agreeableness": [
-        "I take time out for others.",
+        "I am interested in other people’s problems.",
         "I sympathize with others’ feelings.",
-        "I value cooperation in groups."
+        "I take time out for others."
     ],
     "Neuroticism": [
         "I often feel anxious about things.",
@@ -116,23 +152,23 @@ big5_traits = {
 }
 
 big5_colors = {
-    "Openness": "#17becf",
-    "Conscientiousness": "#bcbd22",
-    "Extraversion": "#7f7f7f",
-    "Agreeableness": "#e377c2",
-    "Neuroticism": "#8c564b"
+    "Openness": "#1f77b4",
+    "Conscientiousness": "#ff7f0e",
+    "Extraversion": "#2ca02c",
+    "Agreeableness": "#9467bd",
+    "Neuroticism": "#d62728"
 }
 
 big5_summaries = {
     "Openness": {
         "High": "You are imaginative and embrace novelty.",
-        "Medium": "You like some variety but also familiarity.",
-        "Low": "You prefer tradition and routine."
+        "Medium": "You balance new experiences with familiarity.",
+        "Low": "You prefer tradition and familiar patterns."
     },
     "Conscientiousness": {
-        "High": "You are disciplined and structured.",
-        "Medium": "You balance order with flexibility.",
-        "Low": "You prefer spontaneity over rigid routines."
+        "High": "You are disciplined, structured, and reliable.",
+        "Medium": "You balance organization with flexibility.",
+        "Low": "You prefer spontaneity over routine."
     },
     "Extraversion": {
         "High": "You gain energy from social interactions.",
@@ -140,27 +176,15 @@ big5_summaries = {
         "Low": "You prefer quiet and independence."
     },
     "Agreeableness": {
-        "High": "You are empathetic and cooperative.",
-        "Medium": "You balance kindness with assertiveness.",
-        "Low": "You are direct and value self-interest."
+        "High": "You are empathetic and value harmony.",
+        "Medium": "You cooperate but can be assertive too.",
+        "Low": "You are direct and prioritize your own needs."
     },
     "Neuroticism": {
         "High": "You are sensitive to stress and emotions.",
-        "Medium": "You experience stress occasionally but manage it.",
+        "Medium": "You manage stress with occasional struggles.",
         "Low": "You are calm and emotionally steady."
     }
-}
-
-# --------------------------
-# Archetypes
-# --------------------------
-archetypes = {
-    "Originality": ("The Innovator", "You generate fresh and unusual ideas."),
-    "Curiosity": ("The Explorer", "You thrive on learning and discovery."),
-    "Risk Taking": ("The Adventurer", "You embrace bold moves and uncertainty."),
-    "Imagination": ("The Visionary", "You envision possibilities others miss."),
-    "Discipline": ("The Builder", "You bring ideas to life with persistence."),
-    "Collaboration": ("The Connector", "You excel in creative teamwork.")
 }
 
 # --------------------------
@@ -176,34 +200,30 @@ def get_level(score: float) -> str:
 
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
-    if len(labels) == 0:
-        # nothing to plot
-        fig, ax = plt.subplots()
-        ax.text(0.5, 0.5, "No data", ha="center", va="center")
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight")
-        buf.seek(0)
-        plt.close(fig)
-        return buf
-
     num_vars = len(labels)
+
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
     values = list(scores.values())
     values += values[:1]
 
-    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
     ax.plot(angles, values, linewidth=1.5, color="black")
-    ax.fill(angles, values, alpha=0.1, color="gray")
+    ax.fill(angles, values, alpha=0.05, color="gray")
 
     for i, (trait, score) in enumerate(scores.items()):
-        ax.scatter(angles[i], score, color=colors.get(trait, "#333333"), s=60, zorder=10)
+        ax.plot([angles[i], angles[i+1]], [score, values[i+1]],
+                color=colors[trait], linewidth=3)
+        ax.scatter(angles[i], score, color=colors[trait], s=50, zorder=10, label=trait)
 
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_xticklabels(labels, fontsize=9)
     ax.set_ylim(0,5)
+    ax.set_yticks([1,2,3,4,5])
+    ax.set_yticklabels(["1","2","3","4","5"])
     plt.title(title, size=12, weight="bold")
+    ax.legend(bbox_to_anchor=(1.15, 1.1), fontsize=7)
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
@@ -216,163 +236,143 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
 # --------------------------
 st.title("Creative Identity & Personality Profile")
 
-# build questions once
+# Intro heading
+if "current_q" not in st.session_state:
+    st.session_state.current_q = 0
+
 if "all_questions" not in st.session_state:
     all_questions = []
-    # keep insertion order consistent: creative first then big5
-    for trait, qs in creative_traits.items():
-        for q in qs:
-            all_questions.append((trait, q))
-    for trait, qs in big5_traits.items():
+    for trait, qs in {**creative_traits, **big5_traits}.items():
         for q in qs:
             all_questions.append((trait, q))
     random.shuffle(all_questions)
     st.session_state.all_questions = all_questions
-    st.session_state.responses = {}   # store numeric 1..5 or None
-    st.session_state.current_q = 0
+
+if "responses" not in st.session_state:
+    st.session_state.responses = {}
 
 all_questions = st.session_state.all_questions
 responses = st.session_state.responses
 current_q = st.session_state.current_q
 total_qs = len(all_questions)
 
-# Intro
-if current_q == 0:
-    st.markdown("## Welcome to the Creative Identity Quiz 🎨")
-    st.markdown(
-        "This short quiz explores your **creative traits** and **personality dimensions**. "
-        "Answer honestly – there are no right or wrong answers! "
-        "At the end, you'll see your creative profile, archetypes, and personalised feedback."
-    )
-
-# Question page
+# --------------------------
+# Question Pages
+# --------------------------
 if current_q < total_qs:
+    if current_q == 0:
+        st.markdown("## Welcome to the Creative Identity Quiz")
+        st.markdown(
+            "This quiz explores your **creative traits** and **personality dimensions**. "
+            "Please rate each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree. "
+            "Answer honestly – there are no right or wrong answers!"
+        )
+        st.divider()
+
     trait, question = all_questions[current_q]
     key = f"{trait}_{current_q}"
     st.markdown(f"**Q{current_q+1}/{total_qs}:** {question}")
 
-    # Use a placeholder so the control starts 'blank'
-    radio_options = ["Select..."] + [1, 2, 3, 4, 5]
+    # --- Custom 1–5 buttons ---
+    cols = st.columns(5)
+    for i, col in enumerate(cols, start=1):
+        button_key = f"{key}_btn{i}"
+        if col.button(str(i), key=button_key):
+            responses[key] = i
+            st.session_state.responses = responses
+            st.rerun()
 
-    # decide index: if we've saved a numeric response, preselect it; otherwise preselect the placeholder
-    if key in responses and isinstance(responses[key], int) and responses[key] in [1,2,3,4,5]:
-        pre_index = radio_options.index(responses[key])
+    # Show selection
+    if key in responses and responses[key] is not None:
+        st.markdown(f"✅ You selected: **{responses[key]}**")
     else:
-        pre_index = 0
+        st.markdown("_Please choose an option above to continue._")
 
-    answer = st.radio("", radio_options, index=pre_index, horizontal=True, key=key)
-
-    # Normalize storage: treat placeholder as None
-    if answer == "Select...":
-        responses[key] = None
-    else:
-        # answer will be an int 1..5
-        responses[key] = int(answer)
-
+    # Navigation
     col1, col2 = st.columns([1,1])
     with col1:
-        if st.button("⬅️ Back", disabled=(current_q == 0)):
+        if st.button("Back", disabled=(current_q == 0)):
             st.session_state.current_q -= 1
             st.rerun()
     with col2:
-        # Only enable next when a numeric answer (1..5) exists
-        answered = (key in responses) and (isinstance(responses[key], int))
-        if st.button("Next Question ➡️", disabled=not answered):
+        answered = key in responses and responses[key] is not None
+        if st.button("Next Question", disabled=not answered):
             st.session_state.current_q += 1
             st.rerun()
 
-# Results page
+# --------------------------
+# Results Page
+# --------------------------
 else:
     st.success("All questions complete — here are your results!")
 
-    # Prepare score containers
-    creative_scores = {t: 0.0 for t in creative_traits.keys()}
-    creative_counts = {t: 0 for t in creative_traits.keys()}
-    big5_scores = {t: 0.0 for t in big5_traits.keys()}
-    big5_counts = {t: 0 for t in big5_traits.keys()}
+    # Scores
+    creative_scores = {t:0 for t in creative_traits}
+    creative_counts = {t:0 for t in creative_traits}
+    big5_scores = {t:0 for t in big5_traits}
+    big5_counts = {t:0 for t in big5_traits}
 
-    # Aggregate responses safely
     for key, val in responses.items():
-        # key format: "{trait}_{index}"
-        trait_name = key.rsplit("_", 1)[0]
-        if val is None:
-            continue
-        if trait_name in creative_scores:
-            creative_scores[trait_name] += val
-            creative_counts[trait_name] += 1
-        if trait_name in big5_scores:
-            big5_scores[trait_name] += val
-            big5_counts[trait_name] += 1
+        if val:
+            trait = key.split("_")[0]
+            if trait in creative_scores:
+                creative_scores[trait] += val
+                creative_counts[trait] += 1
+            if trait in big5_scores:
+                big5_scores[trait] += val
+                big5_counts[trait] += 1
 
-    # Safe averaging (avoid division by zero)
     for t in creative_scores:
-        if creative_counts[t] > 0:
-            creative_scores[t] = creative_scores[t] / creative_counts[t]
-        else:
-            creative_scores[t] = 0.0
-
+        creative_scores[t] /= creative_counts[t]
     for t in big5_scores:
-        if big5_counts[t] > 0:
-            big5_scores[t] = big5_scores[t] / big5_counts[t]
-        else:
-            big5_scores[t] = 0.0
+        big5_scores[t] /= big5_counts[t]
 
-    # Charts side-by-side
+    # Charts
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Creative Traits")
         st.image(radar_chart(creative_scores, creative_colors, "Creative Traits"), use_container_width=True)
     with col2:
-        st.subheader("Big Five Traits")
         st.image(radar_chart(big5_scores, big5_colors, "Big Five Traits"), use_container_width=True)
 
-    # Archetypes (top 2 and weakest)
+    # Archetypes
     sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
-    if len(sorted_traits) >= 3:
-        main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-    else:
-        main_trait = sorted_traits[0][0] if sorted_traits else None
-        sub_trait = sorted_traits[1][0] if len(sorted_traits) > 1 else None
-        weakest_trait = sorted_traits[-1][0] if sorted_traits else None
+    main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
     st.subheader("Your Creative Archetypes")
     for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
-        if trait:
-            name, desc = archetypes[trait]
-            color = creative_colors.get(trait, "#cccccc")
-            st.markdown(
-                f"<div style='background-color:{color}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
-                f"<span style='color:{color}; font-weight:bold'>{label}: {name}</span><br>"
-                f"<i>{desc}</i></div>",
-                unsafe_allow_html=True
-            )
+        if label == "Growth Area":
+            content = archetypes[trait]["improvement"]
+        else:
+            content = archetypes[trait]["description"]
+        st.markdown(
+            f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
+            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{label}: {archetypes[trait]['name']}</span><br>"
+            f"<i>{content}</i></div>", unsafe_allow_html=True
+        )
 
-    # Trait summaries
+    # Summaries
     st.subheader("Creative Trait Insights")
     for trait, score in creative_scores.items():
         level = get_level(score)
         summary = creative_summaries[trait][level]
-        color = creative_colors.get(trait, "#cccccc")
         st.markdown(
-            f"<div style='background-color:{color}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{color}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>",
-            unsafe_allow_html=True
+            f"<div style='background-color:{creative_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
     st.subheader("Big Five Trait Insights")
     for trait, score in big5_scores.items():
         level = get_level(score)
         summary = big5_summaries[trait][level]
-        color = big5_colors.get(trait, "#cccccc")
         st.markdown(
-            f"<div style='background-color:{color}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{color}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>",
-            unsafe_allow_html=True
+            f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    # report missed questions count (if any)
-    missed = sum(1 for i in range(len(all_questions)) if responses.get(f"{all_questions[i][0]}_{i}") is None)
-    if missed > 0:
-        st.warning(f"You skipped {missed} question(s).")
+    # Missed questions
+    missed = [q for q, ans in responses.items() if ans is None]
+    if missed:
+        st.warning(f"You skipped {len(missed)} questions. Your scores may be less accurate.")
+
