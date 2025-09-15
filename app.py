@@ -76,6 +76,7 @@ if "questions" not in st.session_state:
         ]
     }
 
+    # shuffle
     all_qs = []
     for trait, qs in {**creative_traits, **big_five}.items():
         for q in qs:
@@ -86,6 +87,26 @@ if "questions" not in st.session_state:
 
 all_questions = st.session_state.questions
 total_qs = len(all_questions)
+
+# --------------------------
+# Colors
+# --------------------------
+creative_colors = {
+    "Divergent Thinking": "#d62728",
+    "Risk-taking": "#ff7f0e",
+    "Openness to Experience": "#1f77b4",
+    "Persistence": "#2ca02c",
+    "Curiosity": "#9467bd",
+    "Tolerance of Ambiguity": "#8c564b"
+}
+
+big5_colors = {
+    "Openness": "#1f77b4",
+    "Conscientiousness": "#ff7f0e",
+    "Extraversion": "#2ca02c",
+    "Agreeableness": "#9467bd",
+    "Neuroticism": "#d62728"
+}
 
 # --------------------------
 # Helpers
@@ -103,7 +124,7 @@ def calculate_scores(responses, questions):
     avg_scores = {t: (sum(v) / len(v)) if v else 0 for t, v in scores.items()}
     return avg_scores
 
-def radar_chart(scores, title):
+def radar_chart(scores, colors, title):
     traits = list(scores.keys())
     values = list(scores.values())
     N = len(traits)
@@ -113,8 +134,12 @@ def radar_chart(scores, title):
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
-    ax.fill(angles, values, alpha=0.25, color="skyblue")
-    ax.plot(angles, values, linewidth=2, color="blue")
+    ax.fill(angles, values, alpha=0.1, color="gray")
+    ax.plot(angles, values, linewidth=2, color="black")
+
+    for i, (trait, val) in enumerate(scores.items()):
+        ax.scatter(angles[i], val, color=colors[trait], s=60)
+        ax.plot([angles[i], angles[i]], [0, val], color=colors[trait], linewidth=2)
 
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
@@ -140,8 +165,10 @@ def show_archetypes(main_trait, sub_trait, growth_trait):
             title, desc = archetypes[trait]
             st.markdown(
                 f"""
-                <div style='background-color:#f0f8ff; padding:15px; border-radius:12px; margin-bottom:10px'>
-                <b>{role}: {title}</b><br>{desc}
+                <div style='background-color:{creative_colors[trait]}20;
+                            padding:15px; border-radius:12px; margin-bottom:10px'>
+                <span style='color:{creative_colors[trait]}; font-weight:bold'>
+                {role}: {title}</span><br><i>{desc}</i>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -150,23 +177,23 @@ def show_archetypes(main_trait, sub_trait, growth_trait):
 def show_trait_summaries(scores):
     st.markdown("### Trait Insights")
     for trait, score in scores.items():
+        if trait in creative_colors:
+            color = creative_colors[trait]
+        else:
+            color = big5_colors[trait]
+
         if score >= 4:
             level = "High"
-            desc = "You show strong alignment with this trait."
-            color = "#d4f5d0"
         elif score >= 2.5:
             level = "Medium"
-            desc = "You show a balanced level of this trait."
-            color = "#fff3cd"
         else:
             level = "Low"
-            desc = "This trait is less expressed for you."
-            color = "#f8d7da"
 
         st.markdown(
             f"""
-            <div style='background-color:{color}; padding:12px; border-radius:10px; margin-bottom:6px'>
-            <b>{trait} ({level}):</b> {score:.2f}/5<br>{desc}
+            <div style='background-color:{color}20; padding:12px; 
+                        border-radius:10px; margin-bottom:6px'>
+            <b style='color:{color}'>{trait} ({level})</b> — {score:.2f}/5
             </div>
             """,
             unsafe_allow_html=True
@@ -206,7 +233,7 @@ if current_q < total_qs:
             st.session_state.current_q -= 1
             st.rerun()
     with col2:
-        if st.button("Forward"):
+        if st.button("Next Question"):
             st.session_state.responses[key] = answer
             st.session_state.current_q += 1
             st.rerun()
@@ -220,7 +247,6 @@ else:
     responses = st.session_state.responses
     scores = calculate_scores(responses, all_questions)
 
-    # Split scores
     creative_traits = ["Divergent Thinking","Risk-taking","Openness to Experience",
                        "Persistence","Curiosity","Tolerance of Ambiguity"]
     big_five = ["Openness","Conscientiousness","Extraversion","Agreeableness","Neuroticism"]
@@ -229,10 +255,10 @@ else:
     big_five_scores = {t: scores[t] for t in big_five}
 
     # Show charts
-    radar_chart(creative_scores, "Creative Traits")
-    radar_chart(big_five_scores, "Big Five Personality Traits")
+    radar_chart(creative_scores, creative_colors, "Creative Traits")
+    radar_chart(big_five_scores, big5_colors, "Big Five Personality Traits")
 
-    # Archetypes (main, sub, growth)
+    # Archetypes
     sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
     main_trait, sub_trait = sorted_traits[0][0], sorted_traits[1][0]
     growth_trait = sorted_traits[-1][0]
@@ -240,13 +266,3 @@ else:
 
     # Summaries
     show_trait_summaries(scores)
-
-    # Questions missed
-    missed = [f"Q{i+1}: {q}" for i, (_, q) in enumerate(all_questions)
-              if st.session_state.responses.get(f"{all_questions[i][0]}_{i}") is None]
-
-    if missed:
-        st.warning("⚠️ You missed some questions:")
-        for m in missed:
-            st.write(f"- {m}")
-
