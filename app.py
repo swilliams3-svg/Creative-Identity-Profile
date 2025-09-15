@@ -518,18 +518,62 @@ else:
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    # PDF Download (embed the two radar images and color-coded cards)
-    pdf_buf = create_pdf(
-        creative_scores, big5_scores,
-        {
-            "Main Archetype": (main_trait, archetypes[main_trait]),
-            "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
-            "Growth Area": (weakest_trait, archetypes[weakest_trait]),
-        },
-        creative_summaries, big5_summaries,
-        chart_buf_creative, chart_buf_big5
-    )
-    st.download_button("📥 Download Your Profile (PDF)", data=pdf_buf.getvalue(), file_name="creative_profile.pdf", mime="application/pdf")
+       # --------------------------
+    # Deeper Insights Section
+    # --------------------------
+    st.markdown("---")
+    st.markdown("## 🔍 Deeper Insights")
+
+    with st.expander("📘 The Science Behind This Quiz"):
+        st.markdown("""
+        This quiz is based on decades of creativity and personality research.  
+        - **Creative Traits** draw on theories of divergent and convergent thinking (Guilford, 1967).  
+        - **Big Five Traits** come from established personality psychology (Costa & McCrae, 1992).  
+        - Together, they provide a balanced view of your creative identity and personal style.
+        """)
+
+    with st.expander("📖 Academic Foundations of the Quiz"):
+        st.markdown("""
+        **Key References**  
+        - Guilford, J. P. (1967). *The Nature of Human Intelligence*.  
+        - Amabile, T. M. (1996). *Creativity in Context*.  
+        - Runco, M. A. (2014). *Creativity: Theories and Themes*.  
+        - Costa, P. T., & McCrae, R. R. (1992). *Revised NEO Personality Inventory*.  
+        - Sternberg, R. J. (2006). *The Nature of Creativity*.  
+
+        These frameworks ensure the quiz isn’t just fun, but also grounded in psychological science.
+        """)
+
+    with st.expander("🌀 Divergent vs Convergent Thinking"):
+        st.markdown("This chart shows how your quiz traits map onto **divergent** and **convergent** thinking styles.")
+        
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(7,4))
+        divergent_traits = ["Originality", "Curiosity", "Imagination", "Risk-Taking"]
+        convergent_traits = ["Discipline", "Collaboration", "Conscientiousness"]
+
+        ax.set_title("Divergent vs. Convergent Thinking", fontsize=13, weight="bold")
+
+        ax.text(0.25, 0.9, "Divergent Thinking", fontsize=11, ha="center", weight="bold", color="#2ca02c")
+        for i, trait in enumerate(divergent_traits):
+            ax.text(0.25, 0.75 - i*0.15, f"• {trait}", fontsize=10, ha="center", color="#2ca02c")
+
+        ax.text(0.75, 0.9, "Convergent Thinking", fontsize=11, ha="center", weight="bold", color="#1f77b4")
+        for i, trait in enumerate(convergent_traits):
+            ax.text(0.75, 0.75 - i*0.15, f"• {trait}", fontsize=10, ha="center", color="#1f77b4")
+
+        ax.axis("off")
+        st.pyplot(fig)
+
+    with st.expander("📥 Download Your Full Report"):
+        st.markdown("You can download a **personalised PDF** with your radar charts, archetypes, and trait insights.")
+        st.download_button(
+            "📥 Download Your Profile (PDF)", 
+            data=pdf_buf.getvalue(), 
+            file_name="creative_profile.pdf", 
+            mime="application/pdf"
+        )
+
 
     # Missed questions
     missed = [q for q, ans in responses.items() if ans is None]
