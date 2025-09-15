@@ -7,48 +7,86 @@ import random
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Traits with questions
+# Trait dictionaries (3 questions each)
 # --------------------------
-traits = {
+creative_traits = {
     "Openness": [
         "I enjoy exploring new ideas and experiences.",
-        "I often imagine possibilities that others don’t.",
-        "I like experimenting with unusual approaches.",
-        "I am curious about many different things."
+        "I have a vivid imagination.",
+        "I often imagine possibilities that others don’t."
     ],
     "Risk-taking": [
         "I am comfortable taking chances with new ideas.",
-        "I don’t mind uncertainty when trying something new.",
         "I would rather try and fail than not try at all.",
         "I enjoy venturing into the unknown."
     ],
     "Resilience": [
         "I keep going when faced with creative setbacks.",
         "I see mistakes as opportunities to learn.",
-        "I bounce back quickly after difficulties.",
         "I stay motivated even when things get tough."
     ],
     "Collaboration": [
         "I enjoy brainstorming with others.",
         "I build on the ideas of those around me.",
-        "I value different perspectives in problem solving.",
-        "I work well in creative teams."
+        "I value different perspectives in problem solving."
     ],
     "Divergent Thinking": [
         "I can think of many solutions to a problem.",
         "I enjoy finding unusual uses for common things.",
-        "I generate lots of ideas quickly.",
         "I like connecting unrelated concepts."
     ],
     "Convergent Thinking": [
         "I can evaluate which ideas are most useful.",
         "I am good at narrowing options to find the best one.",
-        "I can turn many ideas into a clear plan.",
         "I make decisions based on logic and evidence."
     ]
 }
 
-# Archetypes
+big5_traits = {
+    "Conscientiousness": [
+        "I like to keep things organized.",
+        "I pay attention to details.",
+        "I get chores done right away."
+    ],
+    "Extraversion": [
+        "I feel comfortable around people.",
+        "I start conversations.",
+        "I don’t mind being the center of attention."
+    ],
+    "Agreeableness": [
+        "I am interested in other people’s problems.",
+        "I sympathize with others’ feelings.",
+        "I take time out for others."
+    ],
+    "Neuroticism": [
+        "I often feel anxious about things.",
+        "I get upset easily.",
+        "I worry about many things."
+    ]
+}
+
+# --------------------------
+# Colours
+# --------------------------
+creative_colors = {
+    "Openness": "#17becf",
+    "Risk-taking": "#e377c2",
+    "Resilience": "#bcbd22",
+    "Collaboration": "#8c564b",
+    "Divergent Thinking": "#7f7f7f",
+    "Convergent Thinking": "#aec7e8"
+}
+
+big5_colors = {
+    "Conscientiousness": "#ff7f0e",
+    "Extraversion": "#2ca02c",
+    "Agreeableness": "#9467bd",
+    "Neuroticism": "#d62728"
+}
+
+# --------------------------
+# Archetypes (based on creative traits)
+# --------------------------
 archetypes = {
     "Openness": {
         "name": "The Explorer",
@@ -82,16 +120,6 @@ archetypes = {
     }
 }
 
-# Trait colours
-trait_colors = {
-    "Openness": "tab:blue",
-    "Risk-taking": "tab:red",
-    "Resilience": "tab:green",
-    "Collaboration": "tab:orange",
-    "Divergent Thinking": "tab:purple",
-    "Convergent Thinking": "tab:brown"
-}
-
 # --------------------------
 # Helpers
 # --------------------------
@@ -103,8 +131,7 @@ def get_level(score: float) -> str:
     else:
         return "Low"
 
-# Radar chart
-def radar_chart(scores: dict) -> io.BytesIO:
+def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     values = list(scores.values())
     num_vars = len(labels)
@@ -113,37 +140,36 @@ def radar_chart(scores: dict) -> io.BytesIO:
     values += values[:1]
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, linewidth=2, color="black")
+    ax.fill(angles, values, alpha=0.25, color="gray")
 
-    for i, trait in enumerate(labels):
-        val_pair = [values[i], values[i+1]] if i < len(labels)-1 else [values[i], values[0]]
-        angle_pair = [angles[i], angles[i+1]] if i < len(labels)-1 else [angles[i], angles[0]]
-        ax.plot(angle_pair, val_pair, color=trait_colors[trait], linewidth=3)
-        ax.fill(angle_pair, val_pair, alpha=0.2, color=trait_colors[trait])
+    # color the labels
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels, fontsize=9)
+    for label, color in zip(ax.get_xticklabels(), [colors[t] for t in labels]):
+        label.set_color(color)
 
     ax.set_ylim(0,5)
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
     ax.set_yticks([1,2,3,4,5])
     ax.set_yticklabels(["1","2","3","4","5"])
 
+    plt.title(title, size=12, weight="bold")
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close(fig)
     return buf
 
-# Bar chart
-def bar_chart(scores: dict) -> io.BytesIO:
-    fig, ax = plt.subplots(figsize=(6,4))
-    traits_list = list(scores.keys())
+def bar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
+    labels = list(scores.keys())
     values = list(scores.values())
-    ax.bar(traits_list, values, color=[trait_colors[t] for t in traits_list])
+    fig, ax = plt.subplots(figsize=(5,4))
+    ax.bar(labels, values, color=[colors[t] for t in labels])
     ax.set_ylim(0,5)
-    ax.set_ylabel("Score")
-    ax.set_title("Trait Scores")
-    plt.xticks(rotation=45, ha="right")
-
+    ax.set_ylabel("Average Score")
+    ax.set_title(title, weight="bold")
+    plt.xticks(rotation=30, ha="right")
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
@@ -151,15 +177,15 @@ def bar_chart(scores: dict) -> io.BytesIO:
     return buf
 
 # --------------------------
-# Streamlit UI
+# Streamlit App
 # --------------------------
 st.title("Creative Identity Profile")
-st.write("Please respond to each statement on a 1–5 scale:")
+st.write("Please rate each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree.")
 
-# Shuffle questions once
+# Shuffle once
 if "all_questions" not in st.session_state:
     all_questions = []
-    for trait, qs in traits.items():
+    for trait, qs in {**creative_traits, **big5_traits}.items():
         for q in qs:
             all_questions.append((trait, q))
     random.shuffle(all_questions)
@@ -167,78 +193,79 @@ if "all_questions" not in st.session_state:
 
 all_questions = st.session_state.all_questions
 
-# Store responses
 if "responses" not in st.session_state:
     st.session_state.responses = {f"{trait}_{i}": None for i, (trait, _) in enumerate(all_questions, 1)}
 
 responses = st.session_state.responses
 total_qs = len(all_questions)
-
-# Show questions
 answered = 0
+
+# Likert scale reference
+st.markdown("**Scale reference:** 1 = Strongly Disagree · 2 = Disagree · 3 = Neutral · 4 = Agree · 5 = Strongly Agree")
+
 for i, (trait, question) in enumerate(all_questions, 1):
     key = f"{trait}_{i}"
     index_val = (responses[key] - 1) if responses[key] else None
-    st.caption("1 = Strongly Disagree · 5 = Strongly Agree")
-    responses[key] = st.radio(
-        f"Q{i}/{total_qs}: {question}",
-        [1,2,3,4,5],
-        horizontal=True,
-        index=index_val,
-        key=key
-    )
+    responses[key] = st.radio(f"Q{i}/{total_qs}: {question}", [1,2,3,4,5],
+                              horizontal=True, index=index_val, key=key)
     if responses[key] is not None:
         answered += 1
 
-# Progress
-st.write(f"Progress: {answered}/{total_qs} questions answered")
 st.progress(answered / total_qs)
-
-# Warn about missed questions
-missed = [q for (trait, q), (k, v) in zip(all_questions, responses.items()) if v is None]
-if missed:
-    st.warning(f"You have {len(missed)} unanswered question(s). Scroll up to complete them before results will show.")
 
 # Results
 if answered == total_qs:
-    st.success("Questionnaire complete — here are your results:")
+    st.success("All questions complete — here are your results!")
 
-    # aggregate per-trait scores
-    scores = {trait: 0.0 for trait in traits}
-    counts = {trait: 0 for trait in traits}
+    # Creative trait scores
+    creative_scores = {t:0 for t in creative_traits}
+    creative_counts = {t:0 for t in creative_traits}
     for key, val in responses.items():
-        if val is not None:
+        if val:
             trait = key.split("_")[0]
-            scores[trait] += val
-            counts[trait] += 1
-    for trait in scores:
-        scores[trait] = (scores[trait] / counts[trait]) if counts[trait] else 0.0
+            if trait in creative_scores:
+                creative_scores[trait] += val
+                creative_counts[trait] += 1
+    for t in creative_scores:
+        creative_scores[t] /= creative_counts[t]
 
-    # Charts side by side
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(radar_chart(scores).getvalue(), caption="Your Creative Trait Profile", use_container_width=True)
-    with col2:
-        st.image(bar_chart(scores).getvalue(), caption="Trait Scores", use_container_width=True)
+    # Big Five scores
+    big5_scores = {t:0 for t in big5_traits}
+    big5_counts = {t:0 for t in big5_traits}
+    for key, val in responses.items():
+        if val:
+            trait = key.split("_")[0]
+            if trait in big5_scores:
+                big5_scores[trait] += val
+                big5_counts[trait] += 1
+    for t in big5_scores:
+        big5_scores[t] /= big5_counts[t]
+
+    # Charts
+    c1, c2 = st.columns(2)
+    with c1:
+        st.image(radar_chart(creative_scores, creative_colors, "Creative Traits"), use_container_width=True)
+    with c2:
+        st.image(bar_chart(big5_scores, big5_colors, "Big Five Traits"), use_container_width=True)
 
     # Archetypes
-    sorted_traits = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    main_trait = sorted_traits[0][0]
-    sub_trait = sorted_traits[1][0]
-    weakest_trait = sorted_traits[-1][0]
+    sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
+    main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
-    st.subheader("Your Creative Archetype")
-    st.info(f"**Main Archetype: {archetypes[main_trait]['name']}**\n\n{archetypes[main_trait]['description']}")
-    st.write(f"Sub-Archetype: **{archetypes[sub_trait]['name']}** — {archetypes[sub_trait]['description']}")
+    st.subheader("Your Creative Archetypes")
+    st.write(f"**Main Archetype: {archetypes[main_trait]['name']}** — {archetypes[main_trait]['description']}")
+    st.write(f"**Sub-Archetype: {archetypes[sub_trait]['name']}** — {archetypes[sub_trait]['description']}")
+    st.write(f"**Growth Area ({weakest_trait})** — {archetypes[weakest_trait]['improvement']}")
 
-    st.subheader("Ways to grow")
-    st.write(f"Weaker area: **{weakest_trait}** — {archetypes[weakest_trait]['improvement']}")
-
+    # Trait Insights
     st.subheader("Trait Insights")
-    for trait, score in scores.items():
+    st.markdown("**Creative Traits**")
+    for trait, score in creative_scores.items():
         level = get_level(score)
-        st.markdown(
-            f"<span style='color:{trait_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5",
-            unsafe_allow_html=True
-        )
+        st.markdown(f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5", unsafe_allow_html=True)
+
+    st.markdown("**Big Five Traits**")
+    for trait, score in big5_scores.items():
+        level = get_level(score)
+        st.markdown(f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5", unsafe_allow_html=True)
 
