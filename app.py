@@ -280,11 +280,19 @@ if current_q < total_qs:
 
     st.markdown(f"**Q{current_q + 1}/{total_qs}:** {question}")
 
-    # --- Custom 1–5 buttons ---
+    # --- Custom 1–5 buttons with Likert descriptors ---
+    likert_labels = {
+        1: "1\nStrongly Disagree",
+        2: "2\nDisagree",
+        3: "3\nNeutral",
+        4: "4\nAgree",
+        5: "5\nStrongly Agree",
+    }
+
     cols = st.columns(5)
     for i, col in enumerate(cols, start=1):
         button_key = f"{key}_btn{i}"
-        if col.button(str(i), key=button_key):
+        if col.button(likert_labels[i], key=button_key, use_container_width=True):
             responses[key] = i
             st.session_state.responses = responses
             st.rerun()
@@ -399,3 +407,4 @@ else:
     missed = [q for q, ans in responses.items() if ans is None]
     if missed:
         st.warning(f"You skipped {len(missed)} questions. Your scores may be less accurate.")
+
