@@ -283,7 +283,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 
-ef create_pdf(creative_scores, big5_scores, archetypes_results,
+def create_pdf(creative_scores, big5_scores, archetypes_results,
                creative_summaries, big5_summaries,
                chart_buf_creative, chart_buf_big5):
     buffer = io.BytesIO()
