@@ -518,7 +518,21 @@ else:
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-       # --------------------------
+    # --------------------------
+    # Generate the PDF
+    # --------------------------
+    pdf_buf = create_pdf(
+        creative_scores, big5_scores,
+        {
+            "Main Archetype": (main_trait, archetypes[main_trait]),
+            "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
+            "Growth Area": (weakest_trait, archetypes[weakest_trait]),
+        },
+        creative_summaries, big5_summaries,
+        chart_buf_creative, chart_buf_big5
+    )
+
+    # --------------------------
     # Deeper Insights Section
     # --------------------------
     st.markdown("---")
@@ -565,14 +579,17 @@ else:
         ax.axis("off")
         st.pyplot(fig)
 
-    with st.expander("📥 Download Your Full Report"):
-        st.markdown("You can download a **personalised PDF** with your radar charts, archetypes, and trait insights.")
-        st.download_button(
-            "📥 Download Your Profile (PDF)", 
-            data=pdf_buf.getvalue(), 
-            file_name="creative_profile.pdf", 
-            mime="application/pdf"
-        )
+    # --------------------------
+    # PDF Download (styled)
+    # --------------------------
+    st.markdown("### 📥 Download Your Full Report")
+    st.markdown("Includes your **radar charts, archetypes, and trait insights** in one personalised PDF.")
+    st.download_button(
+        "📥 Download Your Profile (PDF)", 
+        data=pdf_buf.getvalue(), 
+        file_name="creative_profile.pdf", 
+        mime="application/pdf"
+    )
 
 
     # Missed questions
