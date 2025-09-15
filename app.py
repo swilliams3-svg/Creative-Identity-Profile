@@ -73,6 +73,97 @@ questions = {
 }
 
 # --------------------------
+# TRAIT INSIGHTS
+# --------------------------
+trait_insights = {
+    "Originality": {
+        "High": "You excel at generating unique and unconventional ideas.",
+        "Medium": "You balance creative thinking with practical approaches.",
+        "Low": "You prefer familiar solutions over novelty."
+    },
+    "Curiosity": {
+        "High": "You have a strong desire to explore and learn.",
+        "Medium": "You are interested in learning when it is useful.",
+        "Low": "You are more focused on familiar knowledge and routines."
+    },
+    "Risk Taking": {
+        "High": "You embrace uncertainty and new experiences.",
+        "Medium": "You are selective about when to take risks.",
+        "Low": "You prefer safety and predictability."
+    },
+    "Imagination": {
+        "High": "You frequently picture possibilities beyond the present.",
+        "Medium": "You use imagination when needed but remain grounded.",
+        "Low": "You are more practical and concrete in thinking."
+    },
+    "Discipline": {
+        "High": "You are structured and committed to creative projects.",
+        "Medium": "You maintain some discipline with flexibility.",
+        "Low": "You prefer freedom and spontaneity over structure."
+    },
+    "Collaboration": {
+        "High": "You thrive on sharing and co-creating with others.",
+        "Medium": "You collaborate when useful but also value independence.",
+        "Low": "You prefer working alone to stay in control."
+    },
+    "Openness": {
+        "High": "You welcome new experiences and diverse perspectives.",
+        "Medium": "You are open but also cautious with novelty.",
+        "Low": "You prefer familiarity and tradition."
+    },
+    "Conscientiousness": {
+        "High": "You are organized, reliable, and goal-focused.",
+        "Medium": "You balance planning with flexibility.",
+        "Low": "You are spontaneous and less detail-oriented."
+    },
+    "Extraversion": {
+        "High": "You are energized by social interactions.",
+        "Medium": "You enjoy company but also value solitude.",
+        "Low": "You prefer quiet, reflective environments."
+    },
+    "Agreeableness": {
+        "High": "You are cooperative, empathetic, and compassionate.",
+        "Medium": "You balance cooperation with assertiveness.",
+        "Low": "You are more focused on your own goals."
+    },
+    "Neuroticism": {
+        "High": "You are more sensitive to stress and emotions.",
+        "Medium": "You experience occasional worry or stress.",
+        "Low": "You are calm and resilient in most situations."
+    },
+}
+
+# --------------------------
+# ARCHETYPES
+# --------------------------
+archetypes = {
+    "Originality": {
+        "Main": "The Innovator",
+        "Subs": ["Inventor", "Visionary", "Trendsetter"]
+    },
+    "Curiosity": {
+        "Main": "The Explorer",
+        "Subs": ["Seeker", "Learner", "Adventurer"]
+    },
+    "Risk Taking": {
+        "Main": "The Challenger",
+        "Subs": ["Pioneer", "Rebel", "Trailblazer"]
+    },
+    "Imagination": {
+        "Main": "The Dreamer",
+        "Subs": ["Storyteller", "Artist", "Futurist"]
+    },
+    "Discipline": {
+        "Main": "The Architect",
+        "Subs": ["Planner", "Organizer", "Executor"]
+    },
+    "Collaboration": {
+        "Main": "The Connector",
+        "Subs": ["Mediator", "Networker", "Partner"]
+    },
+}
+
+# --------------------------
 # COLORS
 # --------------------------
 creative_colors = {
@@ -90,6 +181,14 @@ big5_colors = {
     "Extraversion": "#2ca02c",
     "Agreeableness": "#9467bd",
     "Neuroticism": "#d62728",
+}
+
+answer_colors = {
+    1: "#d73027",
+    2: "#fc8d59",
+    3: "#fee08b",
+    4: "#91bfdb",
+    5: "#4575b4",
 }
 
 # --------------------------
@@ -117,36 +216,40 @@ page = st.session_state.page
 responses = st.session_state.responses
 
 if page < total_qs:
-    # Intro heading
-    if page == 0:
-        st.markdown("### Welcome to the Creative Identity Profile Quiz")
-        st.write("This quiz explores both **creative traits** and the **Big Five personality traits**. "
-                 "Answer each question honestly on a scale of 1–5, then view your results at the end.")
+    # Heading
+    st.markdown("### Creative Identity Profile Quiz")
+    st.write("This quiz explores your **creative traits** and **Big Five personality traits**. "
+             "Answer honestly on a scale of 1–5 to receive your personalised profile.")
 
     # Current question
     trait, question = all_questions[page]
     st.markdown(f"**Question {page+1} of {total_qs}**")
+    st.write(question)
+
     resp_key = f"resp_{page}"
     current_val = responses.get(resp_key, None)
 
-    responses[resp_key] = st.radio(
-        question,
-        [1, 2, 3, 4, 5],
-        horizontal=True,
-        index=current_val - 1 if current_val else 0,
-        key=resp_key
-    )
+    cols = st.columns(5)
+    for i, col in enumerate(cols, 1):
+        button_label = str(i)
+        if col.button(button_label, key=f"{resp_key}_{i}", help=f"Answer {i}",
+                      use_container_width=True):
+            st.session_state.responses[resp_key] = i
+            st.rerun()
+        if current_val == i:
+            col.markdown(f"<div style='background-color:{answer_colors[i]}; color:white; text-align:center; "
+                         f"padding:4px; border-radius:6px;'>{i}</div>", unsafe_allow_html=True)
 
-    # Custom navigation buttons
+    # Navigation
     col1, col2 = st.columns([1, 1])
     with col1:
         if page > 0:
-            if st.button("Back", key="back_btn"):
+            if st.button("Back", key="back_btn", use_container_width=True):
                 st.session_state.page -= 1
                 st.rerun()
     with col2:
-        if responses[resp_key] is not None:
-            if st.button("Next Question", key="next_btn"):
+        if resp_key in responses:
+            if st.button("Next Question", key="next_btn", use_container_width=True):
                 st.session_state.page += 1
                 st.rerun()
 
@@ -168,13 +271,33 @@ else:
 
     avg_scores = {trait: np.mean(vals) if vals else 0 for trait, vals in scores.items()}
 
-    # Display results summary
-    st.subheader("Trait Scores")
+    # Display summaries
     for trait, score in avg_scores.items():
-        st.markdown(f"**{trait}**: {score:.2f}/5")
+        if score >= 4:
+            level = "High"
+        elif score >= 2.5:
+            level = "Medium"
+        else:
+            level = "Low"
+
+        st.markdown(f"### {trait}: {score:.2f}/5")
+        st.write(trait_insights[trait][level])
+
+    # Archetype section with card style
+    top_creative = max(creative_colors.keys(), key=lambda t: avg_scores[t])
+    archetype = archetypes.get(top_creative, None)
+    if archetype:
+        st.markdown("---")
+        st.subheader("Your Creative Archetype")
+        st.markdown(
+            f"<div style='background-color:{creative_colors[top_creative]}20; padding:1rem; border-radius:12px;'>"
+            f"<span style='color:{creative_colors[top_creative]}; font-weight:bold; font-size:18px;'>{archetype['Main']}</span><br>"
+            f"<i>Sub-Archetypes: {', '.join(archetype['Subs'])}</i>"
+            f"</div>", unsafe_allow_html=True
+        )
 
     # --------------------------
-    # RADAR CHARTS SIDE BY SIDE
+    # RADAR CHARTS
     # --------------------------
     creative_traits = list(creative_colors.keys())
     big5_traits = list(big5_colors.keys())
@@ -197,7 +320,6 @@ else:
         ax.set_thetagrids(np.degrees(angles[:-1]), labels)
         ax.set_ylim(0, 5)
         ax.set_title(title, size=12, pad=20)
-        ax.legend(bbox_to_anchor=(1.2, 1.1))
         return fig
 
     col1, col2 = st.columns(2)
@@ -207,7 +329,7 @@ else:
         st.pyplot(plot_radar(big5_traits, avg_scores, big5_colors, "Big Five Traits"))
 
     # --------------------------
-    # PDF Download
+    # PDF DOWNLOAD
     # --------------------------
     def create_pdf():
         buffer = BytesIO()
@@ -222,11 +344,20 @@ else:
             c.drawString(1*inch, y, f"{trait}: {score:.2f}/5")
             y -= 0.3*inch
 
+        if archetype:
+            y -= 0.3*inch
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(1*inch, y, f"Archetype: {archetype['Main']}")
+            y -= 0.3*inch
+            c.setFont("Helvetica", 12)
+            c.drawString(1*inch, y, "Sub-Archetypes: " + ", ".join(archetype["Subs"]))
+
         c.showPage()
         c.save()
         buffer.seek(0)
         return buffer
 
     pdf_buffer = create_pdf()
-    st.download_button("📄 Download PDF", data=pdf_buffer, file_name="creative_identity_profile.pdf", mime="application/pdf")
-
+    st.download_button("📄 Download PDF", data=pdf_buffer,
+                       file_name="creative_identity_profile.pdf",
+                       mime="application/pdf")
