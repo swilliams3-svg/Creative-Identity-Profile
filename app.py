@@ -176,10 +176,10 @@ for i, (trait, question) in enumerate(all_questions, 1):
     key = f"{trait}_{i}"
     responses.setdefault(key, None)
 
-    # Highlight missed in red
+    # Highlight missed in red (no ⚠️)
     if responses[key] is None:
         st.markdown(
-            f"<span style='color:red; font-weight:bold'>⚠️ Q{i}/{total_qs}: {question}</span>",
+            f"<span style='color:red; font-weight:bold'>Q{i}/{total_qs}: {question}</span>",
             unsafe_allow_html=True
         )
     else:
