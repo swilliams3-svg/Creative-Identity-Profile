@@ -236,6 +236,77 @@ def radar_chart(scores: dict, colors: dict, title: str = "") -> io.BytesIO:
     buf.seek(0)
     plt.close(fig)
     return buf
+    PDF Generator
+# --------------------------
+def create_pdf(creative_scores, big5_scores, archetypes_data,
+               creative_summaries, big5_summaries,
+               chart_buf_creative, chart_buf_big5):
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+
+    # Title
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
+
+    # Charts
+    img1 = ImageReader(chart_buf_creative)
+    img2 = ImageReader(chart_buf_big5)
+    chart_size = 180
+    c.drawImage(img1, 60, height - 250, width=chart_size, height=chart_size, mask='auto')
+    c.drawImage(img2, 300, height - 250, width=chart_size, height=chart_size, mask='auto')
+    y = height - 280
+
+    # Archetypes
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(40, y - 40, "Your Creative Archetypes")
+    y -= 60
+    for label, (trait, arch) in archetypes_data.items():
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(50, y, f"{label}: {arch['name']}")
+        c.setFont("Helvetica", 9)
+        text = arch['description'] if label != "Growth Area" else arch['improvement']
+        c.drawString(60, y - 12, text)
+        y -= 40
+        if y < 100:
+            c.showPage()
+            y = height - 60
+
+    # Creative Traits
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(40, y, "Creative Trait Insights")
+    y -= 20
+    for trait, score in creative_scores.items():
+        level = get_level(score)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
+        c.setFont("Helvetica", 9)
+        c.drawString(60, y - 12, creative_summaries[trait][level])
+        y -= 30
+        if y < 100:
+            c.showPage()
+            y = height - 60
+
+    # Big Five Traits
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(40, y, "Big Five Trait Insights")
+    y -= 20
+    for trait, score in big5_scores.items():
+        level = get_level(score)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
+        c.setFont("Helvetica", 9)
+        c.drawString(60, y - 12, big5_summaries[trait][level])
+        y -= 30
+        if y < 100:
+            c.showPage()
+            y = height - 60
+
+    c.showPage()
+    c.save()
+    buf.seek(0)
+    return buf
 
 # --------------------------
 # Streamlit App
@@ -407,4 +478,22 @@ else:
     missed = [q for q, ans in responses.items() if ans is None]
     if missed:
         st.warning(f"You skipped {len(missed)} questions. Your scores may be less accurate.")
+
+    # PDF Download
+    pdf_buf = create_pdf(
+        creative_scores, big5_scores,
+        {
+            "Main Archetype": (main_trait, archetypes[main_trait]),
+            "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
+            "Growth Area": (weakest_trait, archetypes[weakest_trait]),
+        },
+        creative_summaries, big5_summaries,
+        creative_chart, big5_chart
+    )
+    st.download_button(
+        label="Download Report (PDF)",
+        data=pdf_buf,
+        file_name="Creative_Profile.pdf",
+        mime="application/pdf"
+    )
 
