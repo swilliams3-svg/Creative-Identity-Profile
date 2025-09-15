@@ -279,10 +279,18 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
 # --------------------------
 # PDF Generator (ReportLab)
 # --------------------------
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+
 def create_pdf(
-    creative_scores, big5_scores,
-    archetypes_data, creative_summaries, big5_summaries,
-    chart_buf_creative, chart_buf_big5
+    creative_scores,
+    big5_scores,
+    archetypes_data,
+    creative_summaries,
+    big5_summaries,
+    chart_buf_creative,
+    chart_buf_big5
 ):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -292,99 +300,61 @@ def create_pdf(
     c.setFont("Helvetica-Bold", 18)
     c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
 
-    # Charts (side by side)
+    # Radar charts
     img1 = ImageReader(chart_buf_creative)
     img2 = ImageReader(chart_buf_big5)
     chart_size = 200
-    left_x = 48
-    right_x = width - 48 - chart_size
-    charts_y = height - 260
-    c.drawImage(img1, left_x, charts_y, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
-    c.drawImage(img2, right_x, charts_y, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
+    c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size,
+                preserveAspectRatio=True, mask='auto')
+    c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size,
+                preserveAspectRatio=True, mask='auto')
 
-    y = charts_y - 30
-
-    # Archetypes (Main / Sub / Growth)
-    c.setFont("Helvetica-Bold", 13)
-    c.drawString(40, y, "Your Creative Archetypes")
-    y -= 18
-
-    c.setFont("Helvetica", 9)
+    # Archetypes
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(40, height - 320, "Your Creative Archetypes")
+    y = height - 340
     for label, (trait, arch) in archetypes_data.items():
-        # colored background
-        color_hex = creative_colors.get(trait, "#cccccc")
-        light = lighten_hex(color_hex, factor=0.18)
-        c.setFillColorRGB(*light)
-        rect_h = 34
-        c.rect(40, y - rect_h + 6, width - 80, rect_h, fill=1, stroke=0)
-
-        # text
-        c.setFillColorRGB(*hex_to_rgb_float(color_hex))
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(48, y + 6, f"{label}: {arch['name']}")
+        c.setFont("Helvetica-Bold", 11)
+        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
+                                 for i in (0, 2, 4)))
+        c.drawString(50, y, f"{label}: {arch['name']}")
+        c.setFillColorRGB(0, 0, 0)
         c.setFont("Helvetica", 9)
-        c.setFillColorRGB(0,0,0)
         text = arch['description'] if label != "Growth Area" else arch['improvement']
-        c.drawString(48, y - 6, text)
-
-        y -= (rect_h + 6)
-        if y < 110:
-            c.showPage()
-            y = height - 60
+        c.drawString(60, y-12, text)
+        y -= 40
 
     # Creative Trait Insights
-    c.setFont("Helvetica-Bold", 13)
+    c.setFont("Helvetica-Bold", 14)
+    c.setFillColorRGB(0, 0, 0)
     c.drawString(40, y, "Creative Trait Insights")
-    y -= 18
-
+    y -= 20
     for trait, score in creative_scores.items():
         level = get_level(score)
-        color_hex = creative_colors.get(trait, "#cccccc")
-        light = lighten_hex(color_hex, factor=0.18)
-
-        # background bar
-        c.setFillColorRGB(*light)
-        box_h = 28
-        c.rect(40, y - box_h + 6, width - 80, box_h, fill=1, stroke=0)
-
-        # text on top
-        c.setFillColorRGB(*hex_to_rgb_float(color_hex))
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(48, y + 6, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 8)
-        c.setFillColorRGB(0,0,0)
-        c.drawString(48, y - 6, creative_summaries[trait][level])
-
-        y -= (box_h + 6)
-        if y < 110:
-            c.showPage()
-            y = height - 60
+        c.setFont("Helvetica-Bold", 10)
+        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
+                                 for i in (0, 2, 4)))
+        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
+        c.setFont("Helvetica", 9)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawString(60, y-12, creative_summaries[trait][level])
+        y -= 30
 
     # Big Five Trait Insights
-    c.setFont("Helvetica-Bold", 13)
+    c.setFont("Helvetica-Bold", 14)
+    c.setFillColorRGB(0, 0, 0)
     c.drawString(40, y, "Big Five Trait Insights")
-    y -= 18
-
+    y -= 20
     for trait, score in big5_scores.items():
         level = get_level(score)
-        color_hex = big5_colors.get(trait, "#cccccc")
-        light = lighten_hex(color_hex, factor=0.18)
-
-        c.setFillColorRGB(*light)
-        box_h = 28
-        c.rect(40, y - box_h + 6, width - 80, box_h, fill=1, stroke=0)
-
-        c.setFillColorRGB(*hex_to_rgb_float(color_hex))
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(48, y + 6, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 8)
-        c.setFillColorRGB(0,0,0)
-        c.drawString(48, y - 6, big5_summaries[trait][level])
-
-        y -= (box_h + 6)
-        if y < 80:
-            c.showPage()
-            y = height - 60
+        c.setFont("Helvetica-Bold", 10)
+        c.setFillColorRGB(*tuple(int(big5_colors[trait].lstrip("#")[i:i+2], 16)/255
+                                 for i in (0, 2, 4)))
+        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
+        c.setFont("Helvetica", 9)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawString(60, y-12, big5_summaries[trait][level])
+        y -= 30
 
     c.showPage()
     c.save()
