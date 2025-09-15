@@ -176,8 +176,17 @@ def get_level(score: float) -> str:
 
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
-    num_vars = len(labels)
+    if len(labels) == 0:
+        # nothing to plot
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "No data", ha="center", va="center")
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches="tight")
+        buf.seek(0)
+        plt.close(fig)
+        return buf
 
+    num_vars = len(labels)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
@@ -189,7 +198,7 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     ax.fill(angles, values, alpha=0.1, color="gray")
 
     for i, (trait, score) in enumerate(scores.items()):
-        ax.scatter(angles[i], score, color=colors[trait], s=60, zorder=10)
+        ax.scatter(angles[i], score, color=colors.get(trait, "#333333"), s=60, zorder=10)
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=8)
@@ -207,14 +216,19 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
 # --------------------------
 st.title("Creative Identity & Personality Profile")
 
+# build questions once
 if "all_questions" not in st.session_state:
     all_questions = []
-    for trait, qs in {**creative_traits, **big5_traits}.items():
+    # keep insertion order consistent: creative first then big5
+    for trait, qs in creative_traits.items():
+        for q in qs:
+            all_questions.append((trait, q))
+    for trait, qs in big5_traits.items():
         for q in qs:
             all_questions.append((trait, q))
     random.shuffle(all_questions)
     st.session_state.all_questions = all_questions
-    st.session_state.responses = {}
+    st.session_state.responses = {}   # store numeric 1..5 or None
     st.session_state.current_q = 0
 
 all_questions = st.session_state.all_questions
@@ -222,6 +236,7 @@ responses = st.session_state.responses
 current_q = st.session_state.current_q
 total_qs = len(all_questions)
 
+# Intro
 if current_q == 0:
     st.markdown("## Welcome to the Creative Identity Quiz 🎨")
     st.markdown(
@@ -230,84 +245,134 @@ if current_q == 0:
         "At the end, you'll see your creative profile, archetypes, and personalised feedback."
     )
 
+# Question page
 if current_q < total_qs:
     trait, question = all_questions[current_q]
     key = f"{trait}_{current_q}"
-    st.markdown(f"**Q{current_q+1}/{total_qs}: {question}**")
+    st.markdown(f"**Q{current_q+1}/{total_qs}:** {question}")
 
-    options = [1,2,3,4,5]
-    default_index = options.index(responses[key]) if key in responses else None
-    answer = st.radio("Select your answer:", options, horizontal=True, index=default_index, key=key)
-    responses[key] = answer
+    # Use a placeholder so the control starts 'blank'
+    radio_options = ["Select..."] + [1, 2, 3, 4, 5]
 
-    col1, col2 = st.columns(2)
+    # decide index: if we've saved a numeric response, preselect it; otherwise preselect the placeholder
+    if key in responses and isinstance(responses[key], int) and responses[key] in [1,2,3,4,5]:
+        pre_index = radio_options.index(responses[key])
+    else:
+        pre_index = 0
+
+    answer = st.radio("", radio_options, index=pre_index, horizontal=True, key=key)
+
+    # Normalize storage: treat placeholder as None
+    if answer == "Select...":
+        responses[key] = None
+    else:
+        # answer will be an int 1..5
+        responses[key] = int(answer)
+
+    col1, col2 = st.columns([1,1])
     with col1:
-        if st.button("⬅️ Back", disabled=current_q == 0):
+        if st.button("⬅️ Back", disabled=(current_q == 0)):
             st.session_state.current_q -= 1
             st.rerun()
     with col2:
-        answered = key in responses and responses[key] is not None
+        # Only enable next when a numeric answer (1..5) exists
+        answered = (key in responses) and (isinstance(responses[key], int))
         if st.button("Next Question ➡️", disabled=not answered):
             st.session_state.current_q += 1
             st.rerun()
+
+# Results page
 else:
     st.success("All questions complete — here are your results!")
 
-    creative_scores = {t:0 for t in creative_traits}
-    creative_counts = {t:0 for t in creative_traits}
-    big5_scores = {t:0 for t in big5_traits}
-    big5_counts = {t:0 for t in big5_traits}
+    # Prepare score containers
+    creative_scores = {t: 0.0 for t in creative_traits.keys()}
+    creative_counts = {t: 0 for t in creative_traits.keys()}
+    big5_scores = {t: 0.0 for t in big5_traits.keys()}
+    big5_counts = {t: 0 for t in big5_traits.keys()}
 
+    # Aggregate responses safely
     for key, val in responses.items():
-        if val:
-            trait = key.split("_")[0]
-            if trait in creative_scores:
-                creative_scores[trait] += val
-                creative_counts[trait] += 1
-            if trait in big5_scores:
-                big5_scores[trait] += val
-                big5_counts[trait] += 1
+        # key format: "{trait}_{index}"
+        trait_name = key.rsplit("_", 1)[0]
+        if val is None:
+            continue
+        if trait_name in creative_scores:
+            creative_scores[trait_name] += val
+            creative_counts[trait_name] += 1
+        if trait_name in big5_scores:
+            big5_scores[trait_name] += val
+            big5_counts[trait_name] += 1
 
+    # Safe averaging (avoid division by zero)
     for t in creative_scores:
-        creative_scores[t] /= creative_counts[t]
-    for t in big5_scores:
-        big5_scores[t] /= big5_counts[t]
+        if creative_counts[t] > 0:
+            creative_scores[t] = creative_scores[t] / creative_counts[t]
+        else:
+            creative_scores[t] = 0.0
 
+    for t in big5_scores:
+        if big5_counts[t] > 0:
+            big5_scores[t] = big5_scores[t] / big5_counts[t]
+        else:
+            big5_scores[t] = 0.0
+
+    # Charts side-by-side
     col1, col2 = st.columns(2)
     with col1:
+        st.subheader("Creative Traits")
         st.image(radar_chart(creative_scores, creative_colors, "Creative Traits"), use_container_width=True)
     with col2:
+        st.subheader("Big Five Traits")
         st.image(radar_chart(big5_scores, big5_colors, "Big Five Traits"), use_container_width=True)
 
-    st.subheader("Your Creative Archetypes")
+    # Archetypes (top 2 and weakest)
     sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
-    main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    if len(sorted_traits) >= 3:
+        main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    else:
+        main_trait = sorted_traits[0][0] if sorted_traits else None
+        sub_trait = sorted_traits[1][0] if len(sorted_traits) > 1 else None
+        weakest_trait = sorted_traits[-1][0] if sorted_traits else None
 
+    st.subheader("Your Creative Archetypes")
     for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
-        archetype_name, archetype_desc = archetypes[trait]
-        st.markdown(
-            f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
-            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{label}: {archetype_name}</span><br>"
-            f"<i>{archetype_desc}</i></div>", unsafe_allow_html=True
-        )
+        if trait:
+            name, desc = archetypes[trait]
+            color = creative_colors.get(trait, "#cccccc")
+            st.markdown(
+                f"<div style='background-color:{color}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
+                f"<span style='color:{color}; font-weight:bold'>{label}: {name}</span><br>"
+                f"<i>{desc}</i></div>",
+                unsafe_allow_html=True
+            )
 
+    # Trait summaries
     st.subheader("Creative Trait Insights")
     for trait, score in creative_scores.items():
         level = get_level(score)
         summary = creative_summaries[trait][level]
+        color = creative_colors.get(trait, "#cccccc")
         st.markdown(
-            f"<div style='background-color:{creative_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>", unsafe_allow_html=True
+            f"<div style='background-color:{color}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<span style='color:{color}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<i>{summary}</i></div>",
+            unsafe_allow_html=True
         )
 
     st.subheader("Big Five Trait Insights")
     for trait, score in big5_scores.items():
         level = get_level(score)
         summary = big5_summaries[trait][level]
+        color = big5_colors.get(trait, "#cccccc")
         st.markdown(
-            f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>", unsafe_allow_html=True
+            f"<div style='background-color:{color}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<span style='color:{color}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<i>{summary}</i></div>",
+            unsafe_allow_html=True
         )
 
+    # report missed questions count (if any)
+    missed = sum(1 for i in range(len(all_questions)) if responses.get(f"{all_questions[i][0]}_{i}") is None)
+    if missed > 0:
+        st.warning(f"You skipped {missed} question(s).")
