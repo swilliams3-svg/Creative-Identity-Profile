@@ -6,6 +6,8 @@ import random
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
@@ -124,7 +126,7 @@ archetypes = {
 }
 
 # --------------------------
-# Big Five Traits
+# Big Five Traits (fixed: renamed Openness)
 # --------------------------
 big5_traits = {
     "Conscientiousness": [
@@ -147,7 +149,7 @@ big5_traits = {
         "I get upset easily.",
         "I worry about many things."
     ],
-    "Openness": [   # Big Five Openness
+    "Openness_Big5": [
         "I enjoy trying new activities and experiences.",
         "I have a broad range of interests.",
         "I am curious about many different things."
@@ -159,7 +161,7 @@ big5_colors = {
     "Extraversion": "#2ca02c",
     "Agreeableness": "#9467bd",
     "Neuroticism": "#d62728",
-    "Openness": "#1f77b4"
+    "Openness_Big5": "#1f77b4"
 }
 
 big5_summaries = {
@@ -183,7 +185,7 @@ big5_summaries = {
         "Medium": "You experience occasional stress but manage it.",
         "Low": "You are calm, stable, and less affected by stress."
     },
-    "Openness": {
+    "Openness_Big5": {
         "High": "You are imaginative and embrace new experiences.",
         "Medium": "You enjoy some novelty but also value familiarity.",
         "Low": "You prefer tradition and familiar ways of thinking."
@@ -204,7 +206,6 @@ def get_level(score: float) -> str:
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     num_vars = len(labels)
-
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
@@ -221,7 +222,8 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
         ax.scatter(angles[i], score, color=colors[trait], s=60, zorder=10, label=trait)
 
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=9)
+    labels_clean = [t.replace("_Big5", "") for t in labels]  # clean names for display
+    ax.set_xticklabels(labels_clean, fontsize=9)
     ax.set_ylim(0,5)
     ax.set_yticks([1,2,3,4,5])
     ax.set_yticklabels(["1","2","3","4","5"])
@@ -235,12 +237,14 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     return buf
 
 # --------------------------
-# PDF Generator
+# PDF Generator with wrapping
 # --------------------------
 def create_pdf(creative_scores, big5_scores, archetypes_data, creative_summaries, big5_summaries, chart_buf_creative, chart_buf_big5):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     width, height = A4
+    styles = getSampleStyleSheet()
+    normal = styles["Normal"]
 
     c.setFont("Helvetica-Bold", 18)
     c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
@@ -251,16 +255,20 @@ def create_pdf(creative_scores, big5_scores, archetypes_data, creative_summaries
     c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
     c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
 
+    y = height - 320
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(40, height - 320, "Your Creative Archetypes")
-    y = height - 340
+    c.drawString(40, y, "Your Creative Archetypes")
+    y -= 20
+
     for label, (trait, arch) in archetypes_data.items():
         c.setFont("Helvetica-Bold", 11)
         c.drawString(50, y, f"{label}: {arch['name']}")
-        c.setFont("Helvetica", 10)
+        y -= 14
         text = arch['description'] if label != "Growth Area" else arch['improvement']
-        c.drawString(60, y-12, text)
-        y -= 40
+        p = Paragraph(text, normal)
+        w, h = p.wrap(width-100, 200)
+        p.drawOn(c, 60, y-h)
+        y -= (h+10)
 
     c.setFont("Helvetica-Bold", 14)
     c.drawString(40, y, "Creative Trait Insights")
@@ -269,20 +277,25 @@ def create_pdf(creative_scores, big5_scores, archetypes_data, creative_summaries
         level = get_level(score)
         c.setFont("Helvetica-Bold", 10)
         c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 9)
-        c.drawString(60, y-12, creative_summaries[trait][level])
-        y -= 30
+        y -= 12
+        p = Paragraph(creative_summaries[trait][level], normal)
+        w, h = p.wrap(width-100, 200)
+        p.drawOn(c, 60, y-h)
+        y -= (h+10)
 
     c.setFont("Helvetica-Bold", 14)
     c.drawString(40, y, "Big Five Trait Insights")
     y -= 20
     for trait, score in big5_scores.items():
+        display_trait = trait.replace("_Big5", "")
         level = get_level(score)
         c.setFont("Helvetica-Bold", 10)
-        c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 9)
-        c.drawString(60, y-12, big5_summaries[trait][level])
-        y -= 30
+        c.drawString(50, y, f"{display_trait} ({level}) — {score:.2f}/5")
+        y -= 12
+        p = Paragraph(big5_summaries[trait][level], normal)
+        w, h = p.wrap(width-100, 200)
+        p.drawOn(c, 60, y-h)
+        y -= (h+10)
 
     c.showPage()
     c.save()
@@ -317,7 +330,7 @@ st.progress((current_q+1) / total_qs)
 
 trait, question = all_questions[current_q]
 key = f"{trait}_{current_q+1}"
-index_val = (responses[key]-1) if responses[key] else None
+index_val = (responses[key]-1) if responses[key] is not None else 0
 responses[key] = st.radio(question, [1,2,3,4,5], horizontal=True, index=index_val, key=key)
 
 # Navigation
@@ -401,29 +414,22 @@ if st.session_state.get("show_results", False):
     for trait, score in big5_scores.items():
         level = get_level(score)
         summary = big5_summaries[trait][level]
+        display_trait = trait.replace("_Big5", "")
         st.markdown(
             f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{display_trait} ({level})</span> — {score:.2f}/5<br>"
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    # PDF Download
-    pdf_buf = create_pdf(
-        creative_scores, big5_scores,
-        {
-            "Main Archetype": (main_trait, archetypes[main_trait]),
-            "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
-            "Growth Area": (weakest_trait, archetypes[weakest_trait]),
-        },
-        creative_summaries, big5_summaries,
-        radar_chart(creative_scores, creative_colors, "Creative Traits"),
-        radar_chart(big5_scores, big5_colors, "Big Five Traits")
-    )
+    # PDF download
+    chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
+    chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
+    archetypes_data = {
+        "Main Archetype": (main_trait, archetypes[main_trait]),
+        "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
+        "Growth Area": (weakest_trait, archetypes[weakest_trait])
+    }
+    pdf_buf = create_pdf(creative_scores, big5_scores, archetypes_data, creative_summaries, big5_summaries, chart_buf_creative, chart_buf_big5)
+    st.download_button("Download Your Full Profile (PDF)", pdf_buf, file_name="creative_identity_profile.pdf", mime="application/pdf")
 
-    st.download_button(
-        label="Download Report (PDF)",
-        data=pdf_buf,
-        file_name="Creative_Profile.pdf",
-        mime="application/pdf"
-    )
 
