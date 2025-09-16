@@ -277,75 +277,39 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     return buf
 
 # --------------------------
-# PDF Generator (ReportLab)
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
+# Generate PDF
+# --------------------------
+archetypes_results = {
+    "Main Archetype": (main_trait, archetypes[main_trait]),
+    "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
+    "Growth Area": (weakest_trait, archetypes[weakest_trait]),
+}
+
+pdf_buf = create_pdf(
+    creative_scores,
+    big5_scores,
+    archetypes_results,
+    creative_summaries,
+    big5_summaries,
+    chart_buf_creative,
+    chart_buf_big5
 )
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-import io
 
-def create_pdf(creative_scores, big5_scores, archetypes_results,
-               creative_summaries, big5_summaries,
-               chart_buf_creative, chart_buf_big5):
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4,
-                            leftMargin=50, rightMargin=50,
-                            topMargin=50, bottomMargin=50)
-
-    styles = getSampleStyleSheet()
-    cover_title = ParagraphStyle(
-        "CoverTitle", parent=styles["Title"], fontSize=28,
-        spaceAfter=20, alignment=1
-    )
-    cover_subtitle = ParagraphStyle(
-        "CoverSubtitle", parent=styles["Heading2"], fontSize=16,
-        spaceAfter=10, alignment=1, textColor=colors.grey
-    )
-    cover_tagline = ParagraphStyle(
-        "CoverTagline", parent=styles["Normal"], fontSize=12,
-        spaceAfter=40, textColor=colors.HexColor("#555555"),
-        alignment=1
+# --------------------------
+# Collapsible Report
+# --------------------------
+with st.expander("📄 View Your Full Report", expanded=False):
+    st.write(
+        "Here is your personalised **Creative Identity Profile**. "
+        "You can preview the content below or download a professional PDF report."
     )
 
-    section_style = ParagraphStyle(
-        "SectionStyle", parent=styles["Heading2"], fontSize=14,
-        spaceBefore=15, spaceAfter=10
+    st.download_button(
+        label="📥 Download Your Report",
+        data=pdf_buf,   # already bytes
+        file_name="creative_identity_profile.pdf",
+        mime="application/pdf"
     )
-    body_style = ParagraphStyle(
-        "BodyStyle", parent=styles["Normal"], fontSize=11,
-        leading=15, spaceAfter=8
-    )
-
-    elements = []
-
-    # --- Cover Page ---
-    elements.append(Spacer(1, 200))  # push content down
-    elements.append(Paragraph("Creative Identity Profile", cover_title))
-    elements.append(Paragraph("Personalised Creativity Report", cover_subtitle))
-    elements.append(Paragraph("Exploring your unique blend of traits and personality", cover_tagline))
-    elements.append(PageBreak())
-
-      # --- Archetype Results ---
-    elements.append(Paragraph("Your Archetypes", section_style))
-
-    data = [["Archetype", "Description"]]  # header row
-    for label, val in archetypes_results.items():
-        data.append([f"<b>{label}</b>", f"{val[0]} — {val[1]}"])
-
-    table = Table(data, colWidths=[120, 350])
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-        ("BOX", (0, 0), (-1, -1), 1, colors.black),
-        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-    ]))
-    elements.append(table)
-    elements.append(Spacer(1, 20))
 
 
 # --------------------------
@@ -505,11 +469,16 @@ else:
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
- # --------------------------
- # Generate the PDF
- # --------------------------
- # --- Generate PDF ---
-    pdf_buf = create_pdf(
+# --------------------------
+# Generate PDF
+# --------------------------
+archetypes_results = {
+    "Main Archetype": (main_trait, archetypes[main_trait]),
+    "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
+    "Growth Area": (weakest_trait, archetypes[weakest_trait]),
+}
+
+pdf_buf = create_pdf(
     creative_scores,
     big5_scores,
     archetypes_results,
@@ -517,10 +486,28 @@ else:
     big5_summaries,
     chart_buf_creative,
     chart_buf_big5
-    )  # <-- this closes the create_pdf call
+)
+
+# --------------------------
+# Collapsible Report
+# --------------------------
+with st.expander("📄 View Your Full Report", expanded=False):
+    st.write(
+        "Here is your personalised **Creative Identity Profile**. "
+        "You can preview the content below or download a professional PDF report."
+    )
+
+    st.download_button(
+        label="📥 Download Your Report",
+        data=pdf_buf,   # already bytes
+        file_name="creative_identity_profile.pdf",
+        mime="application/pdf"
+    )
 
 
-# --- Collapsible Section for Report ---
+# --------------------------
+# Collapsible Section
+# --------------------------
 with st.expander("📄 View Your Full Report", expanded=False):
     st.write(
         "Here is your personalised **Creative Identity Profile**. "
@@ -533,6 +520,7 @@ with st.expander("📄 View Your Full Report", expanded=False):
         file_name="creative_identity_profile.pdf",
         mime="application/pdf"
     )
+
 
     # --------------------------
     # Deeper Insights Section
