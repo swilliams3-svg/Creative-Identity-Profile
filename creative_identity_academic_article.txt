@@ -2,33 +2,52 @@ The Science Behind the Creative Identity & Personality Profile
 
 Introduction
 The Creative Identity & Personality Profile was designed by drawing upon established research in both creativity studies and personality psychology. The quiz integrates validated psychological frameworks with applied creativity theory, providing participants with a structured but engaging way to reflect on their creative strengths and tendencies.
+
 —————
+
 Creative Traits
 Research shows that creativity is not a single skill, but a combination of dispositions, habits, and mindsets (Runco & Jaeger, 2012; Amabile, 1996; Sternberg, 2006). Six traits were selected for this quiz, each reflecting well-documented components of creative behaviour:
+
 •	Originality – the ability to generate novel and unconventional ideas (Guilford, 1950). 
+
 •	Curiosity – openness to questioning and exploring new concepts (Kashdan et al., 2004). 
+
 •	Risk-Taking – willingness to tolerate uncertainty and possible failure (Beghetto, 2009). 
+
 •	Imagination – capacity for mental imagery and envisioning possibilities (Vygotsky, 2004). 
+
 •	Discipline – persistence, effort, and self-regulation in creative work (Torrance, 1974). 
+
 •	Collaboration – social interaction and exchange as enablers of creativity (Sawyer, 2012).
+
 The quiz items for these traits are inspired by creativity assessments such as the Torrance Tests of Creative Thinking (TTCT), Amabile’s Consensual Assessment Technique, and contemporary studies on creative personality characteristics.
+
 —————
+
 Big Five Personality Dimensions
+
 The second foundation of the quiz is the Big Five Personality Model (Costa & McCrae, 1992), one of the most extensively validated models in psychology. The five dimensions—Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism—are consistently linked with life outcomes, behaviour, and creativity.
+
 •	Openness to Experience is most strongly correlated with creative thinking and divergent idea generation (Feist, 1998). 
+
 •	Conscientiousness supports sustained effort and organisation in creative projects. 
+
 •	Extraversion, Agreeableness, and Neuroticism influence collaborative style, emotional resilience, and social creativity (Puryear, Kettler & Rinn, 2017).
 —————
 Archetypes and Feedback
+
 To make psychological feedback more engaging and applicable, the quiz uses creative archetypes (e.g., The Innovator, The Dreamer, The Explorer). Archetype-based feedback is grounded in narrative psychology and coaching practice, translating abstract psychological data into identities that are easier to relate to and apply in personal growth contexts (McAdams, 1993).
+
 •	Trait scores are grouped into High, Medium, and Low, reflecting established reporting practices in self-assessment psychology. 
+
 •	This approach allows participants to situate themselves along a continuum, rather than being assigned fixed labels.
+
 —————
+
 Why Self-Report?
 While no single tool can capture the full complexity of creativity, self-report questionnaires are widely used in both psychological research and applied contexts. They allow individuals to reflect on their experiences and tendencies, and when combined with validated frameworks, they provide reliable insight into personality and creative behaviour (Silvia et al., 2012).
+
 —————
-Conclusion
-This quiz sits at the intersection of creativity research and personality psychology. By combining trait-based creativity insights with the Big Five model, it provides participants with a nuanced profile of their creative identity—balancing novelty, imagination, and risk-taking with personality dispositions that shape how creativity is expressed and developed.
 
 Historical Foundations of Creativity Research
 J. P. Guilford (1950) was one of the first psychologists to argue for creativity as a distinct psychological domain, emphasising divergent thinking as a key process. His work laid the groundwork for subsequent assessments such as the Torrance Tests of Creative Thinking (TTCT), developed by E. Paul Torrance (1966), which operationalised creativity as a measurable cognitive and expressive ability.
@@ -51,30 +70,51 @@ Integrating Archetypes and Traits
 The Creative Identity & Personality Profile translates these academic insights into accessible archetypes: The Innovator (originality), The Explorer (curiosity), The Adventurer (risk-taking), The Dreamer (imagination), The Builder (discipline), and The Connector (collaboration). These archetypes are mapped to both psychological research and applied growth strategies. High scorers reflect the strengths identified in decades of research, while low scorers are offered growth tips grounded in evidence-based practices.
 
 Conclusion
-Creativity is not a single skill but a constellation of traits, habits, and contexts. The Creative Identity & Personality Profile integrates cognitive theories, personality research, and applied models to provide individuals with a structured reflection of their creative identity. By understanding archetypes, sub-archetypes, and growth areas, individuals can better harness their potential for innovation, problem-solving, and expression.
+This quiz sits at the intersection of creativity research and personality psychology. By combining trait-based creativity insights with the Big Five model, it provides participants with a nuanced profile of their creative identity—balancing novelty, imagination, and risk-taking with personality dispositions that shape how creativity is expressed and developed. Creativity is not a single skill but a constellation of traits, habits, and contexts. The Creative Identity & Personality Profile integrates cognitive theories, personality research, and applied models to provide individuals with a structured reflection of their creative identity. By understanding archetypes, sub-archetypes, and growth areas, individuals can better harness their potential for innovation, problem-solving, and expression.
 
 —————
+
 References
 Amabile, T. M. (1996). Creativity in Context. Boulder, CO: Westview Press.
+
 Beghetto, R. A. (2009). Correlates of intellectual risk taking in elementary school science. Journal of Research in Science Teaching, 46(2), 210–223. 
+
 Boden, M. A. (1990). The Creative Mind: Myths and Mechanisms. London: Routledge.
+
 Boden, M. A. (2004). The Creative Mind: Myths and Mechanisms (2nd ed.). London: Routledge.
+
 Costa, P. T., & McCrae, R. R. (1992). Revised NEO Personality Inventory (NEO PI-R) and NEO Five-Factor Inventory (NEO-FFI). Odessa, FL: Psychological Assessment Resources.
+
 Dacey, J. S., & Lennon, K. H. (1998). Understanding Creativity: The Interplay of Biological, Psychological, and Social Factors. San Francisco: Jossey-Bass.
+
 Fauconnier, G., & Turner, M. (2002). The Way We Think: Conceptual Blending and the Mind’s Hidden Complexities. New York: Basic Books.
+
 Feist, G. J. (1998). A meta-analysis of personality in scientific and artistic creativity. Personality and Social Psychology Review, 2(4), 290–309. 
+
 Finke, R. A., Ward, T. B., & Smith, S. M. (1992). Creative Cognition: Theory, Research, and Applications. Cambridge, MA: MIT Press.
+
 Guilford, J. P. (1950). Creativity. American Psychologist, 5(9), 444–454.
+
 Kashdan, T. B., Rose, P., & Fincham, F. D. (2004). Curiosity and exploration: Facilitating positive subjective experiences and personal growth opportunities. Journal of Personality Assessment, 82(3), 291–305. 
+
 McAdams, D. P. (1993). The Stories We Live By: Personal Myths and the Making of the Self. Guilford Press. 
+
 Puryear, J. S., Kettler, T., & Rinn, A. N. (2017). Relationships of personality to differential conceptions of creativity: A systematic review. Psychology of Aesthetics, Creativity, and the Arts, 11(1), 59–68. 
+
 Runco, M. A. (2007). Creativity: Theories and Themes: Research, Development, and Practice. San Diego: Academic Press.
+
 Sawyer, R. K. (2012). Explaining Creativity: The Science of Human Innovation (2nd ed.). Oxford University Press. 
+
 Silvia, P. J., Kaufman, J. C., & Pretz, J. E. (2012). The Cambridge Handbook of Creativity Assessment. In J. C. Kaufman & R. J. Sternberg (Eds.), The Cambridge Handbook of Creativity (pp. 635–661). Cambridge University Press. 
+
 Sternberg, R. J. (1988). The Triarchic Mind: A New Theory of Human Intelligence. New York: Viking.
+
 Sternberg, R. J. (2005). Creativity or Creativities? International Journal of Human-Computer Studies, 63(4–5), 370–382.
+
 Torrance, E. P. (1966). Torrance Tests of Creative Thinking. Lexington, MA: Personnel Press.
+
 Weinberg, R. S. (2018). Foundations of Sport and Exercise Psychology (7th ed.). Champaign, IL: Human Kinetics.
+
 —————
 
 
