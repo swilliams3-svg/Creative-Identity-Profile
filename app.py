@@ -266,8 +266,13 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     return buf
 
 # --------------------------
-# PDF Generator (updated clean version)
+# PDF Generator (ReportLab)
 # --------------------------
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
 def create_pdf(
     creative_scores,
     big5_scores,
@@ -277,16 +282,16 @@ def create_pdf(
     chart_buf_creative,
     chart_buf_big5
 ):
+    """Generate PDF report for the Creative Identity Profile"""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
-    buf,
-    pagesize=A4,
-    rightMargin=40,
-    leftMargin=40,
-    topMargin=50,
-    bottomMargin=40
-)
-
+        buf,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=50,
+        bottomMargin=40
+    )
 
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name="HeadingCenter", parent=styles["Heading1"], alignment=TA_CENTER))
@@ -294,16 +299,20 @@ def create_pdf(
     styles.add(ParagraphStyle(name="BodyText", parent=styles["Normal"], leading=14, alignment=TA_LEFT))
 
     story = []
+
+    # Title
     story.append(Paragraph("Creative Identity & Personality Profile", styles["HeadingCenter"]))
     story.append(Spacer(1, 20))
 
-    img1 = Image(chart_buf_creative, width=200, height=200)
-    img2 = Image(chart_buf_big5, width=200, height=200)
-    story.append(img1)
-    story.append(Spacer(1, 12))
-    story.append(img2)
+    # Radar Charts
+    story.append(Paragraph("Overview Charts", styles["Heading2"]))
+    story.append(Spacer(1, 10))
+    story.append(Image(chart_buf_creative, width=200, height=200))
+    story.append(Spacer(1, 10))
+    story.append(Image(chart_buf_big5, width=200, height=200))
     story.append(Spacer(1, 20))
 
+    # Archetypes
     story.append(Paragraph("Your Creative Archetypes", styles["Heading2"]))
     for label, (trait, arch) in archetypes_results.items():
         if label == "Growth Area":
@@ -314,6 +323,7 @@ def create_pdf(
         story.append(Paragraph(content, styles["BodyText"]))
         story.append(Spacer(1, 12))
 
+    # Creative Traits
     story.append(Paragraph("Creative Trait Insights", styles["Heading2"]))
     for trait, score in creative_scores.items():
         level = get_level(score)
@@ -321,6 +331,7 @@ def create_pdf(
         story.append(Paragraph(creative_summaries[trait][level], styles["BodyText"]))
         story.append(Spacer(1, 10))
 
+    # Big Five Traits
     story.append(Paragraph("Big Five Trait Insights", styles["Heading2"]))
     for trait, score in big5_scores.items():
         level = get_level(score)
@@ -331,6 +342,7 @@ def create_pdf(
     doc.build(story)
     buf.seek(0)
     return buf.getvalue()
+
 
 # --------------------------
 # Streamlit App
