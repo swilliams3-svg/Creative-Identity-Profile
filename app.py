@@ -279,9 +279,33 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
 # --------------------------
 # PDF Generator (ReportLab)
 # --------------------------
+import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
+
+# Helper function: wrap text so it doesn't overflow
+def wrap_text(c, text, x, y, max_width, font="Helvetica", font_size=9, leading=11):
+    """
+    Draw text wrapped to max_width.
+    Returns updated y after writing.
+    """
+    c.setFont(font, font_size)
+    words = text.split()
+    line = ""
+    for word in words:
+        test_line = f"{line} {word}".strip()
+        if stringWidth(test_line, font, font_size) <= max_width:
+            line = test_line
+        else:
+            c.drawString(x, y, line)
+            y -= leading
+            line = word
+    if line:
+        c.drawString(x, y, line)
+        y -= leading
+    return y
 
 def create_pdf(
     creative_scores,
@@ -290,7 +314,10 @@ def create_pdf(
     creative_summaries,
     big5_summaries,
     chart_buf_creative,
-    chart_buf_big5
+    chart_buf_big5,
+    creative_colors,
+    big5_colors,
+    get_level
 ):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -311,18 +338,20 @@ def create_pdf(
 
     # Archetypes
     c.setFont("Helvetica-Bold", 14)
+    c.setFillColorRGB(0, 0, 0)
     c.drawString(40, height - 320, "Your Creative Archetypes")
     y = height - 340
     for label, (trait, arch) in archetypes_data.items():
+        # Header with color
         c.setFont("Helvetica-Bold", 11)
-        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
-                                 for i in (0, 2, 4)))
+        r, g, b = [int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255 for i in (0, 2, 4)]
+        c.setFillColorRGB(r, g, b)
         c.drawString(50, y, f"{label}: {arch['name']}")
         c.setFillColorRGB(0, 0, 0)
-        c.setFont("Helvetica", 9)
+        # Description or improvement
         text = arch['description'] if label != "Growth Area" else arch['improvement']
-        c.drawString(60, y-12, text)
-        y -= 40
+        y = wrap_text(c, text, 60, y-12, max_width=480)
+        y -= 10
 
     # Creative Trait Insights
     c.setFont("Helvetica-Bold", 14)
@@ -331,14 +360,16 @@ def create_pdf(
     y -= 20
     for trait, score in creative_scores.items():
         level = get_level(score)
+        # Header
         c.setFont("Helvetica-Bold", 10)
-        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
-                                 for i in (0, 2, 4)))
+        r, g, b = [int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255 for i in (0, 2, 4)]
+        c.setFillColorRGB(r, g, b)
         c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 9)
         c.setFillColorRGB(0, 0, 0)
-        c.drawString(60, y-12, creative_summaries[trait][level])
-        y -= 30
+        # Wrapped summary
+        summary = creative_summaries[trait][level]
+        y = wrap_text(c, summary, 60, y-12, max_width=480)
+        y -= 8
 
     # Big Five Trait Insights
     c.setFont("Helvetica-Bold", 14)
@@ -347,19 +378,22 @@ def create_pdf(
     y -= 20
     for trait, score in big5_scores.items():
         level = get_level(score)
+        # Header
         c.setFont("Helvetica-Bold", 10)
-        c.setFillColorRGB(*tuple(int(big5_colors[trait].lstrip("#")[i:i+2], 16)/255
-                                 for i in (0, 2, 4)))
+        r, g, b = [int(big5_colors[trait].lstrip("#")[i:i+2], 16)/255 for i in (0, 2, 4)]
+        c.setFillColorRGB(r, g, b)
         c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
-        c.setFont("Helvetica", 9)
         c.setFillColorRGB(0, 0, 0)
-        c.drawString(60, y-12, big5_summaries[trait][level])
-        y -= 30
+        # Wrapped summary
+        summary = big5_summaries[trait][level]
+        y = wrap_text(c, summary, 60, y-12, max_width=480)
+        y -= 8
 
     c.showPage()
     c.save()
     buf.seek(0)
     return buf
+
 
 # --------------------------
 # Streamlit App (main)
