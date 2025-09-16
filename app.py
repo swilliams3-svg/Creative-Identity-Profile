@@ -287,11 +287,11 @@ st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
     # Growth Trait (lowest only)
     # --------------------------
 sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-    lowest_trait = sorted_traits[-1][0]
+lowest_trait = sorted_traits[-1][0]
 
-    st.markdown(f"### Growth Trait: {lowest_trait}")
-    st.write(trait_descriptions[lowest_trait]["low"])
-    st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
+st.markdown(f"### Growth Trait: {lowest_trait}")
+st.write(trait_descriptions[lowest_trait]["low"])
+st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
     # --------------------------
     # List of Traits
