@@ -526,13 +526,13 @@ with st.expander("📄 View Your Full Report", expanded=False):
         "You can preview the content below or download a professional PDF report."
     )
 
-    # PDF download button
     st.download_button(
         label="📥 Download Your Report",
         data=pdf_buf,  # pdf_buf is already bytes
         file_name="creative_identity_profile.pdf",
-        mime="application/pdf",
+        mime="application/pdf"
     )
+
 
     # --------------------------
     # Deeper Insights Section
