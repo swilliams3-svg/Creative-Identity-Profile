@@ -243,37 +243,41 @@ def radar_chart(scores, title):
     angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # same size for all
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # fixed size
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
     ax.set_yticklabels([])
     ax.set_title(title, size=14, weight="bold", pad=20)
 
-    # Plot each trait with its colour
+    # Plot each trait with its colour (but don't duplicate legend entries)
     for i, label in enumerate(labels):
         val = values[i]
         ax.plot(
-            [angles[i], angles[i+1]], 
-            [val, values[i+1]], 
-            color=palette[label], 
-            linewidth=2, 
-            label=label
+            [angles[i], angles[i+1]],
+            [val, values[i+1]],
+            color=palette[label],
+            linewidth=2
         )
 
-    # Add legend outside the chart
+    # Add legend with unique trait names
+    handles = [plt.Line2D([0], [0], color=palette[label], lw=2) for label in labels]
     ax.legend(
-        loc="upper right", 
-        bbox_to_anchor=(1.3, 1.1), 
+        handles, labels,
+        loc="upper right",
+        bbox_to_anchor=(1.3, 1.1),
         fontsize=8,
         frameon=False
     )
 
     st.pyplot(fig)
 
+    # Save chart to buffer for PDF
     buf = io.BytesIO()
     fig.savefig(buf, format="PNG", bbox_inches="tight")
     buf.seek(0)
+    plt.close(fig)  # Close the figure to avoid Streamlit issues
     return buf
+
 
 
     # --------------------------
