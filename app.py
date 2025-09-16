@@ -534,8 +534,6 @@ with st.expander("📄 View Your Full Report", expanded=False):
         mime="application/pdf",
     )
 
-    )
-
     # --------------------------
     # Deeper Insights Section
     # --------------------------
