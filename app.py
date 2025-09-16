@@ -211,6 +211,9 @@ elif st.session_state.page == "results":
     # --------------------------
     # Radar Charts
     # --------------------------
+        # --------------------------
+    # Radar Charts
+    # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
@@ -228,18 +231,23 @@ elif st.session_state.page == "results":
             val = values[i]
             ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
 
-        st.pyplot(fig)
-
         buf = io.BytesIO()
         fig.savefig(buf, format="PNG")
         buf.seek(0)
+        st.pyplot(fig)
         return buf
 
-    st.subheader("Big Five Personality Dimensions")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+    # Put charts side by side
+    col1, col2 = st.columns(2)
 
-    st.subheader("Creative Traits")
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    with col1:
+        st.subheader("Big Five Personality Dimensions")
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+
+    with col2:
+        st.subheader("Creative Traits")
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+
 
     # --------------------------
     # Archetypes
