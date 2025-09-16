@@ -259,39 +259,103 @@ elif st.session_state.page == "results":
     # --------------------------
     # Radar Charts
     # --------------------------
-    def radar_chart(scores, title):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]
-        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-        angles += angles[:1]
+   # --------------------------
+# Radar Chart Function
+# --------------------------
+import matplotlib.pyplot as plt
 
-        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_title(title, size=14, weight="bold", pad=20)
+def radar_chart(trait_scores, title):
+    labels = list(trait_scores.keys())
+    values = list(trait_scores.values())
 
-        for i, label in enumerate(labels):
-            val = values[i]
-            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    values += values[:1]  # repeat first value to close loop
+    angles += angles[:1]
 
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG")
-        buf.seek(0)
-        st.pyplot(fig)
-        return buf
+    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
 
-    # Put charts side by side
+    ax.plot(angles, values, linewidth=2, linestyle='solid')
+    ax.fill(angles, values, alpha=0.25)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_yticklabels([])
+    ax.set_title(title, size=12, weight="bold", y=1.1)
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    return buf
+
+
+# --------------------------
+# Results Page
+# --------------------------
+elif st.session_state.page == "results":
+    st.title("Your Creative Identity Profile")
+
+    # Calculate scores
+    creative_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in creative_traits.items()
+    }
+    bigfive_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in big_five_traits.items()
+    }
+
+    creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
+    bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
+
+    # --------------------------
+    # Radar Charts side by side
+    # --------------------------
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Big Five")
+        st.subheader("Big Five Personality Dimensions")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+        st.image(chart_buf_big5)
 
     with col2:
         st.subheader("Creative Traits")
         chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+        st.image(chart_buf_creative)
+
+    # --------------------------
+    # Archetypes
+    # --------------------------
+    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+    main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+
+    st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+    st.write(f"Your results suggest that {trait_descriptions[main_trait]['high']}")
+
+    st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+    st.write(f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}")
+
+    st.markdown(f"### Growth Area: {lowest_trait}")
+    st.write(f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}")
+    st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
+
+    # --------------------------
+    # Personalised Trait Scores
+    # --------------------------
+    st.subheader("Your Trait Scores")
+
+    def interpret_score(trait, score):
+        if score >= 70:
+            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('high', 'a strong ability in this area.')}."
+        elif score >= 40:
+            return f"You scored {score}% in **{trait}**, showing a balanced approach: {trait_descriptions.get(trait, {}).get('medium', 'sometimes strong, sometimes moderate in this area.')}."
+        else:
+            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('low', 'this may be a weaker area for you.')}"
+
+    all_scores = {**creative_perc, **bigfive_perc}
+
+    for t, p in all_scores.items():
+        st.write(interpret_score(t, p))
 
 
     # --------------------------
