@@ -139,6 +139,32 @@ archetypes = {
 }
 
 # --------------------------
+# Radar Chart Function
+# --------------------------
+def radar_chart(trait_scores, title):
+    labels = list(trait_scores.keys())
+    values = list(trait_scores.values())
+
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    values += values[:1]
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, linewidth=2, linestyle='solid')
+    ax.fill(angles, values, alpha=0.25)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_yticklabels([])
+    ax.set_title(title, size=12, weight="bold", y=1.1)
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    return buf
+
+# --------------------------
 # Session State
 # --------------------------
 if "page" not in st.session_state:
@@ -208,281 +234,96 @@ elif st.session_state.page == "results":
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-    # --------------------------
-    # Radar Charts side by side
-    # --------------------------
+    # Radar charts
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+
     col1, col2 = st.columns(2)
-
     with col1:
-        st.subheader("Big Five Personality Dimensions")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-
+        st.image(chart_buf_big5, caption="Big Five Personality Dimensions")
     with col2:
-        st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+        st.image(chart_buf_creative, caption="Creative Traits")
 
-    # --------------------------
-    # Archetypes
-    # --------------------------
-    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-    main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-
-    st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-    st.write(f"Your results suggest that {trait_descriptions[main_trait]['high']}")
-
-    st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-    st.write(f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}")
-
-    st.markdown(f"### Growth Area: {lowest_trait}")
-    st.write(f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}")
-    st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
-
-    # --------------------------
-    # Personalised Trait Scores
-    # --------------------------
-    st.subheader("Your Trait Scores")
-
-    def interpret_score(trait, score):
-        if score >= 70:
-            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('high', 'a strong ability in this area.')}."
-        elif score >= 40:
-            return f"You scored {score}% in **{trait}**, showing a balanced approach: {trait_descriptions.get(trait, {}).get('medium', 'sometimes strong, sometimes moderate in this area.')}."
-        else:
-            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('low', 'this may be a weaker area for you.')}"
-
-    all_scores = {**creative_perc, **bigfive_perc}
-
-    for t, p in all_scores.items():
-        st.write(interpret_score(t, p))
-
-
-    # --------------------------
-    # Radar Charts
-    # --------------------------
-   # --------------------------
-# Radar Chart Function
-# --------------------------
-import matplotlib.pyplot as plt
-
-def radar_chart(trait_scores, title):
-    labels = list(trait_scores.keys())
-    values = list(trait_scores.values())
-
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-    values += values[:1]  # repeat first value to close loop
-    angles += angles[:1]
-
-    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
-
-    ax.plot(angles, values, linewidth=2, linestyle='solid')
-    ax.fill(angles, values, alpha=0.25)
-
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=8)
-    ax.set_yticklabels([])
-    ax.set_title(title, size=12, weight="bold", y=1.1)
-
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
-    plt.close(fig)
-    buf.seek(0)
-    return buf
-
-
-# --------------------------
-# Results Page
-# --------------------------
-elif st.session_state.page == "results":
-    st.title("Your Creative Identity Profile")
-
-    # Calculate scores
-    creative_scores = {
-        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
-        for t, qs in creative_traits.items()
-    }
-    bigfive_scores = {
-        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
-        for t, qs in big_five_traits.items()
-    }
-
-    creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
-    bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
-
-    # --------------------------
-    # Radar Charts side by side
-    # --------------------------
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("Big Five Personality Dimensions")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-        st.image(chart_buf_big5)
-
-    with col2:
-        st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-        st.image(chart_buf_creative)
-
-    # --------------------------
-    # Archetypes
-    # --------------------------
-    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-    main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-
-    st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-    st.write(f"Your results suggest that {trait_descriptions[main_trait]['high']}")
-
-    st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-    st.write(f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}")
-
-    st.markdown(f"### Growth Area: {lowest_trait}")
-    st.write(f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}")
-    st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
-
-    # --------------------------
-    # Personalised Trait Scores
-    # --------------------------
-    st.subheader("Your Trait Scores")
-
-    def interpret_score(trait, score):
-        if score >= 70:
-            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('high', 'a strong ability in this area.')}."
-        elif score >= 40:
-            return f"You scored {score}% in **{trait}**, showing a balanced approach: {trait_descriptions.get(trait, {}).get('medium', 'sometimes strong, sometimes moderate in this area.')}."
-        else:
-            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('low', 'this may be a weaker area for you.')}"
-
-    all_scores = {**creative_perc, **bigfive_perc}
-
-    for t, p in all_scores.items():
-        st.write(interpret_score(t, p))
-
-
-    # --------------------------
-    # Archetypes
-    # --------------------------
+    # Archetypes and Growth
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
     st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
     st.write(trait_descriptions[main_trait]["high"])
-    st.write(f"**Growth Tip:** {archetypes[main_trait][2]}")
 
     st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
     st.write(trait_descriptions[sub_trait]["medium"])
-    st.write(f"**Growth Tip:** {archetypes[sub_trait][2]}")
 
     st.markdown(f"### Growth Area: {lowest_trait}")
     st.write(trait_descriptions[lowest_trait]["low"])
     st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
-    # --------------------------
-    # List of Traits
-    # --------------------------
+    # Trait Scores
     st.subheader("Your Trait Scores")
     for t, p in creative_perc.items():
-        st.write(f"**{t}:** {p}%")
+        if p >= 67:
+            st.write(f"**{t}:** {p}% → {trait_descriptions[t]['high']}")
+        elif p >= 34:
+            st.write(f"**{t}:** {p}% → {trait_descriptions[t]['medium']}")
+        else:
+            st.write(f"**{t}:** {p}% → {trait_descriptions[t]['low']}")
+
     for t, p in bigfive_perc.items():
         st.write(f"**{t}:** {p}%")
 
-    # --------------------------
     # Academic Section
-    # --------------------------
     with st.expander("The Science Behind the Creative Identity & Personality Profile"):
         with open("academic_article.txt", "r") as f:
             st.markdown(f.read())
 
-
-    # --------------------------
     # PDF Generation
-    # --------------------------
-def create_pdf():
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    width, height = A4
-    margin = 50
+    def create_pdf():
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=A4)
+        width, height = A4
 
-    # Title
-    c.setFont("Helvetica-Bold", 18)
-    c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
+        c.setFont("Helvetica-Bold", 18)
+        c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
 
-    # Charts side by side
-    img1 = ImageReader(chart_buf_creative)
-    img2 = ImageReader(chart_buf_big5)
-    chart_size = 200
-    spacing = 80
-    c.drawImage(img1, margin, height - 280, width=chart_size, height=chart_size)
-    c.drawImage(img2, margin + chart_size + spacing, height - 280, width=chart_size, height=chart_size)
+        img1 = ImageReader(chart_buf_creative)
+        img2 = ImageReader(chart_buf_big5)
+        chart_size = 200
+        c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size)
+        c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size)
 
-    # Move down below charts
-    y = height - 320
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(40, height - 320, "Archetypes and Growth Area")
 
-    # Archetypes & Growth Area
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(margin, y, "Archetypes and Growth Area")
-    y -= 30
+        c.setFont("Helvetica", 12)
+        c.drawString(40, height - 340, f"Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+        c.drawString(40, height - 360, trait_descriptions[main_trait]["high"])
+        c.drawString(40, height - 390, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+        c.drawString(40, height - 410, trait_descriptions[sub_trait]["medium"])
+        c.drawString(40, height - 440, f"Growth Area: {lowest_trait}")
+        c.drawString(40, height - 460, trait_descriptions[lowest_trait]["low"])
+        c.drawString(40, height - 480, f"Growth Tip: {archetypes[lowest_trait][2]}")
 
-    styles = getSampleStyleSheet()
-    normal = styles["Normal"]
+        c.showPage()
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(40, height - 60, "Your Trait Scores")
+        y = height - 100
+        for t, p in {**creative_perc, **bigfive_perc}.items():
+            if t in trait_descriptions:
+                if p >= 67:
+                    desc = trait_descriptions[t]["high"]
+                elif p >= 34:
+                    desc = trait_descriptions[t]["medium"]
+                else:
+                    desc = trait_descriptions[t]["low"]
+                c.drawString(40, y, f"{t}: {p}% → {desc}")
+            else:
+                c.drawString(40, y, f"{t}: {p}%")
+            y -= 20
 
-    def add_wrapped_text(text, y_start):
-        frame = Frame(margin, 60, width - 2*margin, y_start - 60, showBoundary=0)
-        story = [Paragraph(text, normal)]
-        frame.addFromList(story, c)
-
-    # Main Archetype (no growth tip)
-    main_text = (
-        f"<b>Main Archetype:</b> {archetypes[main_trait][0]} ({archetypes[main_trait][1]})<br/>"
-        f"Your results suggest that {trait_descriptions[main_trait]['high']}"
-    )
-    add_wrapped_text(main_text, y)
-    y -= 100
-
-    # Sub-Archetype (no growth tip)
-    sub_text = (
-        f"<b>Sub-Archetype:</b> {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})<br/>"
-        f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}"
-    )
-    add_wrapped_text(sub_text, y)
-    y -= 100
-
-    # Growth Area (keep growth tip)
-    growth_text = (
-        f"<b>Growth Area:</b> {lowest_trait}<br/>"
-        f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}<br/><br/>"
-        f"<b>Growth Tip:</b> {archetypes[lowest_trait][2]}"
-    )
-    add_wrapped_text(growth_text, y)
-    y -= 120
-
-    # Trait Scores (personalised only, no growth tips)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(margin, y, "Your Trait Scores")
-    y -= 25
-
-    def interpret_score(trait, score):
-        if score >= 70:
-            return f"You scored {score}% in {trait}, which suggests {trait_descriptions.get(trait, {}).get('high', 'a strong ability in this area.')}."
-        elif score >= 40:
-            return f"You scored {score}% in {trait}, showing a balanced approach: {trait_descriptions.get(trait, {}).get('medium', 'sometimes strong, sometimes moderate in this area.')}."
-        else:
-            return f"You scored {score}% in {trait}, which suggests {trait_descriptions.get(trait, {}).get('low', 'this may be a weaker area for you.')}"
-
-    # Combine all scores
-    all_scores = {**creative_perc, **bigfive_perc}
-
-    for t, p in all_scores.items():
-        personalised = interpret_score(t, p)
-        add_wrapped_text(personalised, y)
-        y -= 60
-        if y < 100:
-            break
-
-    c.save()
-    buf.seek(0)
-    return buf
-
-
+        c.save()
+        buf.seek(0)
+        return buf
 
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
+
