@@ -234,40 +234,47 @@ elif st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Charts (multicolour)
+    # Radar Charts
     # --------------------------
-    def radar_chart(scores, title):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]
-        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-        angles += angles[:1]
+def radar_chart(scores, title):
+    labels = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_title(title, size=14, weight="bold", pad=20)
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # same size for all
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])
+    ax.set_title(title, size=14, weight="bold", pad=20)
 
-        for i, label in enumerate(labels):
-            val = values[i]
-            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
+    # Plot each trait with its colour
+    for i, label in enumerate(labels):
+        val = values[i]
+        ax.plot(
+            [angles[i], angles[i+1]], 
+            [val, values[i+1]], 
+            color=palette[label], 
+            linewidth=2, 
+            label=label
+        )
 
-        st.pyplot(fig)
+    # Add legend outside the chart
+    ax.legend(
+        loc="upper right", 
+        bbox_to_anchor=(1.3, 1.1), 
+        fontsize=8,
+        frameon=False
+    )
 
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG")
-        buf.seek(0)
-        plt.close(fig)
-        return buf
+    st.pyplot(fig)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    with col2:
-        st.subheader("Big Five")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG", bbox_inches="tight")
+    buf.seek(0)
+    return buf
+
 
     # --------------------------
     # Archetypes
