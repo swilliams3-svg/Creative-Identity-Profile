@@ -209,9 +209,54 @@ elif st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Charts
+    # Radar Charts side by side
     # --------------------------
-        # --------------------------
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Big Five Personality Dimensions")
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+
+    with col2:
+        st.subheader("Creative Traits")
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+
+    # --------------------------
+    # Archetypes
+    # --------------------------
+    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+    main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+
+    st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+    st.write(f"Your results suggest that {trait_descriptions[main_trait]['high']}")
+
+    st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+    st.write(f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}")
+
+    st.markdown(f"### Growth Area: {lowest_trait}")
+    st.write(f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}")
+    st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
+
+    # --------------------------
+    # Personalised Trait Scores
+    # --------------------------
+    st.subheader("Your Trait Scores")
+
+    def interpret_score(trait, score):
+        if score >= 70:
+            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('high', 'a strong ability in this area.')}."
+        elif score >= 40:
+            return f"You scored {score}% in **{trait}**, showing a balanced approach: {trait_descriptions.get(trait, {}).get('medium', 'sometimes strong, sometimes moderate in this area.')}."
+        else:
+            return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions.get(trait, {}).get('low', 'this may be a weaker area for you.')}"
+
+    all_scores = {**creative_perc, **bigfive_perc}
+
+    for t, p in all_scores.items():
+        st.write(interpret_score(t, p))
+
+
+    # --------------------------
     # Radar Charts
     # --------------------------
     def radar_chart(scores, title):
@@ -283,68 +328,96 @@ elif st.session_state.page == "results":
         with open("academic_article.txt", "r") as f:
             st.markdown(f.read())
 
+
     # --------------------------
     # PDF Generation
     # --------------------------
-      # --------------------------
-    # PDF Generation
-    # --------------------------
-    def create_pdf():
-        buf = io.BytesIO()
-        c = canvas.Canvas(buf, pagesize=A4)
-        width, height = A4
+   def create_pdf():
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+    margin = 50
 
-        # Title
-        c.setFont("Helvetica-Bold", 18)
-        c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
+    # Title
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
 
-        # Charts side by side
-        img1 = ImageReader(chart_buf_creative)
-        img2 = ImageReader(chart_buf_big5)
-        chart_size = 200
-        margin = 60
-        spacing = 80
+    # Charts side by side
+    img1 = ImageReader(chart_buf_creative)
+    img2 = ImageReader(chart_buf_big5)
+    chart_size = 200
+    spacing = 80
+    c.drawImage(img1, margin, height - 280, width=chart_size, height=chart_size)
+    c.drawImage(img2, margin + chart_size + spacing, height - 280, width=chart_size, height=chart_size)
 
-        c.drawImage(img1, margin, height - 280, width=chart_size, height=chart_size)
-        c.drawImage(img2, margin + chart_size + spacing, height - 280, width=chart_size, height=chart_size)
+    # Move down below charts
+    y = height - 320
 
-        # Archetypes and Growth Area
-        y = height - 320
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(margin, y, "Archetypes and Growth Area")
+    # Archetypes & Growth Area
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(margin, y, "Archetypes and Growth Area")
+    y -= 30
 
-        c.setFont("Helvetica", 12)
-        y -= 30
-        c.drawString(margin, y, f"Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-        y -= 20
-        c.drawString(margin, y, trait_descriptions[main_trait]['high'][:95] + "...")  # shortened for space
-        y -= 30
+    styles = getSampleStyleSheet()
+    normal = styles["Normal"]
 
-        c.drawString(margin, y, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-        y -= 20
-        c.drawString(margin, y, trait_descriptions[sub_trait]['medium'][:95] + "...")
-        y -= 30
+    def add_wrapped_text(text, y_start):
+        frame = Frame(margin, 60, width - 2*margin, y_start - 60, showBoundary=0)
+        story = [Paragraph(text, normal)]
+        frame.addFromList(story, c)
 
-        c.drawString(margin, y, f"Growth Area: {lowest_trait}")
-        y -= 20
-        c.drawString(margin, y, trait_descriptions[lowest_trait]['low'][:95] + "...")
-        y -= 40
+    # Main Archetype (no growth tip)
+    main_text = (
+        f"<b>Main Archetype:</b> {archetypes[main_trait][0]} ({archetypes[main_trait][1]})<br/>"
+        f"Your results suggest that {trait_descriptions[main_trait]['high']}"
+    )
+    add_wrapped_text(main_text, y)
+    y -= 100
 
-        # Trait Scores
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(margin, y, "Your Trait Scores")
-        y -= 25
+    # Sub-Archetype (no growth tip)
+    sub_text = (
+        f"<b>Sub-Archetype:</b> {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})<br/>"
+        f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}"
+    )
+    add_wrapped_text(sub_text, y)
+    y -= 100
 
-        c.setFont("Helvetica", 12)
-        for t, p in {**creative_perc, **bigfive_perc}.items():
-            c.drawString(margin, y, f"{t}: {p}%")
-            y -= 18
-            if y < 60:  # Prevent going off page
-                break
+    # Growth Area (keep growth tip)
+    growth_text = (
+        f"<b>Growth Area:</b> {lowest_trait}<br/>"
+        f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}<br/><br/>"
+        f"<b>Growth Tip:</b> {archetypes[lowest_trait][2]}"
+    )
+    add_wrapped_text(growth_text, y)
+    y -= 120
 
-        c.save()
-        buf.seek(0)
-        return buf
+    # Trait Scores (personalised only, no growth tips)
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(margin, y, "Your Trait Scores")
+    y -= 25
+
+    def interpret_score(trait, score):
+        if score >= 70:
+            return f"You scored {score}% in {trait}, which suggests {trait_descriptions.get(trait, {}).get('high', 'a strong ability in this area.')}."
+        elif score >= 40:
+            return f"You scored {score}% in {trait}, showing a balanced approach: {trait_descriptions.get(trait, {}).get('medium', 'sometimes strong, sometimes moderate in this area.')}."
+        else:
+            return f"You scored {score}% in {trait}, which suggests {trait_descriptions.get(trait, {}).get('low', 'this may be a weaker area for you.')}"
+
+    # Combine all scores
+    all_scores = {**creative_perc, **bigfive_perc}
+
+    for t, p in all_scores.items():
+        personalised = interpret_score(t, p)
+        add_wrapped_text(personalised, y)
+        y -= 60
+        if y < 100:
+            break
+
+    c.save()
+    buf.seek(0)
+    return buf
+
 
 
     pdf_buf = create_pdf()
