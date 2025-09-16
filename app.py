@@ -332,7 +332,7 @@ elif st.session_state.page == "results":
     # --------------------------
     # PDF Generation
     # --------------------------
-   def create_pdf():
+    def create_pdf():
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     width, height = A4
