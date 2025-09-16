@@ -390,29 +390,84 @@ if current_q < total_qs:
 # --------------------------
 # Results Page
 # --------------------------
-if page == "Results":
-    st.title("🎉 Your Creative Identity Profile Results")
+else:  # when all questions are answered
+    st.success("All questions complete — here are your results!")
 
-    # Show charts
-    st.subheader("Your Creative Traits Radar")
-    st.pyplot(fig_creative)
+    # --- Calculate Scores ---
+    creative_scores = {t: 0 for t in creative_traits}
+    creative_counts = {t: 0 for t in creative_traits}
+    big5_scores = {t: 0 for t in big5_traits}
+    big5_counts = {t: 0 for t in big5_traits}
 
-    st.subheader("Your Big Five Traits Radar")
-    st.pyplot(fig_big5)
+    for key, val in responses.items():
+        if val:
+            trait = key.split("_")[0]
+            if trait in creative_scores:
+                creative_scores[trait] += val
+                creative_counts[trait] += 1
+            if trait in big5_scores:
+                big5_scores[trait] += val
+                big5_counts[trait] += 1
 
-    # Archetype results
+    for t in creative_scores:
+        creative_scores[t] = creative_scores[t] / creative_counts[t] if creative_counts[t] > 0 else 0.0
+    for t in big5_scores:
+        big5_scores[t] = big5_scores[t] / big5_counts[t] if big5_counts[t] > 0 else 0.0
+
+    # --- Charts ---
+    c1, c2 = st.columns(2)
+    chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
+    chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
+    with c1:
+        st.image(chart_buf_creative, use_container_width=True)
+    with c2:
+        st.image(chart_buf_big5, use_container_width=True)
+
+    # --- Archetypes ---
+    sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
+    if len(sorted_traits) >= 3:
+        main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    else:
+        keys = list(creative_traits.keys())
+        main_trait, sub_trait, weakest_trait = keys[0], keys[1], keys[-1]
+
     st.subheader("Your Creative Archetypes")
-    for label, (trait, arch) in archetypes_results.items():
-        if label == "Growth Area":
-            st.markdown(f"**{label}: {arch['name']}** — {arch['improvement']}")
-        else:
-            st.markdown(f"**{label}: {arch['name']}** — {arch['description']}")
+    archetypes_info = {}
+    for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
+        content = archetypes[trait]["improvement"] if label == "Growth Area" else archetypes[trait]["description"]
+        archetypes_info[label] = (trait, archetypes[trait])
+        st.markdown(
+            f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
+            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{label}: {archetypes[trait]['name']}</span><br>"
+            f"<i>{content}</i></div>", unsafe_allow_html=True
+        )
+
+    # --- Trait Insights ---
+    st.subheader("Creative Trait Insights")
+    for trait, score in creative_scores.items():
+        level = get_level(score)
+        summary = creative_summaries[trait][level]
+        st.markdown(
+            f"<div style='background-color:{creative_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<i>{summary}</i></div>", unsafe_allow_html=True
+        )
+
+    st.subheader("Big Five Trait Insights")
+    for trait, score in big5_scores.items():
+        level = get_level(score)
+        summary = big5_summaries[trait][level]
+        st.markdown(
+            f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
+            f"<i>{summary}</i></div>", unsafe_allow_html=True
+        )
 
     # --- Generate PDF ---
     pdf_buf = create_pdf(
         creative_scores,
         big5_scores,
-        archetypes_results,
+        archetypes_info,
         creative_summaries,
         big5_summaries,
         chart_buf_creative,
@@ -425,11 +480,9 @@ if page == "Results":
             "Here is your personalised **Creative Identity Profile**. "
             "You can preview the content below or download a professional PDF report."
         )
-
         st.download_button(
             label="📥 Download Your Report",
-            data=pdf_buf,  # already bytes
+            data=pdf_buf,
             file_name="creative_identity_profile.pdf",
             mime="application/pdf"
         )
-
