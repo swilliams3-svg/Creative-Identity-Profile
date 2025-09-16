@@ -233,9 +233,9 @@ elif st.session_state.page == "results":
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-    # --------------------------
-    # Radar Charts
-    # --------------------------
+# --------------------------
+# Radar Charts
+# --------------------------
 def radar_chart(scores, title):
     labels = list(scores.keys())
     values = list(scores.values())
