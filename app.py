@@ -10,7 +10,20 @@ from reportlab.lib.utils import ImageReader
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Trait Descriptions (expanded + personalised)
+# Colours
+# --------------------------
+palette = {
+    "Curiosity": "#6D9DC5",
+    "Imagination": "#A267AC",
+    "Openness": "#05668D",
+    "Conscientiousness": "#88AB75",
+    "Extraversion": "#E2C044",
+    "Agreeableness": "#5E60CE",
+    "Neuroticism": "#C44536"
+}
+
+# --------------------------
+# Expanded Trait Descriptions
 # --------------------------
 trait_descriptions = {
     "Curiosity": {
@@ -61,7 +74,7 @@ growth_tips = {
 }
 
 # --------------------------
-# Example Question Data
+# Traits & Questions
 # --------------------------
 creative_traits = {
     "Curiosity": [
@@ -86,6 +99,21 @@ bigfive_traits = {
         "I follow through on my commitments.",
         "I like to keep things organized.",
         "I work hard to achieve my goals."
+    ],
+    "Extraversion": [
+        "I feel energized by being around people.",
+        "I enjoy group conversations and activities.",
+        "I like to be the center of attention."
+    ],
+    "Agreeableness": [
+        "I value cooperation and harmony.",
+        "I am considerate of others' feelings.",
+        "I try to avoid conflict when possible."
+    ],
+    "Neuroticism": [
+        "I often feel anxious or stressed.",
+        "I worry about things going wrong.",
+        "I find it hard to stay calm under pressure."
     ]
 }
 
@@ -95,7 +123,6 @@ bigfive_traits = {
 def radar_chart(data, title):
     labels = list(data.keys())
     values = list(data.values())
-
     angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False).tolist()
     values += values[:1]
     angles += angles[:1]
@@ -116,42 +143,74 @@ def radar_chart(data, title):
     return buf
 
 # --------------------------
-# Quiz State
+# Session State
 # --------------------------
 if "page" not in st.session_state:
-    st.session_state.page = "quiz"
+    st.session_state.page = "intro"
 if "responses" not in st.session_state:
     st.session_state.responses = {}
 
 # --------------------------
+# Intro Page
+# --------------------------
+if st.session_state.page == "intro":
+    st.title("Creative Identity & Personality Profile")
+    st.markdown("""
+    Welcome to the **Creative Identity & Personality Profile**.  
+    This quiz explores both your **creative traits** and your **Big Five personality traits**.  
+
+    - You’ll answer statements on a 1–5 scale.  
+    - The quiz is based on established research in creativity and psychology.  
+    - At the end, you’ll get a personalised profile, archetype, and growth insights.  
+    """)
+    if st.button("Start Quiz"):
+        st.session_state.page = "quiz"
+        st.rerun()
+
+# --------------------------
 # Quiz Page
 # --------------------------
-if st.session_state.page == "quiz":
-    st.title("Creative Identity Profile")
+elif st.session_state.page == "quiz":
+    st.header("Quiz Questions")
 
-    q_index = 0
-    for trait, questions in {**creative_traits, **bigfive_traits}.items():
-        for q in questions:
-            st.radio(
+    questions = []
+    for trait, qs in {**creative_traits, **bigfive_traits}.items():
+        for q in qs:
+            questions.append((trait, q))
+    random.shuffle(questions)
+
+    with st.form("quiz_form"):
+        for trait, q in questions:
+            key = f"{trait}_{q}"
+            st.session_state.responses[key] = st.radio(
                 q,
-                ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
-                key=f"q{q_index}"
+                ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"],
+                horizontal=True,
+                key=key
             )
-            q_index += 1
-
-    if st.button("Submit"):
-        st.session_state.page = "results"
-        st.experimental_rerun()
+        submitted = st.form_submit_button("Submit Quiz")
+        if submitted:
+            st.session_state.page = "results"
+            st.rerun()
 
 # --------------------------
 # Results Page
 # --------------------------
 elif st.session_state.page == "results":
-    st.title("Your Results")
+    st.title("Your Creative Identity Profile")
 
-    # Fake percentages for demo purposes
-    creative_perc = {t: random.randint(20, 95) for t in creative_traits}
-    bigfive_perc = {t: random.randint(20, 95) for t in bigfive_traits}
+    # Calculate scores
+    creative_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in creative_traits.items()
+    }
+    bigfive_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in bigfive_traits.items()
+    }
+
+    creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
+    bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # Radar charts side by side
     col1, col2 = st.columns(2)
@@ -187,34 +246,30 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
 
-    # Archetype section
-    st.subheader("Your Archetype")
+    # Archetype + Growth Trait
+    st.subheader("Your Archetype & Growth Trait")
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, top_score = sorted_traits[0]
     sub_trait, sub_score = sorted_traits[1]
     st.write(f"**Primary Archetype:** {top_trait} ({top_score}%)")
     st.write(f"**Sub-Archetype:** {sub_trait} ({sub_score}%)")
 
-    # Growth Trait section
-    st.subheader("Your Growth Trait")
     all_traits = {**creative_perc, **bigfive_perc}
     lowest_trait = min(all_traits, key=all_traits.get)
     lowest_score = all_traits[lowest_trait]
-    st.write(f"**{lowest_trait}:** {lowest_score}%")
+    st.markdown(f"**Growth Trait:** {lowest_trait} ({lowest_score}%)")
     st.write(trait_descriptions[lowest_trait]["low"])
     st.write(f"💡 Growth Tip: {growth_tips[lowest_trait]}")
-  
-# --------------------------
-# Academic Section
-# --------------------------
-with st.expander("The Science Behind the Creative Identity & Personality Profile"):
-    with open("academic_section.txt", "r") as f:
-        st.markdown(f.read())
+
+    # Academic Section
+    with st.expander("The Science Behind the Creative Identity & Personality Profile"):
+        with open("academic_article.txt", "r") as f:
+            st.markdown(f.read())
 
     # PDF Export
-    if st.button("Download PDF Report"):
-        buffer = io.BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=A4)
+    def create_pdf():
+        buf = io.BytesIO()
+        pdf = canvas.Canvas(buf, pagesize=A4)
         width, height = A4
 
         pdf.setFont("Helvetica-Bold", 16)
@@ -269,12 +324,9 @@ with st.expander("The Science Behind the Creative Identity & Personality Profile
         pdf.drawString(70, y, f"Growth Tip: {growth_tips[lowest_trait]}")
 
         pdf.save()
-        buffer.seek(0)
+        buf.seek(0)
+        return buf
 
-        st.download_button(
-            label="Download Report",
-            data=buffer,
-            file_name="creative_identity_profile.pdf",
-            mime="application/pdf"
-        )
+    pdf_buf = create_pdf()
+    st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
 
