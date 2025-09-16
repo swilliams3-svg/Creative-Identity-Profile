@@ -249,13 +249,19 @@ def radar_chart(scores, title):
     ax.set_yticklabels([])
     ax.set_title(title, size=14, weight="bold", pad=20)
 
-    # Plot lines per trait
-    for i, label in enumerate(labels):
+    # Plot filled radar with multi-colour outline per trait
+    for i, label in enumerate(labels[:-1]):  # skip duplicate closing point
         ax.plot(
             [angles[i], angles[i+1]],
             [values[i], values[i+1]],
             color=palette[label],
             linewidth=2
+        )
+        ax.fill(
+            [angles[i], angles[i+1]],
+            [values[i], values[i+1]],
+            color=palette[label],
+            alpha=0.1
         )
 
     # Legend: one entry per trait
@@ -268,7 +274,7 @@ def radar_chart(scores, title):
         frameon=False
     )
 
-    # Show chart in Streamlit
+    # Show in Streamlit
     st.pyplot(fig)
 
     # Save for PDF
@@ -277,6 +283,7 @@ def radar_chart(scores, title):
     buf.seek(0)
     plt.close(fig)
     return buf
+
 
     # --------------------------
     # Archetypes
