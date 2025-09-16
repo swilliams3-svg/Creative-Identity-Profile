@@ -264,23 +264,24 @@ elif page == "results":
     with col2:
         st.subheader("Creative Traits")
         chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+        
+# --------------------------
+# Archetypes and Growth Area
+# --------------------------
+sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
-    # --------------------------
-    # Archetype Identification
-    # --------------------------
-def determine_archetype(creativity_scores):
-    # Example logic – adapt to your real rules/mapping
-    if creativity_scores.get("Openness", 0) > 70 and creativity_scores.get("Curiosity", 0) > 70:
-        return "The Explorer", "Innovator"
-    elif creativity_scores.get("Persistence", 0) > 70:
-        return "The Maker", "Builder"
-    else:
-        return "The Thinker", "Philosopher"
+st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+st.write(f"**{main_trait}: {creative_perc[main_trait]}%** — {trait_descriptions[main_trait]['high']}")
+st.write(f"**Growth Tip:** {archetypes[main_trait][2]}")
 
-archetype, sub_archetype = determine_archetype(creative_perc)
+st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+st.write(f"**{sub_trait}: {creative_perc[sub_trait]}%** — {trait_descriptions[sub_trait]['medium']}")
+st.write(f"**Growth Tip:** {archetypes[sub_trait][2]}")
 
-st.subheader("Your Creative Archetype")
-st.markdown(f"**{archetype}** — _{sub_archetype}_")
+st.markdown(f"### Growth Area: {lowest_trait}")
+st.write(f"**{lowest_trait}: {creative_perc[lowest_trait]}%** — {trait_descriptions[lowest_trait]['low']}")
+st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
     # --------------------------
     # Growth Trait (lowest only)
