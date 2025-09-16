@@ -221,18 +221,31 @@ if "responses" not in st.session_state:
     st.session_state.responses = {}
 
 # --------------------------
-# Questions
+# Quiz Page
 # --------------------------
-all_questions = {**creative_traits, **bigfive_traits}
-for trait, questions in all_questions.items():
-    st.subheader(trait)
-    for q in questions:
-        st.session_state.responses[q] = st.radio(
-            q,
-            [1, 2, 3, 4, 5],
-            index=2,
-            key=q
-        )
+elif st.session_state.page == "quiz":
+    st.header("Quiz Questions")
+
+    questions = []
+    for trait, qs in {**creative_traits, **big_five_traits}.items():
+        for q in qs:
+            questions.append((trait, q))
+    random.shuffle(questions)
+
+    with st.form("quiz_form"):
+        for trait, q in questions:
+            key = f"{trait}_{q}"
+            st.session_state.responses[key] = st.radio(
+                q,
+                ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"],
+                horizontal=True,
+                key=key
+            )
+        submitted = st.form_submit_button("Submit Quiz")
+        if submitted:
+            st.session_state.page = "results"
+            st.rerun()
+
 
 # --------------------------
 # Results
