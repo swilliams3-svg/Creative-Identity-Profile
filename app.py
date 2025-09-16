@@ -30,7 +30,7 @@ likert_short = {
 }
 
 # --------------------------
-# Creative Traits
+# Creative Traits (FULL)
 # --------------------------
 creative_traits = {
     "Originality": [
@@ -143,7 +143,7 @@ archetypes = {
     }
 }
 # --------------------------
-# Big Five Traits
+# Big Five Traits (FULL)
 # --------------------------
 big5_traits = {
     "Openness": [
@@ -173,7 +173,7 @@ big5_traits = {
     ]
 }
 
-# Use a different palette so they don’t look linked to Creative traits
+# Different colours from creative traits
 big5_colors = {
     "Openness": "#17becf",
     "Conscientiousness": "#bcbd22",
@@ -221,13 +221,6 @@ def get_level(score: float) -> str:
     else:
         return "Low"
 
-def hex_to_rgb_float(hexcolor: str):
-    hexcolor = hexcolor.lstrip("#")
-    r = int(hexcolor[0:2], 16) / 255.0
-    g = int(hexcolor[2:4], 16) / 255.0
-    b = int(hexcolor[4:6], 16) / 255.0
-    return (r, g, b)
-
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     num_vars = len(labels)
@@ -263,136 +256,224 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     buf.seek(0)
     plt.close(fig)
     return buf
-# --------------------------
-# PDF Report Generator
-# --------------------------
-def create_pdf(creative_scores, big5_scores, archetypes_results,
-               creative_summaries, big5_summaries,
-               chart_buf_creative, chart_buf_big5):
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
-    from reportlab.lib import colors
 
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        rightMargin=40, leftMargin=40,
-        topMargin=50, bottomMargin=40
-    )
+# --------------------------
+# PDF Generator
+# --------------------------
+def create_pdf(
+    creative_scores,
+    big5_scores,
+    archetypes_results,
+    creative_summaries,
+    big5_summaries,
+    chart_buf_creative,
+    chart_buf_big5
+):
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            rightMargin=40, leftMargin=40,
+                            topMargin=50, bottomMargin=40)
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="CenterTitle", alignment=1, fontSize=16, spaceAfter=12))
-    styles.add(ParagraphStyle(name="SectionHeading", fontSize=13, spaceAfter=8, textColor=colors.HexColor("#333333")))
-    styles.add(ParagraphStyle(name="BodyText", fontSize=10, leading=14))
+    styles.add(ParagraphStyle(name="HeadingCenter", parent=styles["Heading1"], alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name="TraitHeading", parent=styles["Heading3"], spaceAfter=6))
+    styles.add(ParagraphStyle(name="BodyText", parent=styles["Normal"], leading=14, alignment=TA_LEFT))
 
     story = []
+    story.append(Paragraph("Creative Identity & Personality Profile", styles["HeadingCenter"]))
+    story.append(Spacer(1, 20))
 
-    # Title
-    story.append(Paragraph("Creative Identity Profile", styles["CenterTitle"]))
+    # Charts
+    img1 = Image(chart_buf_creative, width=200, height=200)
+    img2 = Image(chart_buf_big5, width=200, height=200)
+    story.append(img1)
     story.append(Spacer(1, 12))
+    story.append(img2)
+    story.append(Spacer(1, 20))
 
-    # --- Creative Traits Section ---
-    story.append(Paragraph("Creative Traits", styles["SectionHeading"]))
+    # Archetypes
+    story.append(Paragraph("Your Creative Archetypes", styles["Heading2"]))
+    for label, (trait, arch) in archetypes_results.items():
+        if label == "Growth Area":
+            content = arch["improvement"]
+        else:
+            content = arch["description"]
+        story.append(Paragraph(f"<b>{label}: {arch['name']}</b>", styles["TraitHeading"]))
+        story.append(Paragraph(content, styles["BodyText"]))
+        story.append(Spacer(1, 12))
+
+    # Creative Traits
+    story.append(Paragraph("Creative Trait Insights", styles["Heading2"]))
     for trait, score in creative_scores.items():
         level = get_level(score)
-        summary = creative_summaries[trait][level]
-        story.append(Paragraph(f"<b>{trait}</b>: {score:.1f} ({level})", styles["BodyText"]))
-        story.append(Paragraph(summary, styles["BodyText"]))
-        story.append(Spacer(1, 6))
+        story.append(Paragraph(f"<b>{trait} ({level}) — {score:.2f}/5</b>", styles["TraitHeading"]))
+        story.append(Paragraph(creative_summaries[trait][level], styles["BodyText"]))
+        story.append(Spacer(1, 10))
 
-    story.append(Spacer(1, 12))
-    story.append(Image(chart_buf_creative, width=250, height=250))
-    story.append(Spacer(1, 12))
-
-    # --- Big Five Section ---
-    story.append(Paragraph("Big Five Personality Traits", styles["SectionHeading"]))
+    # Big Five Traits
+    story.append(Paragraph("Big Five Trait Insights", styles["Heading2"]))
     for trait, score in big5_scores.items():
         level = get_level(score)
-        summary = big5_summaries[trait][level]
-        story.append(Paragraph(f"<b>{trait}</b>: {score:.1f} ({level})", styles["BodyText"]))
-        story.append(Paragraph(summary, styles["BodyText"]))
-        story.append(Spacer(1, 6))
+        story.append(Paragraph(f"<b>{trait} ({level}) — {score:.2f}/5</b>", styles["TraitHeading"]))
+        story.append(Paragraph(big5_summaries[trait][level], styles["BodyText"]))
+        story.append(Spacer(1, 10))
 
-    story.append(Spacer(1, 12))
-    story.append(Image(chart_buf_big5, width=250, height=250))
-    story.append(Spacer(1, 12))
-
-    # --- Archetypes ---
-    story.append(Paragraph("Creative Archetypes", styles["SectionHeading"]))
-    for arch, desc in archetypes_results.items():
-        story.append(Paragraph(f"<b>{arch}</b>: {desc}", styles["BodyText"]))
-        story.append(Spacer(1, 6))
-
-    story.append(Spacer(1, 12))
-
-    # --- Academic Background Section ---
-    story.append(Paragraph("The Science Behind the Quiz", styles["SectionHeading"]))
-    academic_text = """
-    This quiz is informed by established research in creativity and psychology.
-    It integrates <b>divergent and convergent thinking</b> (Guilford, 1950), 
-    <b>the Big Five personality model</b> (McCrae & Costa, 1999), 
-    and <b>creative identity frameworks</b> (Amabile, 1996; Sternberg, 2006).
-    Divergent thinking reflects the ability to generate multiple ideas, 
-    while convergent thinking involves evaluating and refining ideas.
-    Both are essential components of the creative process.
-    """
-    story.append(Paragraph(academic_text, styles["BodyText"]))
-    story.append(Spacer(1, 12))
+    # Academic Report
+    story.append(Paragraph("Scientific & Psychological Background", styles["Heading2"]))
+    story.append(Paragraph(
+        "This quiz combines two evidence-based frameworks: "
+        "the Big Five personality model and key creativity traits (originality, curiosity, imagination, etc.). "
+        "It draws on research from psychology and creativity studies (e.g., Amabile, Guilford, Torrance, "
+        "Finke, Ward & Smith, Boden, Sternberg, Runco). The creative traits reflect factors linked with "
+        "divergent thinking, convergent thinking, and applied creativity in practice.",
+        styles["BodyText"]
+    ))
+    story.append(Spacer(1, 10))
 
     doc.build(story)
-    buffer.seek(0)
-    return buffer
+    buf.seek(0)
+    return buf.getvalue()
+# --------------------------
+# Streamlit App
+# --------------------------
+st.set_page_config(page_title="Creative Identity Profile", layout="centered")
+
+# Session state
+if "page" not in st.session_state:
+    st.session_state.page = "Intro"
+if "creative_answers" not in st.session_state:
+    st.session_state.creative_answers = {}
+if "big5_answers" not in st.session_state:
+    st.session_state.big5_answers = {}
 
 # --------------------------
-# Streamlit App Navigation
+# Navigation
 # --------------------------
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Quiz", "Results"])
+page = st.session_state.page
+
+if page == "Intro":
+    st.title("✨ Creative Identity Profile ✨")
+    st.write(
+        "Discover your **creative identity** and how it aligns with your **personality**. "
+        "This profile is based on the **Big Five Personality Traits** and research-driven **creativity traits**."
+    )
+    if st.button("Start the Quiz ➡️"):
+        st.session_state.page = "Creative Traits"
+
+# --------------------------
+# Creative Traits Page
+# --------------------------
+elif page == "Creative Traits":
+    st.header("🎨 Creative Traits")
+    st.write("Answer honestly based on how much you agree with each statement (1 = strongly disagree, 5 = strongly agree).")
+
+    for trait, questions in creative_traits.items():
+        st.subheader(trait)
+        for i, q in enumerate(questions):
+            key = f"{trait}_{i}"
+            st.session_state.creative_answers[key] = st.radio(
+                q,
+                [1,2,3,4,5],
+                index=2,
+                horizontal=True,
+                key=key
+            )
+
+    if st.button("Next ➡️"):
+        st.session_state.page = "Big Five Traits"
+
+# --------------------------
+# Big Five Traits Page
+# --------------------------
+elif page == "Big Five Traits":
+    st.header("🧠 Big Five Personality Traits")
+    st.write("Please respond to each statement (1 = strongly disagree, 5 = strongly agree).")
+
+    for trait, questions in big5_traits.items():
+        st.subheader(trait)
+        for i, q in enumerate(questions):
+            key = f"{trait}_{i}"
+            st.session_state.big5_answers[key] = st.radio(
+                q,
+                [1,2,3,4,5],
+                index=2,
+                horizontal=True,
+                key=key
+            )
+
+    if st.button("See Results 📊"):
+        st.session_state.page = "Results"
+
 # --------------------------
 # Results Page
 # --------------------------
-if page == "Results":
-    st.title("✨ Your Creative Identity Profile")
+elif page == "Results":
+    st.title("📊 Your Creative Identity Profile")
 
-    # --- Calculate Scores (placeholder values for demo) ---
-    creative_scores = {trait: np.random.uniform(1, 5) for trait in creative_traits.keys()}
-    big5_scores = {trait: np.random.uniform(1, 5) for trait in big5_traits.keys()}
-    archetypes_results = {
-        "Explorer": "You thrive on novelty and discovery.",
-        "Innovator": "You enjoy creating unique solutions.",
-        "Visionary": "You imagine future possibilities."
+    # Calculate scores
+    creative_scores = {
+        trait: np.mean([st.session_state.creative_answers[f"{trait}_{i}"] for i in range(len(questions))])
+        for trait, questions in creative_traits.items()
+    }
+    big5_scores = {
+        trait: np.mean([st.session_state.big5_answers[f"{trait}_{i}"] for i in range(len(questions))])
+        for trait, questions in big5_traits.items()
     }
 
-    # --- Generate Charts ---
+    # Generate radar charts
     chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
     chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
 
-    # --- Display Results ---
-    st.subheader("Creative Traits")
-    st.image(chart_buf_creative)
+    # Example archetypes (placeholder logic)
+    archetypes_results = {
+        "Primary": {"name": "The Explorer", "description": "You thrive on curiosity and new experiences."},
+        "Secondary": {"name": "The Visionary", "description": "You see possibilities where others see problems."},
+        "Growth Area": {"name": "The Builder", "improvement": "Focus on consistency and structured follow-through."}
+    }
 
+    # Display charts
+    st.subheader("Radar Charts")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(chart_buf_creative, caption="Creative Traits", use_container_width=True)
+    with col2:
+        st.image(chart_buf_big5, caption="Big Five Traits", use_container_width=True)
+
+    # Archetypes
+    st.subheader("Your Creative Archetypes")
+    for label, arch in archetypes_results.items():
+        if label == "Growth Area":
+            st.markdown(f"**{label}: {arch['name']}** — {arch['improvement']}")
+        else:
+            st.markdown(f"**{label}: {arch['name']}** — {arch['description']}")
+
+    # Creative Traits Summaries
+    st.subheader("Creative Trait Insights")
     for trait, score in creative_scores.items():
         level = get_level(score)
-        summary = creative_summaries[trait][level]
-        st.markdown(f"**{trait}:** {score:.1f} ({level})")
-        st.write(summary)
+        st.markdown(f"**{trait} ({level}) — {score:.2f}/5**")
+        st.write(creative_summaries[trait][level])
 
-    st.subheader("Big Five Traits")
-    st.image(chart_buf_big5)
-
+    # Big Five Summaries
+    st.subheader("Big Five Trait Insights")
     for trait, score in big5_scores.items():
         level = get_level(score)
-        summary = big5_summaries[trait][level]
-        st.markdown(f"**{trait}:** {score:.1f} ({level})")
-        st.write(summary)
+        st.markdown(f"**{trait} ({level}) — {score:.2f}/5**")
+        st.write(big5_summaries[trait][level])
 
-    st.subheader("Creative Archetypes")
-    for arch, desc in archetypes_results.items():
-        st.markdown(f"**{arch}:** {desc}")
+    # Academic Context (Collapsible)
+    with st.expander("📚 Scientific & Psychological Background"):
+        st.write(
+            "This profile combines two evidence-based frameworks: "
+            "the **Big Five personality model** and research-driven **creativity traits** "
+            "(originality, curiosity, imagination, etc.).\n\n"
+            "It is inspired by decades of work in psychology and creativity studies "
+            "from **Amabile, Guilford, Torrance, Finke, Ward & Smith, Boden, Sternberg, Runco, and others**. "
+            "These traits connect with **divergent thinking**, **convergent thinking**, "
+            "and applied creativity in everyday practice."
+        )
 
-    # --- Generate PDF ---
+    # Generate PDF
     pdf_buf = create_pdf(
         creative_scores,
         big5_scores,
@@ -403,16 +484,10 @@ if page == "Results":
         chart_buf_big5
     )
 
-    # --- Collapsible Report Section ---
-    with st.expander("📄 View Your Full Report", expanded=False):
-        st.write(
-            "Here is your personalised **Creative Identity Profile**. "
-            "You can preview the results above and download a professional PDF report below."
-        )
-
-        st.download_button(
-            label="📥 Download Your Report",
-            data=pdf_buf.getvalue(),  # must be bytes
-            file_name="creative_identity_profile.pdf",
-            mime="application/pdf"
-        )
+    # PDF download
+    st.download_button(
+        label="📥 Download Your Report (PDF)",
+        data=pdf_buf,
+        file_name="creative_identity_profile.pdf",
+        mime="application/pdf"
+    )
