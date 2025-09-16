@@ -202,17 +202,21 @@ elif st.session_state.page == "quiz":
 
     with st.form("quiz_form"):
         for trait, q in questions:
-            key = f"{trait}_{q}"
-            st.session_state.responses[key] = st.radio(
+            widget_key = f"{trait}_{q}"
+            response = st.radio(
                 q,
                 ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"],
                 horizontal=True,
-                key=key
+                key=widget_key
             )
+            # Save the response into session state
+            st.session_state.responses[widget_key] = response
+
         submitted = st.form_submit_button("Submit Quiz")
         if submitted:
             st.session_state.page = "results"
             st.rerun()
+
 
 # --------------------------
 # Results Page
@@ -233,30 +237,41 @@ elif st.session_state.page == "results":
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-def radar_chart(scores, title):
-    labels = list(scores.keys())
-    values = list(scores.values())
-    values += values[:1]  # repeat first value to close the loop
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-    angles += angles[:1]
+    # --------------------------
+    # Radar Charts (multicolour)
+    # --------------------------
+    def radar_chart(scores, title):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]
+        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_title(title, size=14, weight="bold", pad=20)
+        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_title(title, size=14, weight="bold", pad=20)
 
-    # Plot one continuous polygon (works for sure)
-    ax.plot(angles, values, color="tab:blue", linewidth=2)
-    ax.fill(angles, values, color="tab:blue", alpha=0.1)
+        for i, label in enumerate(labels):
+            val = values[i]
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
 
-    st.pyplot(fig)
+        st.pyplot(fig)
 
-    buf = io.BytesIO()
-    fig.savefig(buf, format="PNG", bbox_inches="tight")
-    buf.seek(0)
-    plt.close(fig)
-    return buf
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG")
+        buf.seek(0)
+        plt.close(fig)
+        return buf
 
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Creative Traits")
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    with col2:
+        st.subheader("Big Five Personality Dimensions")
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
     # --------------------------
     # Archetypes
@@ -360,3 +375,4 @@ def radar_chart(scores, title):
 
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
+
