@@ -125,29 +125,29 @@ trait_descriptions = {
         "low": "You prefer working alone and rely less on group dynamics."
     },
     "Openness": {
-        "high": "You are highly open to new experiences and perspectives.",
-        "medium": "You are moderately open, balancing curiosity with practicality.",
-        "low": "You prefer familiar routines and are less inclined to explore new ideas."
+        "high": "You are highly open-minded, curious, and willing to explore new perspectives.",
+        "medium": "You show openness in some areas but remain cautious in others.",
+        "low": "You prefer routine and familiarity over novelty and abstract ideas."
     },
     "Conscientiousness": {
-        "high": "You are highly disciplined and organized in your approach.",
-        "medium": "You are reasonably conscientious but can be flexible when needed.",
-        "low": "You may struggle with organization and long-term follow-through."
+        "high": "You are organized, responsible, and goal-driven.",
+        "medium": "You are dependable in some areas but can be flexible in others.",
+        "low": "You are more spontaneous and less focused on structure."
     },
     "Extraversion": {
-        "high": "You feel energized by social interactions and group settings.",
-        "medium": "You are moderately outgoing but also value time alone.",
-        "low": "You prefer quiet, solitary activities over social engagements."
+        "high": "You feel energized by social interactions and enjoy group activities.",
+        "medium": "You balance social activities with moments of quiet.",
+        "low": "You prefer solitude and smaller, quieter environments."
     },
     "Agreeableness": {
-        "high": "You are highly cooperative, empathetic, and value harmony.",
-        "medium": "You are somewhat agreeable, balancing your needs with others.",
-        "low": "You tend to be more competitive and prioritize your own perspective."
+        "high": "You are empathetic, cooperative, and supportive of others.",
+        "medium": "You show kindness but balance it with assertiveness.",
+        "low": "You prioritize your own needs and may come across as competitive."
     },
     "Neuroticism": {
-        "high": "You are highly sensitive to stress and may experience emotional ups and downs.",
-        "medium": "You experience occasional stress but generally manage well.",
-        "low": "You are calm, resilient, and rarely feel overwhelmed by stress."
+        "high": "You are more likely to experience stress and emotional ups and downs.",
+        "medium": "You manage stress reasonably well with occasional struggles.",
+        "low": "You remain calm, resilient, and emotionally stable under pressure."
     }
 }
 
@@ -164,7 +164,7 @@ archetypes = {
 }
 
 # --------------------------
-# Session State Initialisation
+# Session State
 # --------------------------
 if "page" not in st.session_state:
     st.session_state.page = "intro"
@@ -172,11 +172,9 @@ if "responses" not in st.session_state:
     st.session_state.responses = {}
 
 # --------------------------
-# Page Routing
+# Intro Page
 # --------------------------
-page = st.session_state.page
-
-if page == "intro":
+if st.session_state.page == "intro":
     st.title("Creative Identity & Personality Profile")
     st.markdown("""
     Welcome to the **Creative Identity & Personality Profile**.  
@@ -190,7 +188,10 @@ if page == "intro":
         st.session_state.page = "quiz"
         st.rerun()
 
-elif page == "quiz":
+# --------------------------
+# Quiz Page
+# --------------------------
+elif st.session_state.page == "quiz":
     st.header("Quiz Questions")
 
     questions = []
@@ -295,9 +296,9 @@ elif st.session_state.page == "results":
     # --------------------------
     # Academic Section
     # --------------------------
-with st.expander("The Science Behind the Creative Identity & Personality Profile"):
-    with open("academic_section.txt", "r") as f:
-        st.markdown(f.read())
+    with st.expander("The Science Behind the Creative Identity & Personality Profile"):
+        with open("academic_section.txt", "r") as f:
+            st.markdown(f.read())
 
     # --------------------------
     # PDF Generation
@@ -339,4 +340,3 @@ with st.expander("The Science Behind the Creative Identity & Personality Profile
 
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
-
