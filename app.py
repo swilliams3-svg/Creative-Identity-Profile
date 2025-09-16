@@ -272,7 +272,7 @@ elif st.session_state.page == "results":
     # Academic Section
     # --------------------------
     with st.expander("The Science Behind the Creative Identity & Personality Profile"):
-        with open("academic_section.txt", "r") as f:
+        with open("academic_article.txt", "r") as f:
             st.markdown(f.read())
 
     # --------------------------
