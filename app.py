@@ -278,9 +278,15 @@ def create_pdf(
     chart_buf_big5
 ):
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4,
-                            rightMargin=40, leftMargin=40,
-                            topMargin=50, bottomMargin=40)
+    doc = SimpleDocTemplate(
+    buf,
+    pagesize=A4,
+    rightMargin=40,
+    leftMargin=40,
+    topMargin=50,
+    bottomMargin=40
+)
+
 
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name="HeadingCenter", parent=styles["Heading1"], alignment=TA_CENTER))
