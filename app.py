@@ -161,29 +161,40 @@ def categorize(score):
     else:
         return "low"
 
-def radar_chart(scores, title):
+def radar_chart(scores, title, palette):
     labels = list(scores.keys())
     values = list(scores.values())
-    values += values[:1]
+    values += values[:1]  # close the polygon
+
     angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-    for i, label in enumerate(labels):
-        vals = [scores[label]] * (len(labels) + 1)
-        ax.plot(angles, vals, color=trait_colors[label], linewidth=2, label=label)
 
+    # Draw each segment of the polygon in its trait colour
+    for i in range(len(labels)):
+        ax.plot(
+            angles[i:i+2], values[i:i+2],
+            color=palette[labels[i]],
+            linewidth=2
+        )
+
+    # Optional: faint fill under the whole shape in grey (remove if not wanted)
+    ax.fill(angles, values, color="lightgrey", alpha=0.15)
+
+    # Setup labels
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
     ax.set_yticklabels([])
     ax.set_title(title, size=14, weight="bold", pad=20)
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
     st.pyplot(fig)
 
     buf = io.BytesIO()
     fig.savefig(buf, format="PNG")
     buf.seek(0)
     return buf
+
 
 # --------------------------
 # Session State
