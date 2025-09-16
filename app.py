@@ -1,508 +1,350 @@
-# app.py
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import io
 import random
+
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+
+# Register font for compatibility (especially if we need non-Latin later)
+pdfmetrics.registerFont(UnicodeCIDFont('HeiseiMin-W3'))
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Likert Labels
-# --------------------------
-likert_labels = {
-    1: "1\nStrongly Disagree",
-    2: "2\nDisagree",
-    3: "3\nNeutral",
-    4: "4\nAgree",
-    5: "5\nStrongly Agree",
-}
-likert_short = {
-    1: "1 – Strongly Disagree",
-    2: "2 – Disagree",
-    3: "3 – Neutral",
-    4: "4 – Agree",
-    5: "5 – Strongly Agree",
-}
-
-# --------------------------
-# Creative Traits (FULL)
+# Creative Traits Questions
 # --------------------------
 creative_traits = {
-    "Originality": [
-        "I often come up with ideas that others don’t think of.",
-        "I enjoy finding new ways to solve problems.",
-        "I like to put a unique spin on familiar things."
+    "Openness": [
+        "I enjoy exploring new ideas and perspectives.",
+        "I am open to trying new experiences.",
+        "I seek out diverse viewpoints."
     ],
     "Curiosity": [
-        "I enjoy exploring new ideas and perspectives.",
-        "I like to imagine possibilities beyond what I know.",
-        "I am curious about many different things."
+        "I often ask questions to learn more.",
+        "I enjoy investigating how things work.",
+        "I get excited about discovering new things."
     ],
-    "Risk Taking": [
-        "I am willing to take risks in my creative work.",
-        "I don’t mind uncertainty when trying new approaches.",
-        "I experiment with ideas even if they might fail."
+    "RiskTaking": [
+        "I am willing to take risks to pursue ideas.",
+        "I am comfortable with uncertainty in projects.",
+        "I see mistakes as opportunities to learn."
     ],
     "Imagination": [
-        "I often create vivid mental images or stories.",
-        "I enjoy fantasy or thinking about unreal possibilities.",
-        "I can picture things in my head easily."
-    ],
-    "Discipline": [
-        "I can focus on my creative projects until they are finished.",
-        "I stick with routines that help my creativity.",
-        "I put effort into refining and improving my ideas."
+        "I often think in images and metaphors.",
+        "I create original stories, ideas, or scenarios.",
+        "I visualise possibilities beyond the present."
     ],
     "Collaboration": [
-        "I enjoy sharing ideas with others.",
-        "Working with others helps me improve creatively.",
-        "I value feedback in developing my ideas."
-    ]
-}
-
-creative_colors = {
-    "Originality": "#1f77b4",
-    "Curiosity": "#ff7f0e",
-    "Risk Taking": "#2ca02c",
-    "Imagination": "#9467bd",
-    "Discipline": "#d62728",
-    "Collaboration": "#8c564b"
-}
-
-creative_summaries = {
-    "Originality": {
-        "High": "You thrive on bringing new and different ideas.",
-        "Medium": "You balance originality with practicality.",
-        "Low": "You prefer proven and familiar approaches."
-    },
-    "Curiosity": {
-        "High": "You are deeply inquisitive and open to exploring ideas.",
-        "Medium": "You show curiosity but sometimes within limits.",
-        "Low": "You prefer to stick to what you know."
-    },
-    "Risk Taking": {
-        "High": "You embrace uncertainty and experimentation.",
-        "Medium": "You take chances when they feel manageable.",
-        "Low": "You prefer safe and secure approaches."
-    },
-    "Imagination": {
-        "High": "You often create vivid, creative ideas and stories.",
-        "Medium": "You sometimes picture possibilities beyond reality.",
-        "Low": "You stay grounded in realistic and practical ideas."
-    },
-    "Discipline": {
-        "High": "You stay focused and finish your creative projects.",
-        "Medium": "You sometimes balance discipline with flexibility.",
-        "Low": "You may struggle with consistency or follow-through."
-    },
-    "Collaboration": {
-        "High": "You thrive in teamwork and value diverse input.",
-        "Medium": "You enjoy collaboration but also work well alone.",
-        "Low": "You prefer independence in your creative process."
-    }
+        "I enjoy working with others on creative projects.",
+        "I value feedback and input from teammates.",
+        "I build on others’ ideas to create new ones."
+    ],
+    "Persistence": [
+        "I continue working even when ideas are difficult.",
+        "I overcome setbacks in creative projects.",
+        "I stay motivated through challenges."
+    ],
 }
 
 # --------------------------
-# Archetypes
-# --------------------------
-archetypes = {
-    "Originality": {
-        "name": "The Innovator",
-        "description": "You generate unique and unconventional ideas.",
-        "improvement": "Balance originality with practical application."
-    },
-    "Curiosity": {
-        "name": "The Explorer",
-        "description": "You thrive on curiosity and imagination.",
-        "improvement": "Focus your curiosity into projects for impact."
-    },
-    "Risk Taking": {
-        "name": "The Adventurer",
-        "description": "You embrace uncertainty and bold ideas.",
-        "improvement": "Test bold ideas in smaller steps first."
-    },
-    "Imagination": {
-        "name": "The Dreamer",
-        "description": "You think in vivid images and possibilities.",
-        "improvement": "Ground imagination with real-world testing."
-    },
-    "Discipline": {
-        "name": "The Maker",
-        "description": "You bring creative visions to life with structure.",
-        "improvement": "Balance productivity with space for play."
-    },
-    "Collaboration": {
-        "name": "The Connector",
-        "description": "You spark ideas in groups and value feedback.",
-        "improvement": "Balance collaboration with your own vision."
-    }
-}
-
-# --------------------------
-# Big Five Traits (FULL)
+# Big Five Questions
 # --------------------------
 big5_traits = {
     "Openness": [
-        "I enjoy trying new activities and experiences.",
-        "I have a broad range of interests.",
-        "I am curious about many different things."
+        "I have a vivid imagination.",
+        "I enjoy thinking about abstract ideas.",
+        "I like to try new and different things."
     ],
     "Conscientiousness": [
-        "I like to keep things organized.",
         "I pay attention to details.",
-        "I get chores done right away."
+        "I like to be organised.",
+        "I follow through with my plans."
     ],
     "Extraversion": [
         "I feel comfortable around people.",
-        "I start conversations.",
-        "I don’t mind being the center of attention."
+        "I am the life of the party.",
+        "I talk to a lot of different people at social events."
     ],
     "Agreeableness": [
-        "I am interested in other people’s problems.",
-        "I sympathize with others’ feelings.",
-        "I take time out for others."
+        "I sympathise with others’ feelings.",
+        "I take time out for others.",
+        "I make people feel at ease."
     ],
     "Neuroticism": [
-        "I often feel anxious about things.",
-        "I get upset easily.",
-        "I worry about many things."
-    ]
+        "I get stressed out easily.",
+        "I worry about things.",
+        "I get upset easily."
+    ],
+}
+
+# --------------------------
+# Colour Palettes
+# --------------------------
+creative_colors = {
+    "Openness": "#FF7F50",        # Coral
+    "Curiosity": "#6A5ACD",       # SlateBlue
+    "RiskTaking": "#32CD32",      # LimeGreen
+    "Imagination": "#FF69B4",     # HotPink
+    "Collaboration": "#20B2AA",   # LightSeaGreen
+    "Persistence": "#FFA500",     # Orange
 }
 
 big5_colors = {
-    "Openness": "#1f77b4",
-    "Conscientiousness": "#ff7f0e",
-    "Extraversion": "#2ca02c",
-    "Agreeableness": "#9467bd",
-    "Neuroticism": "#d62728"
-}
-
-big5_summaries = {
-    "Openness": {
-        "High": "You are imaginative and embrace novelty.",
-        "Medium": "You balance new experiences with familiarity.",
-        "Low": "You prefer tradition and familiar patterns."
-    },
-    "Conscientiousness": {
-        "High": "You are disciplined, structured, and reliable.",
-        "Medium": "You balance organization with flexibility.",
-        "Low": "You prefer spontaneity over routine."
-    },
-    "Extraversion": {
-        "High": "You gain energy from social interactions.",
-        "Medium": "You enjoy people but also value alone time.",
-        "Low": "You prefer quiet and independence."
-    },
-    "Agreeableness": {
-        "High": "You are empathetic and value harmony.",
-        "Medium": "You cooperate but can be assertive too.",
-        "Low": "You are direct and prioritize your own needs."
-    },
-    "Neuroticism": {
-        "High": "You are sensitive to stress and emotions.",
-        "Medium": "You manage stress with occasional struggles.",
-        "Low": "You are calm and emotionally steady."
-    }
+    "Openness": "#1F77B4",          # Navy-ish Blue
+    "Conscientiousness": "#2CA02C", # Forest Green
+    "Extraversion": "#D62728",      # Dark Red
+    "Agreeableness": "#9467BD",     # Deep Purple
+    "Neuroticism": "#8C564B",       # Brownish
 }
 
 # --------------------------
-# Helpers
+# Session State Init
 # --------------------------
-def get_level(score: float) -> str:
-    if score >= 4:
-        return "High"
-    elif score >= 2.5:
-        return "Medium"
-    else:
-        return "Low"
+if "page" not in st.session_state:
+    st.session_state.page = "Quiz"
+if "responses" not in st.session_state:
+    st.session_state.responses = {}
+# --------------------------
+# Helper: Likert Scale Options
+# --------------------------
+likert_options = {
+    "Strongly Disagree": 1,
+    "Disagree": 2,
+    "Neutral": 3,
+    "Agree": 4,
+    "Strongly Agree": 5
+}
 
-def hex_to_rgb_float(hexcolor: str):
-    hexcolor = hexcolor.lstrip("#")
-    r = int(hexcolor[0:2], 16) / 255.0
-    g = int(hexcolor[2:4], 16) / 255.0
-    b = int(hexcolor[4:6], 16) / 255.0
-    return (r, g, b)
+# --------------------------
+# Save Response
+# --------------------------
+def save_response(trait, q_idx, answer):
+    st.session_state.responses[(trait, q_idx)] = answer
 
-def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
-    labels = list(scores.keys())
-    num_vars = len(labels)
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+# --------------------------
+# Calculate Scores
+# --------------------------
+def calculate_scores():
+    creative_scores = {trait: 0 for trait in creative_traits}
+    big5_scores = {trait: 0 for trait in big5_traits}
+
+    # Tally scores
+    for (trait, q_idx), ans in st.session_state.responses.items():
+        if trait in creative_traits:
+            creative_scores[trait] += likert_options[ans]
+        elif trait in big5_traits:
+            big5_scores[trait] += likert_options[ans]
+
+    # Normalise
+    for trait in creative_scores:
+        creative_scores[trait] = creative_scores[trait] / (len(creative_traits[trait]) * 5) * 100
+    for trait in big5_scores:
+        big5_scores[trait] = big5_scores[trait] / (len(big5_traits[trait]) * 5) * 100
+
+    return creative_scores, big5_scores
+
+# --------------------------
+# Radar Chart Function
+# --------------------------
+def make_radar_chart(scores, trait_colors, title):
+    traits = list(scores.keys())
+    values = list(scores.values())
+
+    N = len(traits)
+    angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+    values += values[:1]
     angles += angles[:1]
 
-    values = [scores[l] for l in labels]
-    values += values[:1]
+    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
 
-    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
-    ax.set_theta_offset(np.pi / 2)
-    ax.set_theta_direction(-1)
+    ax.fill(angles, values, alpha=0.25, color="grey")
+    ax.plot(angles, values, color="black", linewidth=1.5)
 
-    ax.plot(angles, values, linewidth=1.5, color="black")
-    ax.fill(angles, values, alpha=0.05, color="gray")
+    # Add each trait’s color
+    for i, trait in enumerate(traits):
+        ax.plot(angles[i], values[i], 'o', color=trait_colors[trait], label=trait)
 
-    for i, trait in enumerate(labels):
-        col = colors.get(trait, "#333333")
-        ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]],
-                color=col, linewidth=3)
-        ax.scatter(angles[i], values[i], color=col, s=60, zorder=10)
-
+    ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=9)
-    ax.set_ylim(0,5)
-    ax.set_yticks([1,2,3,4,5])
-    ax.set_yticklabels(["1","2","3","4","5"])
-    plt.title(title, size=12, weight="bold")
-    ax.legend(labels, bbox_to_anchor=(1.15, 1.05), fontsize=7)
+    ax.set_xticklabels(traits, fontsize=10)
+    ax.set_title(title, size=14, weight='bold', y=1.1)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
 
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", dpi=150)
-    buf.seek(0)
+    plt.savefig(buf, format="png", bbox_inches="tight", dpi=150)
     plt.close(fig)
+    buf.seek(0)
     return buf
 
 # --------------------------
-# PDF Generator (clean)
+# Academic Summaries (for App inline + PDF end)
 # --------------------------
-def create_pdf(
-    creative_scores,
-    big5_scores,
-    archetypes_results,
-    creative_summaries,
-    big5_summaries,
-    chart_buf_creative,
-    chart_buf_big5
-):
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4,
-                            rightMargin=40, leftMargin=40,
-                            topMargin=50, bottomMargin=40)
+creative_summaries = {
+    "Openness": "Linked to divergent thinking and the ability to generate many unique ideas.",
+    "Curiosity": "Supports exploration and questioning, often seen as the fuel for creativity.",
+    "RiskTaking": "Essential for creative breakthroughs, since innovation often involves uncertainty.",
+    "Imagination": "Relates to mental simulation, conceptual blending, and metaphorical thinking.",
+    "Collaboration": "Social creativity benefits from diverse perspectives and teamwork.",
+    "Persistence": "Sustained effort is often the difference between idea and real innovation.",
+}
+
+big5_summaries = {
+    "Openness": "Associated with intellectual curiosity, novelty seeking, and artistic interests.",
+    "Conscientiousness": "Relates to organisation, reliability, and self-discipline.",
+    "Extraversion": "Tied to sociability, assertiveness, and positive emotionality.",
+    "Agreeableness": "Reflects empathy, compassion, and cooperation.",
+    "Neuroticism": "Represents sensitivity to stress and emotional reactivity.",
+}
+# --------------------------
+# PDF Generation
+# --------------------------
+def create_pdf(creative_scores, big5_scores, creative_summaries, big5_summaries,
+               chart_buf_creative, chart_buf_big5):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=50,
+        leftMargin=50,
+        topMargin=50,
+        bottomMargin=40
+    )
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="HeadingCenter", parent=styles["Heading1"], alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name="TraitHeading", parent=styles["Heading3"], spaceAfter=6))
-    styles.add(ParagraphStyle(name="BodyTextCustom", parent=styles["Normal"], leading=14, alignment=TA_LEFT))
+    styles.add(ParagraphStyle(name="CenterTitle", alignment=TA_CENTER, fontSize=16, leading=20, spaceAfter=15))
+    styles.add(ParagraphStyle(name="SubHeading", fontSize=13, leading=16, spaceAfter=10))
+    styles.add(ParagraphStyle(name="Body", fontSize=10, leading=14))
 
-    story = []
-    story.append(Paragraph("Creative Identity & Personality Profile", styles["HeadingCenter"]))
-    story.append(Spacer(1, 20))
+    flowables = []
 
-    img1 = Image(chart_buf_creative, width=200, height=200)
-    img2 = Image(chart_buf_big5, width=200, height=200)
-    story.append(img1)
-    story.append(Spacer(1, 12))
-    story.append(img2)
-    story.append(Spacer(1, 20))
+    # Title
+    flowables.append(Paragraph("Creative Identity Profile", styles["CenterTitle"]))
+    flowables.append(Spacer(1, 12))
 
-    story.append(Paragraph("Your Creative Archetypes", styles["Heading2"]))
-    for label, (trait, arch) in archetypes_results.items():
-        content = arch["improvement"] if label == "Growth Area" else arch["description"]
-        story.append(Paragraph(f"<b>{label}: {arch['name']}</b>", styles["TraitHeading"]))
-        story.append(Paragraph(content, styles["BodyTextCustom"]))
-        story.append(Spacer(1, 12))
+    # Radar Charts
+    for chart_buf, title in [(chart_buf_creative, "Creative Traits"), (chart_buf_big5, "Big Five Traits")]:
+        img = Image(ImageReader(chart_buf), width=400, height=400)
+        flowables.append(Paragraph(title, styles["SubHeading"]))
+        flowables.append(img)
+        flowables.append(Spacer(1, 12))
 
-    story.append(Paragraph("Creative Trait Insights", styles["Heading2"]))
+    # Scores and summaries
+    flowables.append(Paragraph("Creative Traits Scores", styles["SubHeading"]))
     for trait, score in creative_scores.items():
-        level = get_level(score)
-        story.append(Paragraph(f"<b>{trait} ({level}) — {score:.2f}/5</b>", styles["TraitHeading"]))
-        story.append(Paragraph(creative_summaries[trait][level], styles["BodyTextCustom"]))
-        story.append(Spacer(1, 10))
+        summary = creative_summaries[trait]
+        flowables.append(Paragraph(f"<b>{trait}:</b> {score:.1f}% - {summary}", styles["Body"]))
+        flowables.append(Spacer(1, 6))
 
-    story.append(Paragraph("Big Five Trait Insights", styles["Heading2"]))
+    flowables.append(Spacer(1, 12))
+    flowables.append(Paragraph("Big Five Traits Scores", styles["SubHeading"]))
     for trait, score in big5_scores.items():
-        level = get_level(score)
-        story.append(Paragraph(f"<b>{trait} ({level}) — {score:.2f}/5</b>", styles["TraitHeading"]))
-        story.append(Paragraph(big5_summaries[trait][level], styles["BodyTextCustom"]))
-        story.append(Spacer(1, 10))
+        summary = big5_summaries[trait]
+        flowables.append(Paragraph(f"<b>{trait}:</b> {score:.1f}% - {summary}", styles["Body"]))
+        flowables.append(Spacer(1, 6))
 
-    doc.build(story)
-    buf.seek(0)
-    return buf.getvalue()
+    # Academic section at the end
+    flowables.append(Spacer(1, 20))
+    flowables.append(Paragraph("Scientific Background", styles["SubHeading"]))
+    flowables.append(Paragraph(
+        "This quiz integrates two major areas of psychology: "
+        "the Big Five personality traits (Costa & McCrae, 1992) "
+        "and research on creativity, including divergent and convergent thinking, "
+        "imagination, persistence, and collaboration (e.g., Runco, Guilford, Amabile, Sternberg). "
+        "The Creative Traits are drawn from decades of creativity research, "
+        "while the Big Five provides a well-validated model of personality. "
+        "Together, they provide a rounded perspective on both the personality foundations "
+        "and the creative processes that shape identity.",
+        styles["Body"]
+    ))
 
-# --------------------------
-# Streamlit App
-# --------------------------
-st.title("Creative Identity & Personality Profile")
-
-if "current_q" not in st.session_state:
-    st.session_state.current_q = 0
-
-if "all_questions" not in st.session_state:
-    all_questions = []
-    for trait, qs in {**creative_traits, **big5_traits}.items():
-        for q in qs:
-            all_questions.append((trait, q))
-    random.shuffle(all_questions)
-    st.session_state.all_questions = all_questions
-
-if "responses" not in st.session_state:
-    st.session_state.responses = {}
-
-all_questions = st.session_state.all_questions
-responses = st.session_state.responses
-current_q = st.session_state.current_q
-total_qs = len(all_questions)
+    doc.build(flowables)
+    buffer.seek(0)
+    return buffer
 
 # --------------------------
-# Question Pages
+# PAGE: Results
 # --------------------------
-if current_q < total_qs:
-    if current_q == 0:
-        st.markdown("## Welcome to the Creative Identity Quiz")
-        st.markdown(
-            "This quiz explores your **creative traits** and **personality dimensions**. "
-            "Please rate each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree. "
-            "Answer honestly – there are no right or wrong answers!"
-        )
-        st.divider()
+if st.session_state.page == "Results":
+    st.title("Your Results")
 
-    trait, question = all_questions[current_q]
-    key = f"{trait}_{current_q}"
-    st.markdown(f"**Q{current_q+1}/{total_qs}:** {question}")
+    creative_scores, big5_scores = calculate_scores()
 
-    cols = st.columns(5)
-    for i, col in enumerate(cols, start=1):
-        button_key = f"{key}_btn{i}"
-        if col.button(likert_labels[i], key=button_key, use_container_width=True):
-            responses[key] = i
-            st.session_state.responses = responses
-            st.rerun()
+    # Radar charts
+    chart_buf_creative = make_radar_chart(creative_scores, creative_colors, "Creative Traits Profile")
+    chart_buf_big5 = make_radar_chart(big5_scores, big5_colors, "Big Five Personality Profile")
 
-    if key in responses and responses[key] is not None:
-        st.markdown(f"✅ You selected: **{likert_short[responses[key]]}**")
-    else:
-        st.markdown("_Please choose an option above to continue._")
+    st.image(chart_buf_creative, caption="Creative Traits", use_container_width=True)
+    st.image(chart_buf_big5, caption="Big Five Traits", use_container_width=True)
 
-    col1, col2 = st.columns([1,1])
-    with col1:
-        if st.button("Back", disabled=(current_q == 0)):
-            st.session_state.current_q -= 1
-            st.rerun()
-    with col2:
-        answered = key in responses and responses[key] is not None
-        if st.button("Next Question", disabled=not answered):
-            st.session_state.current_q += 1
-            st.rerun()
+    # Collapsible Creative Traits section
+    with st.expander("🎨 Creative Traits Breakdown", expanded=False):
+        for trait, score in creative_scores.items():
+            st.markdown(f"**{trait}:** {score:.1f}%")
+            st.write(creative_summaries[trait])
 
-# --------------------------
-# Results Page
-# --------------------------
-else:  # when all questions are answered
-    st.success("All questions complete — here are your results!")
+    # Collapsible Big Five section
+    with st.expander("🧠 Big Five Breakdown", expanded=False):
+        for trait, score in big5_scores.items():
+            st.markdown(f"**{trait}:** {score:.1f}%")
+            st.write(big5_summaries[trait])
+    # Scientific background in app
+    with st.expander("📚 Scientific Background", expanded=False):
+        st.write("""
+        This profile draws on two streams of psychology:
+        - **The Big Five Personality Model** (Costa & McCrae, 1992), one of the most widely validated models of personality.  
+        - **Creativity Research** from scholars such as Guilford, Torrance, Runco, Amabile, Sternberg, and Boden, 
+          focusing on originality, imagination, curiosity, persistence, and collaboration.  
 
-    # --- Calculate Scores ---
-    creative_scores = {t: 0 for t in creative_traits}
-    creative_counts = {t: 0 for t in creative_traits}
-    big5_scores = {t: 0 for t in big5_traits}
-    big5_counts = {t: 0 for t in big5_traits}
+        By integrating these, the profile provides insights into both the personality foundations 
+        and the creative processes shaping your identity.
+        """)
 
-    for key, val in responses.items():
-        if val:
-            trait = key.split("_")[0]
-            if trait in creative_scores:
-                creative_scores[trait] += val
-                creative_counts[trait] += 1
-            if trait in big5_scores:
-                big5_scores[trait] += val
-                big5_counts[trait] += 1
-
-    for t in creative_scores:
-        creative_scores[t] = creative_scores[t] / creative_counts[t] if creative_counts[t] > 0 else 0.0
-    for t in big5_scores:
-        big5_scores[t] = big5_scores[t] / big5_counts[t] if big5_counts[t] > 0 else 0.0
-
-    # --- Charts ---
-    c1, c2 = st.columns(2)
-    chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
-    chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
-    with c1:
-        st.image(chart_buf_creative, use_container_width=True)
-    with c2:
-        st.image(chart_buf_big5, use_container_width=True)
-
-    # --- Archetypes ---
-    sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
-    if len(sorted_traits) >= 3:
-        main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-    else:
-        keys = list(creative_traits.keys())
-        main_trait, sub_trait, weakest_trait = keys[0], keys[1], keys[-1]
-
-    st.subheader("Your Creative Archetypes")
-    archetypes_info = {}
-    for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
-        content = archetypes[trait]["improvement"] if label == "Growth Area" else archetypes[trait]["description"]
-        archetypes_info[label] = (trait, archetypes[trait])
-        st.markdown(
-            f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
-            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{label}: {archetypes[trait]['name']}</span><br>"
-            f"<i>{content}</i></div>", unsafe_allow_html=True
-        )
-
-    # --- Trait Insights ---
-    st.subheader("Creative Trait Insights")
-    for trait, score in creative_scores.items():
-        level = get_level(score)
-        summary = creative_summaries[trait][level]
-        st.markdown(
-            f"<div style='background-color:{creative_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>", unsafe_allow_html=True
-        )
-
-    st.subheader("Big Five Trait Insights")
-    for trait, score in big5_scores.items():
-        level = get_level(score)
-        summary = big5_summaries[trait][level]
-        st.markdown(
-            f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>", unsafe_allow_html=True
-        )
-
-    # --- Generate PDF ---
+    # PDF Download
     pdf_buf = create_pdf(
         creative_scores,
         big5_scores,
-        archetypes_info,
         creative_summaries,
         big5_summaries,
         chart_buf_creative,
         chart_buf_big5
     )
+    st.download_button(
+        "⬇️ Download Full Report (PDF)",
+        data=pdf_buf,
+        file_name="Creative_Identity_Profile.pdf",
+        mime="application/pdf"
+    )
 
-    # --- Collapsible Section for Report ---
-    with st.expander("📄 View Your Full Report", expanded=False):
-        st.write(
-            "Here is your personalised **Creative Identity Profile**. "
-            "You can preview the content below or download a professional PDF report."
-        )
+# --------------------------
+# PAGE: Quiz
+# --------------------------
+if st.session_state.page == "Quiz":
+    st.title("Creative Identity & Personality Quiz")
 
-        st.markdown("### 🔬 The Science Behind the Quiz")
-        st.markdown(
-            """
-            This quiz combines insights from **creativity research** and **personality psychology**.
+    questions = st.session_state.questions
+    q_index = st.session_state.q_index
+    trait, question = questions[q_index]
 
-            - **Creative Traits** are adapted from research into divergent and convergent thinking, 
-              originality, risk-taking, and collaboration (Runco, Guilford, Torrance).
-            - **The Big Five Personality Model** (Openness, Conscientiousness, Extraversion, 
-              Agreeableness, Neuroticism) provides a well-validated psychological framework.
-            - Together, these allow us to explore both **how you generate ideas** and **how your personality 
-              shapes creative expression**.
-            - The archetypes (Innovator, Explorer, Maker, etc.) are interpretive summaries 
-              that connect academic findings to practical, everyday creativity.
+    st.write(f"**Q{q_index+1}/{len(questions)} — {trait}:** {question}")
 
-            This approach draws on key thinkers such as **Amabile, Sternberg, Boden, Ward, Finke & Smith**, 
-            and integrates creativity theory (e.g., divergent vs convergent thinking) with personality models.
-            """
-        )
+    cols = st.columns(5)
+    for i, col in enumerate(cols, start=1):
+        if col.button(str(i), key=f"q{q_index}_a{i}"):
+            st.session_state.responses[q_index] = i
+            if q_index + 1 < len(questions):
+                st.session_state.q_index += 1
+            else:
+                st.session_state.page = "Results"
+            st.rerun()
 
-        st.download_button(
-            label="📥 Download Your Report",
-            data=pdf_buf,
-            file_name="creative_identity_profile.pdf",
-            mime="application/pdf"
-        )
+    if q_index > 0:
+        if st.button("⬅️ Back"):
+            st.session_state.q_index -= 1
+            st.rerun()
