@@ -259,7 +259,7 @@ elif page == "results":
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Big Five Personality Dimensions")
+        st.subheader("Big Five")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
     with col2:
         st.subheader("Creative Traits")
