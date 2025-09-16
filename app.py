@@ -508,7 +508,7 @@ else:
     # --------------------------
     # Generate the PDF
     # --------------------------
-    # --- Generate PDF ---
+ # --- Generate PDF ---
 pdf_buf = create_pdf(
     creative_scores,
     big5_scores,
@@ -517,7 +517,7 @@ pdf_buf = create_pdf(
     big5_summaries,
     chart_buf_creative,
     chart_buf_big5
-)
+)  # <-- this closes the create_pdf call
 
 # --- Collapsible Section for Report ---
 with st.expander("📄 View Your Full Report", expanded=False):
@@ -532,7 +532,6 @@ with st.expander("📄 View Your Full Report", expanded=False):
         file_name="creative_identity_profile.pdf",
         mime="application/pdf"
     )
-
 
     # --------------------------
     # Deeper Insights Section
