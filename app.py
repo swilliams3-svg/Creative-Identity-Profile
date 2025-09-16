@@ -340,4 +340,3 @@ elif st.session_state.page == "results":
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
 
-        c.setFont(
