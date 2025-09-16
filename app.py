@@ -286,40 +286,66 @@ elif st.session_state.page == "results":
     # --------------------------
     # PDF Generation
     # --------------------------
+      # --------------------------
+    # PDF Generation
+    # --------------------------
     def create_pdf():
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=A4)
         width, height = A4
 
+        # Title
         c.setFont("Helvetica-Bold", 18)
         c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
 
+        # Charts side by side
         img1 = ImageReader(chart_buf_creative)
         img2 = ImageReader(chart_buf_big5)
         chart_size = 200
-        c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size)
-        c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size)
+        margin = 60
+        spacing = 80
 
-        c.showPage()
+        c.drawImage(img1, margin, height - 280, width=chart_size, height=chart_size)
+        c.drawImage(img2, margin + chart_size + spacing, height - 280, width=chart_size, height=chart_size)
+
+        # Archetypes and Growth Area
+        y = height - 320
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, height - 60, "Archetypes and Growth Area")
+        c.drawString(margin, y, "Archetypes and Growth Area")
 
         c.setFont("Helvetica", 12)
-        c.drawString(40, height - 100, f"Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-        c.drawString(40, height - 120, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-        c.drawString(40, height - 140, f"Growth Area: {lowest_trait}")
+        y -= 30
+        c.drawString(margin, y, f"Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+        y -= 20
+        c.drawString(margin, y, trait_descriptions[main_trait]['high'][:95] + "...")  # shortened for space
+        y -= 30
 
-        c.showPage()
+        c.drawString(margin, y, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+        y -= 20
+        c.drawString(margin, y, trait_descriptions[sub_trait]['medium'][:95] + "...")
+        y -= 30
+
+        c.drawString(margin, y, f"Growth Area: {lowest_trait}")
+        y -= 20
+        c.drawString(margin, y, trait_descriptions[lowest_trait]['low'][:95] + "...")
+        y -= 40
+
+        # Trait Scores
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, height - 60, "Your Trait Scores")
-        y = height - 100
+        c.drawString(margin, y, "Your Trait Scores")
+        y -= 25
+
+        c.setFont("Helvetica", 12)
         for t, p in {**creative_perc, **bigfive_perc}.items():
-            c.drawString(40, y, f"{t}: {p}%")
-            y -= 20
+            c.drawString(margin, y, f"{t}: {p}%")
+            y -= 18
+            if y < 60:  # Prevent going off page
+                break
 
         c.save()
         buf.seek(0)
         return buf
+
 
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
