@@ -480,6 +480,26 @@ else:  # when all questions are answered
             "Here is your personalised **Creative Identity Profile**. "
             "You can preview the content below or download a professional PDF report."
         )
+
+        st.markdown("### 🔬 The Science Behind the Quiz")
+        st.markdown(
+            """
+            This quiz combines insights from **creativity research** and **personality psychology**.
+
+            - **Creative Traits** are adapted from research into divergent and convergent thinking, 
+              originality, risk-taking, and collaboration (Runco, Guilford, Torrance).
+            - **The Big Five Personality Model** (Openness, Conscientiousness, Extraversion, 
+              Agreeableness, Neuroticism) provides a well-validated psychological framework.
+            - Together, these allow us to explore both **how you generate ideas** and **how your personality 
+              shapes creative expression**.
+            - The archetypes (Innovator, Explorer, Maker, etc.) are interpretive summaries 
+              that connect academic findings to practical, everyday creativity.
+
+            This approach draws on key thinkers such as **Amabile, Sternberg, Boden, Ward, Finke & Smith**, 
+            and integrates creativity theory (e.g., divergent vs convergent thinking) with personality models.
+            """
+        )
+
         st.download_button(
             label="📥 Download Your Report",
             data=pdf_buf,
