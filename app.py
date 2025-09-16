@@ -241,7 +241,7 @@ elif st.session_state.page == "results":
 
     # Academic Section
     try:
-        with open("creative_identity_academic_article.txt", "r", encoding="utf-8") as f:
+        with open("academic_article.txt", "r", encoding="utf-8") as f:
             academic_article = f.read()
     except FileNotFoundError:
         academic_article = "⚠️ Academic article file not found. Please make sure creative_identity_academic_article.txt is in the same folder."
