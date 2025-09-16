@@ -1,35 +1,16 @@
-# app.py
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import io
 import random
-from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Likert Labels
-# --------------------------
-likert_labels = {
-    1: "1\nStrongly Disagree",
-    2: "2\nDisagree",
-    3: "3\nNeutral",
-    4: "4\nAgree",
-    5: "5\nStrongly Agree",
-}
-likert_short = {
-    1: "1 – Strongly Disagree",
-    2: "2 – Disagree",
-    3: "3 – Neutral",
-    4: "4 – Agree",
-    5: "5 – Strongly Agree",
-}
-
-# --------------------------
-# Creative Traits (FULL)
+# Creative Traits
 # --------------------------
 creative_traits = {
     "Originality": [
@@ -143,7 +124,7 @@ archetypes = {
 }
 
 # --------------------------
-# Big Five Traits (FULL)
+# Big Five Traits
 # --------------------------
 big5_traits = {
     "Openness": [
@@ -220,47 +201,24 @@ def get_level(score: float) -> str:
     else:
         return "Low"
 
-def hex_to_rgb_float(hexcolor: str):
-    """Convert '#rrggbb' to tuple of floats 0..1"""
-    hexcolor = hexcolor.lstrip("#")
-    r = int(hexcolor[0:2], 16) / 255.0
-    g = int(hexcolor[2:4], 16) / 255.0
-    b = int(hexcolor[4:6], 16) / 255.0
-    return (r, g, b)
-
-def lighten_hex(hexcolor: str, factor: float = 0.18):
-    """Mix color with white to create a pastel (factor between 0 and 1).
-       Smaller factor -> lighter"""
-    r, g, b = hex_to_rgb_float(hexcolor)
-    return (r * factor + (1 - factor) * 1.0,
-            g * factor + (1 - factor) * 1.0,
-            b * factor + (1 - factor) * 1.0)
-
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     num_vars = len(labels)
 
-    # angles
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
-    values = [scores[l] for l in labels]
-    values += values[:1]
-
     fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
-    ax.set_theta_offset(np.pi / 2)
-    ax.set_theta_direction(-1)
+    values = list(scores.values())
+    values += values[:1]
 
     ax.plot(angles, values, linewidth=1.5, color="black")
     ax.fill(angles, values, alpha=0.05, color="gray")
 
-    # draw colored segments and markers for each trait
-    for i, trait in enumerate(labels):
-        col = colors.get(trait, "#333333")
-        # line from point i to i+1 (colored)
-        ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]],
-                color=col, linewidth=3)
-        ax.scatter(angles[i], values[i], color=col, s=60, zorder=10)
+    for i, (trait, score) in enumerate(scores.items()):
+        ax.plot([angles[i], angles[i+1]], [score, values[i+1]],
+                color=colors[trait], linewidth=3)
+        ax.scatter(angles[i], score, color=colors[trait], s=50, zorder=10, label=trait)
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=9)
@@ -268,45 +226,17 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     ax.set_yticks([1,2,3,4,5])
     ax.set_yticklabels(["1","2","3","4","5"])
     plt.title(title, size=12, weight="bold")
-    ax.legend(labels, bbox_to_anchor=(1.15, 1.05), fontsize=7)
+    ax.legend(bbox_to_anchor=(1.15, 1.1), fontsize=7)
 
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", dpi=150)
+    fig.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close(fig)
     return buf
 
 # --------------------------
-# PDF Generator (ReportLab)
+# PDF Export
 # --------------------------
-import io
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfbase.pdfmetrics import stringWidth
-
-# Helper function: wrap text so it doesn't overflow
-def wrap_text(c, text, x, y, max_width, font="Helvetica", font_size=9, leading=11):
-    """
-    Draw text wrapped to max_width.
-    Returns updated y after writing.
-    """
-    c.setFont(font, font_size)
-    words = text.split()
-    line = ""
-    for word in words:
-        test_line = f"{line} {word}".strip()
-        if stringWidth(test_line, font, font_size) <= max_width:
-            line = test_line
-        else:
-            c.drawString(x, y, line)
-            y -= leading
-            line = word
-    if line:
-        c.drawString(x, y, line)
-        y -= leading
-    return y
-
 def create_pdf(
     creative_scores,
     big5_scores,
@@ -314,10 +244,7 @@ def create_pdf(
     creative_summaries,
     big5_summaries,
     chart_buf_creative,
-    chart_buf_big5,
-    creative_colors,
-    big5_colors,
-    get_level
+    chart_buf_big5
 ):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -338,20 +265,18 @@ def create_pdf(
 
     # Archetypes
     c.setFont("Helvetica-Bold", 14)
-    c.setFillColorRGB(0, 0, 0)
     c.drawString(40, height - 320, "Your Creative Archetypes")
     y = height - 340
     for label, (trait, arch) in archetypes_data.items():
-        # Header with color
         c.setFont("Helvetica-Bold", 11)
-        r, g, b = [int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255 for i in (0, 2, 4)]
-        c.setFillColorRGB(r, g, b)
+        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
+                                 for i in (0, 2, 4)))
         c.drawString(50, y, f"{label}: {arch['name']}")
         c.setFillColorRGB(0, 0, 0)
-        # Description or improvement
+        c.setFont("Helvetica", 9)
         text = arch['description'] if label != "Growth Area" else arch['improvement']
-        y = wrap_text(c, text, 60, y-12, max_width=480)
-        y -= 10
+        c.drawString(60, y-12, text)
+        y -= 40
 
     # Creative Trait Insights
     c.setFont("Helvetica-Bold", 14)
@@ -360,16 +285,14 @@ def create_pdf(
     y -= 20
     for trait, score in creative_scores.items():
         level = get_level(score)
-        # Header
         c.setFont("Helvetica-Bold", 10)
-        r, g, b = [int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255 for i in (0, 2, 4)]
-        c.setFillColorRGB(r, g, b)
+        c.setFillColorRGB(*tuple(int(creative_colors[trait].lstrip("#")[i:i+2], 16)/255
+                                 for i in (0, 2, 4)))
         c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
+        c.setFont("Helvetica", 9)
         c.setFillColorRGB(0, 0, 0)
-        # Wrapped summary
-        summary = creative_summaries[trait][level]
-        y = wrap_text(c, summary, 60, y-12, max_width=480)
-        y -= 8
+        c.drawString(60, y-12, creative_summaries[trait][level])
+        y -= 30
 
     # Big Five Trait Insights
     c.setFont("Helvetica-Bold", 14)
@@ -378,29 +301,26 @@ def create_pdf(
     y -= 20
     for trait, score in big5_scores.items():
         level = get_level(score)
-        # Header
         c.setFont("Helvetica-Bold", 10)
-        r, g, b = [int(big5_colors[trait].lstrip("#")[i:i+2], 16)/255 for i in (0, 2, 4)]
-        c.setFillColorRGB(r, g, b)
+        c.setFillColorRGB(*tuple(int(big5_colors[trait].lstrip("#")[i:i+2], 16)/255
+                                 for i in (0, 2, 4)))
         c.drawString(50, y, f"{trait} ({level}) — {score:.2f}/5")
+        c.setFont("Helvetica", 9)
         c.setFillColorRGB(0, 0, 0)
-        # Wrapped summary
-        summary = big5_summaries[trait][level]
-        y = wrap_text(c, summary, 60, y-12, max_width=480)
-        y -= 8
+        c.drawString(60, y-12, big5_summaries[trait][level])
+        y -= 30
 
     c.showPage()
     c.save()
     buf.seek(0)
     return buf
 
-
 # --------------------------
-# Streamlit App (main)
+# Streamlit App
 # --------------------------
 st.title("Creative Identity & Personality Profile")
 
-# Initialize session state
+# Init session state
 if "current_q" not in st.session_state:
     st.session_state.current_q = 0
 
@@ -425,10 +345,11 @@ total_qs = len(all_questions)
 # --------------------------
 if current_q < total_qs:
     if current_q == 0:
-        st.markdown("## Welcome to the Creative Identity Quiz 🎨")
+        st.markdown("## Welcome to the Creative Identity Quiz")
         st.markdown(
             "This quiz explores your **creative traits** and **personality dimensions**. "
-            "Please rate each statement on a 1–5 scale: 1 = Strongly Disagree … 5 = Strongly Agree. "
+            "Please rate each statement on a 1–5 scale: "
+            "1 = Strongly Disagree … 5 = Strongly Agree. "
             "Answer honestly – there are no right or wrong answers!"
         )
         st.divider()
@@ -437,18 +358,25 @@ if current_q < total_qs:
     key = f"{trait}_{current_q}"
     st.markdown(f"**Q{current_q+1}/{total_qs}:** {question}")
 
-    # --- Likert 1–5 buttons with descriptors ---
+    # --- Likert buttons with descriptors ---
+    likert_labels = {
+        1: "Strongly Disagree",
+        2: "Disagree",
+        3: "Neutral",
+        4: "Agree",
+        5: "Strongly Agree"
+    }
     cols = st.columns(5)
     for i, col in enumerate(cols, start=1):
         button_key = f"{key}_btn{i}"
-        if col.button(likert_labels[i], key=button_key, use_container_width=True):
+        if col.button(f"{i}\n{likert_labels[i]}", key=button_key):
             responses[key] = i
             st.session_state.responses = responses
             st.rerun()
 
-    # Show selection with descriptor
+    # Show selection
     if key in responses and responses[key] is not None:
-        st.markdown(f"✅ You selected: **{likert_short[responses[key]]}**")
+        st.markdown(f"✅ You selected: **{likert_labels[responses[key]]} ({responses[key]})**")
     else:
         st.markdown("_Please choose an option above to continue._")
 
@@ -487,85 +415,77 @@ else:
                 big5_counts[trait] += 1
 
     for t in creative_scores:
-        if creative_counts[t] > 0:
-            creative_scores[t] /= creative_counts[t]
-        else:
-            creative_scores[t] = 0.0
+        creative_scores[t] /= creative_counts[t]
     for t in big5_scores:
-        if big5_counts[t] > 0:
-            big5_scores[t] /= big5_counts[t]
-        else:
-            big5_scores[t] = 0.0
+        big5_scores[t] /= big5_counts[t]
 
-    # Charts (buffers)
-    c1, c2 = st.columns(2)
-    chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
-    chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
-    with c1:
-        st.image(chart_buf_creative, use_container_width=True)
-    with c2:
-        st.image(chart_buf_big5, use_container_width=True)
+    # Charts
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(radar_chart(creative_scores, creative_colors, "Creative Traits"), use_container_width=True)
+    with col2:
+        st.image(radar_chart(big5_scores, big5_colors, "Big Five Traits"), use_container_width=True)
 
     # Archetypes
     sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
-    # ensure we have at least 3 traits
-    if len(sorted_traits) >= 3:
-        main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-    else:
-        # fallback (shouldn't happen with full set)
-        keys = list(creative_traits.keys())
-        main_trait, sub_trait, weakest_trait = keys[0], keys[1], keys[-1]
+    main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
     st.subheader("Your Creative Archetypes")
-    archetypes_info = {}
     for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
         if label == "Growth Area":
             content = archetypes[trait]["improvement"]
         else:
             content = archetypes[trait]["description"]
-        archetypes_info[label] = (trait, archetypes[trait])
         st.markdown(
-            f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
+            f"<div style='padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
             f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{label}: {archetypes[trait]['name']}</span><br>"
             f"<i>{content}</i></div>", unsafe_allow_html=True
         )
 
-    # Summaries — Creative Traits
+    # Summaries
     st.subheader("Creative Trait Insights")
     for trait, score in creative_scores.items():
         level = get_level(score)
         summary = creative_summaries[trait][level]
         st.markdown(
-            f"<div style='background-color:{creative_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<div style='padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
             f"<span style='color:{creative_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    # Summaries — Big Five Traits
     st.subheader("Big Five Trait Insights")
     for trait, score in big5_scores.items():
         level = get_level(score)
         summary = big5_summaries[trait][level]
         st.markdown(
-            f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
+            f"<div style='padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
             f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    # PDF Download (embed the two radar images and color-coded cards)
-    pdf_buf = create_pdf(
-        creative_scores, big5_scores,
-        {
-            "Main Archetype": (main_trait, archetypes[main_trait]),
-            "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
-            "Growth Area": (weakest_trait, archetypes[weakest_trait]),
-        },
-        creative_summaries, big5_summaries,
-        chart_buf_creative, chart_buf_big5
-    )
-    st.download_button("📥 Download Your Profile (PDF)", data=pdf_buf.getvalue(), file_name="creative_profile.pdf", mime="application/pdf")
+    # PDF Download
+    chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
+    chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
 
-    # Missed questions
-    missed = [q for q, ans in responses.items() if ans is None]
-    if missed:
-        st.warning(f"You skipped {len(missed)} questions. Your scores may be less accurate.")
+    archetypes_data = {
+        "Main Archetype": (main_trait, archetypes[main_trait]),
+        "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
+        "Growth Area": (weakest_trait, archetypes[weakest_trait])
+    }
+
+    pdf_buf = create_pdf(
+        creative_scores,
+        big5_scores,
+        archetypes_data,
+        creative_summaries,
+        big5_summaries,
+        chart_buf_creative,
+        chart_buf_big5
+    )
+
+    st.download_button(
+        "Download Full Report (PDF)",
+        data=pdf_buf,
+        file_name="creative_identity_profile.pdf",
+        mime="application/pdf"
+    )
