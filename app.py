@@ -213,7 +213,10 @@ elif page == "quiz":
             st.session_state.page = "results"
             st.rerun()
 
-elif page == "results":
+# --------------------------
+# Results Page
+# --------------------------
+elif st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
     # Calculate scores
@@ -245,10 +248,9 @@ elif page == "results":
         ax.set_yticklabels([])
         ax.set_title(title, size=14, weight="bold", pad=20)
 
-        # Plot each trait segment with its colour
         for i, label in enumerate(labels):
-            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
-            ax.fill([angles[i], angles[i+1]], [values[i], values[i+1]], alpha=0.1, color=palette[label])
+            val = values[i]
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
 
         st.pyplot(fig)
 
@@ -257,56 +259,44 @@ elif page == "results":
         buf.seek(0)
         return buf
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Big Five")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-    with col2:
-        st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-        
-# --------------------------
-# Archetypes and Growth Area
-# --------------------------
-sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    st.subheader("Big Five Personality Dimensions")
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
-st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-st.write(f"**{main_trait}: {creative_perc[main_trait]}%** — {trait_descriptions[main_trait]['high']}")
-st.write(f"**Growth Tip:** {archetypes[main_trait][2]}")
-
-st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-st.write(f"**{sub_trait}: {creative_perc[sub_trait]}%** — {trait_descriptions[sub_trait]['medium']}")
-st.write(f"**Growth Tip:** {archetypes[sub_trait][2]}")
-
-st.markdown(f"### Growth Area: {lowest_trait}")
-st.write(f"**{lowest_trait}: {creative_perc[lowest_trait]}%** — {trait_descriptions[lowest_trait]['low']}")
-st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
+    st.subheader("Creative Traits")
+    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
 
     # --------------------------
-    # Growth Trait (lowest only)
+    # Archetypes and Growth Area
     # --------------------------
-sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-lowest_trait = sorted_traits[-1][0]
+    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+    main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
-st.markdown(f"### Growth Trait: {lowest_trait}")
-st.write(trait_descriptions[lowest_trait]["low"])
-st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
+    st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+    st.write(f"**{main_trait}: {creative_perc[main_trait]}%** — {trait_descriptions[main_trait]['high']}")
+    st.write(f"**Growth Tip:** {archetypes[main_trait][2]}")
+
+    st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+    st.write(f"**{sub_trait}: {creative_perc[sub_trait]}%** — {trait_descriptions[sub_trait]['medium']}")
+    st.write(f"**Growth Tip:** {archetypes[sub_trait][2]}")
+
+    st.markdown(f"### Growth Area: {lowest_trait}")
+    st.write(f"**{lowest_trait}: {creative_perc[lowest_trait]}%** — {trait_descriptions[lowest_trait]['low']}")
+    st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
     # --------------------------
     # List of Traits
     # --------------------------
     st.subheader("Your Trait Scores")
     for t, p in creative_perc.items():
-        st.write(f"**{t}:** {p}% - {trait_descriptions[t]['high' if p > 66 else 'medium' if p > 33 else 'low']}")
+        st.write(f"**{t}:** {p}%")
     for t, p in bigfive_perc.items():
-        st.write(f"**{t}:** {p}% - {trait_descriptions[t]['high' if p > 66 else 'medium' if p > 33 else 'low']}")
+        st.write(f"**{t}:** {p}%")
 
     # --------------------------
     # Academic Section
     # --------------------------
     with st.expander("The Science Behind the Creative Identity & Personality Profile"):
-        with open("academic_article.txt", "r") as f:
+        with open("academic_section.txt", "r") as f:
             st.markdown(f.read())
 
     # --------------------------
@@ -326,18 +316,21 @@ st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
         c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size)
         c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size)
 
+        c.showPage()
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, height - 320, "Growth Trait")
-        c.setFont("Helvetica", 12)
-        c.drawString(40, height - 340, f"{lowest_trait}: {trait_descriptions[lowest_trait]['low']}")
-        c.drawString(40, height - 360, f"Growth Tip: {archetypes[lowest_trait][2]}")
+        c.drawString(40, height - 60, "Archetypes and Growth Area")
 
+        c.setFont("Helvetica", 12)
+        c.drawString(40, height - 100, f"Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
+        c.drawString(40, height - 120, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
+        c.drawString(40, height - 140, f"Growth Area: {lowest_trait}")
+
+        c.showPage()
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, height - 400, "Your Trait Scores")
-        y = height - 420
+        c.drawString(40, height - 60, "Your Trait Scores")
+        y = height - 100
         for t, p in {**creative_perc, **bigfive_perc}.items():
-            desc_key = "high" if p > 66 else "medium" if p > 33 else "low"
-            c.drawString(40, y, f"{t}: {p}% - {trait_descriptions[t][desc_key]}")
+            c.drawString(40, y, f"{t}: {p}%")
             y -= 20
 
         c.save()
@@ -346,3 +339,5 @@ st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
+
+        c.setFont(
