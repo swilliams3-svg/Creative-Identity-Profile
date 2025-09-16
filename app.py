@@ -5,8 +5,26 @@ import io
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
+
+# --------------------------
+# Colour Palette
+# --------------------------
+palette = {
+    "Originality": "#F94144",
+    "Curiosity": "#F8961E",
+    "Risk-Taking": "#F9C74F",
+    "Imagination": "#90BE6D",
+    "Discipline": "#577590",
+    "Collaboration": "#43AA8B",
+    "Openness": "#277DA1",
+    "Conscientiousness": "#F3722C",
+    "Extraversion": "#4D908E",
+    "Agreeableness": "#F9844A",
+    "Neuroticism": "#9A031E",
+}
 
 # --------------------------
 # Creative Traits
@@ -76,7 +94,53 @@ big_five_traits = {
 }
 
 # --------------------------
-# PDF Helper for Academic Section
+# Archetypes
+# --------------------------
+archetypes = {
+    "Innovator": ["High Originality", "High Curiosity"],
+    "Explorer": ["High Curiosity", "High Risk-Taking"],
+    "Dreamer": ["High Imagination"],
+    "Maker": ["High Discipline"],
+    "Connector": ["High Collaboration"],
+}
+
+sub_archetypes = {
+    "Visionary Innovator": "Pairs high Originality with strong Imagination.",
+    "Practical Innovator": "Combines Originality with high Discipline.",
+    "Adventurous Explorer": "Exploration with risk-taking courage.",
+    "Collaborative Dreamer": "Imaginative but thrives in group work.",
+    "Grounded Maker": "Disciplined and conscientious creative.",
+}
+
+# --------------------------
+# Trait Summaries & Tips
+# --------------------------
+def trait_summary(score):
+    if score >= 4.2:
+        return "High – a strong defining aspect of your profile."
+    elif score >= 3:
+        return "Medium – present, but with room for development."
+    else:
+        return "Low – a potential area for growth."
+
+def improvement_tip(trait):
+    tips = {
+        "Originality": "Try brainstorming exercises or idea journals.",
+        "Curiosity": "Engage in diverse reading or ask more 'why' questions.",
+        "Risk-Taking": "Experiment with small, low-stakes risks.",
+        "Imagination": "Practice visualisation or creative writing.",
+        "Discipline": "Set structured goals and deadlines.",
+        "Collaboration": "Seek feedback or join creative groups.",
+        "Openness": "Expose yourself to new cultures and perspectives.",
+        "Conscientiousness": "Use task lists and project planning tools.",
+        "Extraversion": "Join groups or practice public speaking.",
+        "Agreeableness": "Practice active listening and empathy.",
+        "Neuroticism": "Develop stress-management and mindfulness routines."
+    }
+    return tips.get(trait, "")
+
+# --------------------------
+# PDF Helper
 # --------------------------
 def wrap_text(c, lines, x, y, max_width, line_height):
     for line in lines:
@@ -109,11 +173,11 @@ if "responses" not in st.session_state:
 if st.session_state.page == "intro":
     st.title("Creative Identity & Personality Profile")
     st.markdown("""
-    This quiz is designed to give you insights into both your **creative traits** and your **personality profile**.
-    
-    - You will answer statements on a **1–5 scale** (1 = Strongly Disagree, 5 = Strongly Agree).
-    - The quiz combines research on creativity and personality psychology.
-    - At the end, you’ll receive a **personal profile with charts and an archetype description**.
+    This quiz gives you insights into both your **creative traits** and your **personality profile**.
+
+    - Answer on a **1–5 scale** (1 = Strongly Disagree, 5 = Strongly Agree).  
+    - Based on research in creativity & personality psychology.  
+    - Get a personalised **profile with charts, archetypes, and growth tips**.  
     """)
     if st.button("Start Quiz"):
         st.session_state.page = "quiz"
@@ -148,26 +212,30 @@ elif st.session_state.page == "quiz":
 elif st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
-    # Compute averages
+    # Scores
     creative_scores = {t: np.mean([st.session_state.responses[f"{t}_{q}"] for q in qs]) for t, qs in creative_traits.items()}
     bigfive_scores = {t: np.mean([st.session_state.responses[f"{t}_{q}"] for q in qs]) for t, qs in big_five_traits.items()}
 
-    # --------------------------
-    # Radar Chart Function
-    # --------------------------
-    def radar_chart(scores, title, colors):
+    # Radar chart function
+    def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
-        values += values[:1]  # close the loop
+        values += values[:1]
         angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
         angles += angles[:1]
 
         fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-        ax.fill(angles, values, color=colors[0], alpha=0.25)
-        ax.plot(angles, values, color=colors[1], linewidth=2)
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
+
+        for i, (trait, val) in enumerate(scores.items()):
+            color = palette.get(trait, "#000000")
+            ax.plot([angles[i], angles[i]], [0, val], color=color, linewidth=2)
+            ax.scatter(angles[i], val, color=color, s=50)
+
+        ax.plot(angles, values, color="#333333", linewidth=1, linestyle="dashed")
+        ax.fill(angles, values, color="#cccccc", alpha=0.1)
         ax.set_title(title, size=14, weight="bold", pad=20)
         st.pyplot(fig)
 
@@ -178,63 +246,66 @@ elif st.session_state.page == "results":
 
     # Show charts
     st.subheader("Big Five Personality Dimensions")
-    chart_buf_big5 = radar_chart(bigfive_scores, "Big Five", colors=("#4DA1A9", "#05668D"))
+    chart_buf_big5 = radar_chart(bigfive_scores, "Big Five")
 
     st.subheader("Creative Traits")
-    chart_buf_creative = radar_chart(creative_scores, "Creative Traits", colors=("#E56B6F", "#C5283D"))
+    chart_buf_creative = radar_chart(creative_scores, "Creative Traits")
 
-    # --------------------------
-    # Academic Section (Collapsible)
-    # --------------------------
-    with st.expander("The Science Behind the Creative Identity & Personality Profile"):
-        st.markdown("This is where the full academic text and references appear.")
+    # Trait summaries
+    st.markdown("### Trait Summaries")
+    for trait, score in {**creative_scores, **bigfive_scores}.items():
+        st.markdown(f"**{trait}** ({score:.1f}) – {trait_summary(score)}  \n_Tip: {improvement_tip(trait)}_")
 
-    # --------------------------
+    # Archetype mapping
+    st.markdown("### Your Archetype")
+    top_creative = max(creative_scores, key=creative_scores.get)
+    if creative_scores[top_creative] >= 4:
+        main_arch = [a for a, cond in archetypes.items() if f"High {top_creative}" in cond]
+        if main_arch:
+            st.write(f"Primary Archetype: **{main_arch[0]}**")
+            for sub, desc in sub_archetypes.items():
+                if top_creative in desc:
+                    st.write(f"- Sub-Archetype: *{sub}* → {desc}")
+
     # PDF Generation
-    # --------------------------
     def create_pdf():
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=A4)
         width, height = A4
 
-        # Title page
+        # Title
         c.setFont("Helvetica-Bold", 18)
         c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
 
-        # Radar charts
+        # Charts
         img1 = ImageReader(chart_buf_creative)
         img2 = ImageReader(chart_buf_big5)
-        chart_size = 200
-        c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
-        c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
+        c.drawImage(img1, 60, height - 280, width=200, height=200, mask='auto')
+        c.drawImage(img2, 300, height - 280, width=200, height=200, mask='auto')
 
-        # Academic / Science Page
+        # Trait summaries
         c.showPage()
         c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(width/2, height - 40, "The Science Behind the Creative Identity & Personality Profile")
-
+        c.drawString(50, height - 50, "Trait Summaries & Tips")
         c.setFont("Helvetica", 10)
-        academic_text = """The Creative Identity & Personality Profile was designed by drawing upon established research in both creativity studies and personality psychology. The quiz integrates validated psychological frameworks with applied creativity theory, providing participants with a structured but engaging way to reflect on their creative strengths and tendencies.
+        y = height - 80
+        for trait, score in {**creative_scores, **bigfive_scores}.items():
+            col = colors.HexColor(palette.get(trait, "#000000"))
+            c.setFillColor(col)
+            c.drawString(50, y, f"{trait} ({score:.1f}) – {trait_summary(score)}")
+            c.setFillColor(colors.black)
+            y -= 14
+            c.drawString(70, y, f"Tip: {improvement_tip(trait)}")
+            y -= 20
+            if y < 80:
+                c.showPage()
+                y = height - 80
 
-Creative Traits
-Research shows that creativity is not a single skill, but a combination of dispositions, habits, and mindsets (Runco & Jaeger, 2012; Amabile, 1996; Sternberg, 2006). Six traits were selected for this quiz, each reflecting well-documented components of creative behaviour:
-
-- Originality – the ability to generate novel and unconventional ideas (Guilford, 1950).
-- Curiosity – openness to questioning and exploring new concepts (Kashdan et al., 2004).
-- Risk-Taking – willingness to tolerate uncertainty and possible failure (Beghetto, 2009).
-- Imagination – capacity for mental imagery and envisioning possibilities (Vygotsky, 2004).
-- Discipline – persistence, effort, and self-regulation in creative work (Torrance, 1974).
-- Collaboration – social interaction and exchange as enablers of creativity (Sawyer, 2012).
-
-Big Five Personality Dimensions
-The second foundation of the quiz is the Big Five Personality Model (Costa & McCrae, 1992), one of the most extensively validated models in psychology. The five dimensions—Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism—are consistently linked with life outcomes, behaviour, and creativity.
-
-References
-- Amabile, T. M. (1996). Creativity in Context. Westview Press.
-- Costa, P. T., & McCrae, R. R. (1992). Revised NEO Personality Inventory. Psychological Assessment Resources.
-- Guilford, J. P. (1950). Creativity. American Psychologist.
-"""
-
+        c.showPage()
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(width/2, height - 40, "The Science Behind the Profile")
+        c.setFont("Helvetica", 10)
+        academic_text = """This profile combines creativity research (Guilford, Torrance, Amabile, Sternberg, Runco) with the Big Five model (Costa & McCrae, 1992). It integrates personality psychology with applied creativity studies to provide reflective insights."""
         wrap_text(c, academic_text.split("\n"), 60, height - 70, width - 100, 12)
 
         c.showPage()
