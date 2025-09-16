@@ -150,8 +150,14 @@ def radar_chart(trait_scores, title):
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
-    ax.plot(angles, values, linewidth=2, linestyle='solid')
-    ax.fill(angles, values, alpha=0.25)
+
+    # Plot each segment in its trait colour
+    for i, label in enumerate(labels):
+        ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], 
+                color=palette[label], linewidth=2)
+        ax.fill([angles[i], angles[i+1], angles[i]], 
+                [values[i], values[i+1], 0], 
+                color=palette[label], alpha=0.25)
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=8)
@@ -163,6 +169,7 @@ def radar_chart(trait_scores, title):
     plt.close(fig)
     buf.seek(0)
     return buf
+
 
 # --------------------------
 # Session State
