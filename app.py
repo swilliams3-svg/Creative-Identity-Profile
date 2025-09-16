@@ -123,35 +123,31 @@ trait_descriptions = {
         "high": "You thrive in teamwork and enjoy co-creating with others.",
         "medium": "You collaborate when needed but also value independence.",
         "low": "You prefer working alone and rely less on group dynamics."
-    }
-}
-
-# Big Five descriptors
-bigfive_descriptions = {
+    },
     "Openness": {
-        "high": "You are highly open to new experiences, imaginative, and curious.",
-        "medium": "You are moderately open, balancing creativity with practicality.",
-        "low": "You prefer routine and familiar experiences over novelty."
+        "high": "You are highly open to new experiences and perspectives.",
+        "medium": "You are moderately open, balancing curiosity with practicality.",
+        "low": "You prefer familiar routines and are less inclined to explore new ideas."
     },
     "Conscientiousness": {
-        "high": "You are very organized, dependable, and goal-oriented.",
-        "medium": "You are reasonably conscientious but sometimes flexible with rules.",
-        "low": "You are more spontaneous and less bound by schedules or structure."
+        "high": "You are highly disciplined and organized in your approach.",
+        "medium": "You are reasonably conscientious but can be flexible when needed.",
+        "low": "You may struggle with organization and long-term follow-through."
     },
     "Extraversion": {
-        "high": "You are outgoing, energetic, and thrive in social interactions.",
-        "medium": "You enjoy some social activities but also value quiet time.",
-        "low": "You are reserved, prefer solitude, and recharge alone."
+        "high": "You feel energized by social interactions and group settings.",
+        "medium": "You are moderately outgoing but also value time alone.",
+        "low": "You prefer quiet, solitary activities over social engagements."
     },
     "Agreeableness": {
-        "high": "You are cooperative, empathetic, and value positive relationships.",
-        "medium": "You are generally agreeable but balance your needs with others.",
-        "low": "You are more competitive, direct, and value independence over harmony."
+        "high": "You are highly cooperative, empathetic, and value harmony.",
+        "medium": "You are somewhat agreeable, balancing your needs with others.",
+        "low": "You tend to be more competitive and prioritize your own perspective."
     },
     "Neuroticism": {
-        "high": "You may often feel stressed, anxious, or emotionally sensitive.",
-        "medium": "You experience some emotional ups and downs but generally cope well.",
-        "low": "You remain calm, resilient, and emotionally stable under stress."
+        "high": "You are highly sensitive to stress and may experience emotional ups and downs.",
+        "medium": "You experience occasional stress but generally manage well.",
+        "low": "You are calm, resilient, and rarely feel overwhelmed by stress."
     }
 }
 
@@ -168,7 +164,7 @@ archetypes = {
 }
 
 # --------------------------
-# Session State
+# Session State Initialisation
 # --------------------------
 if "page" not in st.session_state:
     st.session_state.page = "intro"
@@ -176,9 +172,11 @@ if "responses" not in st.session_state:
     st.session_state.responses = {}
 
 # --------------------------
-# Intro Page
+# Page Routing
 # --------------------------
-if st.session_state.page == "intro":
+page = st.session_state.page
+
+if page == "intro":
     st.title("Creative Identity & Personality Profile")
     st.markdown("""
     Welcome to the **Creative Identity & Personality Profile**.  
@@ -192,10 +190,7 @@ if st.session_state.page == "intro":
         st.session_state.page = "quiz"
         st.rerun()
 
-# --------------------------
-# Quiz Page
-# --------------------------
-elif st.session_state.page == "quiz":
+elif page == "quiz":
     st.header("Quiz Questions")
 
     questions = []
@@ -218,42 +213,7 @@ elif st.session_state.page == "quiz":
             st.session_state.page = "results"
             st.rerun()
 
-# --------------------------
-# Radar Chart Function
-# --------------------------
-def radar_chart(trait_scores, title):
-    labels = list(trait_scores.keys())
-    values = list(trait_scores.values())
-
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-    values += values[:1]
-    angles += angles[:1]
-
-    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
-
-    # Draw each segment in its palette colour
-    for i, label in enumerate(labels):
-        ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]],
-                color=palette[label], linewidth=2)
-        ax.fill([angles[i], angles[i+1], angles[i]],
-                [values[i], values[i+1], 0],
-                color=palette[label], alpha=0.25)
-
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=8)
-    ax.set_yticklabels([])
-    ax.set_title(title, size=12, weight="bold", y=1.1)
-
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
-    plt.close(fig)
-    buf.seek(0)
-    return buf
-
-# --------------------------
-# Results Page
-# --------------------------
-elif st.session_state.page == "results":
+elif page == "results":
     st.title("Your Creative Identity Profile")
 
     # Calculate scores
@@ -269,64 +229,71 @@ elif st.session_state.page == "results":
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-    # Radar Charts side by side
-    col1, col2 = st.columns(2)
+    # --------------------------
+    # Radar Charts
+    # --------------------------
+    def radar_chart(scores, title):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]
+        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        angles += angles[:1]
 
+        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_title(title, size=14, weight="bold", pad=20)
+
+        # Plot each trait segment with its colour
+        for i, label in enumerate(labels):
+            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
+            ax.fill([angles[i], angles[i+1]], [values[i], values[i+1]], alpha=0.1, color=palette[label])
+
+        st.pyplot(fig)
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG")
+        buf.seek(0)
+        return buf
+
+    col1, col2 = st.columns(2)
     with col1:
         st.subheader("Big Five Personality Dimensions")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-        st.image(chart_buf_big5)
-
     with col2:
         st.subheader("Creative Traits")
         chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-        st.image(chart_buf_creative)
 
-    # Archetypes
+    # --------------------------
+    # Growth Trait (lowest only)
+    # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-    main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    lowest_trait = sorted_traits[-1][0]
 
-    st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-    st.write(f"Your results suggest that {trait_descriptions[main_trait]['high']}")
-
-    st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-    st.write(f"Your profile also shows that {trait_descriptions[sub_trait]['medium']}")
-
-    st.markdown(f"### Growth Area: {lowest_trait}")
-    st.write(f"This area may hold you back at times: {trait_descriptions[lowest_trait]['low']}")
+    st.markdown(f"### Growth Trait: {lowest_trait}")
+    st.write(trait_descriptions[lowest_trait]["low"])
     st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
-    # Personalised Trait Scores
+    # --------------------------
+    # List of Traits
+    # --------------------------
     st.subheader("Your Trait Scores")
+    for t, p in creative_perc.items():
+        st.write(f"**{t}:** {p}% - {trait_descriptions[t]['high' if p > 66 else 'medium' if p > 33 else 'low']}")
+    for t, p in bigfive_perc.items():
+        st.write(f"**{t}:** {p}% - {trait_descriptions[t]['high' if p > 66 else 'medium' if p > 33 else 'low']}")
 
-    def interpret_score(trait, score):
-        if trait in trait_descriptions:
-            if score >= 70:
-                return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions[trait]['high']}."
-            elif score >= 40:
-                return f"You scored {score}% in **{trait}**, showing a balanced approach: {trait_descriptions[trait]['medium']}."
-            else:
-                return f"You scored {score}% in **{trait}**, which suggests {trait_descriptions[trait]['low']}."
-        elif trait in bigfive_descriptions:
-            if score >= 70:
-                return f"You scored {score}% in **{trait}**, which suggests {bigfive_descriptions[trait]['high']}."
-            elif score >= 40:
-                return f"You scored {score}% in **{trait}**, showing a balanced approach: {bigfive_descriptions[trait]['medium']}."
-            else:
-                return f"You scored {score}% in **{trait}**, which suggests {bigfive_descriptions[trait]['low']}."
-        else:
-            return f"You scored {score}% in **{trait}**."
-
-    all_scores = {**creative_perc, **bigfive_perc}
-    for t, p in all_scores.items():
-        st.write(interpret_score(t, p))
-
+    # --------------------------
     # Academic Section
+    # --------------------------
     with st.expander("The Science Behind the Creative Identity & Personality Profile"):
         with open("academic_section.txt", "r") as f:
             st.markdown(f.read())
 
+    # --------------------------
     # PDF Generation
+    # --------------------------
     def create_pdf():
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=A4)
@@ -341,37 +308,18 @@ elif st.session_state.page == "results":
         c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size)
         c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size)
 
-        c.showPage()
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, height - 60, "Archetypes and Growth Area")
-
+        c.drawString(40, height - 320, "Growth Trait")
         c.setFont("Helvetica", 12)
-        c.drawString(40, height - 100, f"Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-        c.drawString(40, height - 120, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-        c.drawString(40, height - 140, f"Growth Area: {lowest_trait}")
+        c.drawString(40, height - 340, f"{lowest_trait}: {trait_descriptions[lowest_trait]['low']}")
+        c.drawString(40, height - 360, f"Growth Tip: {archetypes[lowest_trait][2]}")
 
-        c.showPage()
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, height - 60, "Your Trait Scores")
-        y = height - 100
-        for t, p in all_scores.items():
-            if t in trait_descriptions:
-                if p >= 70:
-                    desc = trait_descriptions[t]["high"]
-                elif p >= 40:
-                    desc = trait_descriptions[t]["medium"]
-                else:
-                    desc = trait_descriptions[t]["low"]
-            elif t in bigfive_descriptions:
-                if p >= 70:
-                    desc = bigfive_descriptions[t]["high"]
-                elif p >= 40:
-                    desc = bigfive_descriptions[t]["medium"]
-                else:
-                    desc = bigfive_descriptions[t]["low"]
-            else:
-                desc = ""
-            c.drawString(40, y, f"{t}: {p}% → {desc}")
+        c.drawString(40, height - 400, "Your Trait Scores")
+        y = height - 420
+        for t, p in {**creative_perc, **bigfive_perc}.items():
+            desc_key = "high" if p > 66 else "medium" if p > 33 else "low"
+            c.drawString(40, y, f"{t}: {p}% - {trait_descriptions[t][desc_key]}")
             y -= 20
 
         c.save()
@@ -380,4 +328,3 @@ elif st.session_state.page == "results":
 
     pdf_buf = create_pdf()
     st.download_button("Download Full Report (PDF)", data=pdf_buf, file_name="Creative_Identity_Profile.pdf", mime="application/pdf")
-
