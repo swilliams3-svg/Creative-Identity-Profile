@@ -270,7 +270,7 @@ elif st.session_state.page == "results":
         st.subheader("Creative Traits")
         chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
     with col2:
-        st.subheader("Big Five Personality Dimensions")
+        st.subheader("Big Five")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
     # --------------------------
