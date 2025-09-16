@@ -8,12 +8,12 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
 # --------------------------
-# Page Setup
+# Config
 # --------------------------
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Creative Traits & Big Five
+# Trait Questions
 # --------------------------
 creative_traits = {
     "Originality": [
@@ -77,50 +77,113 @@ big_five_traits = {
 }
 
 # --------------------------
-# Trait Descriptors (High/Medium/Low)
+# Archetypes Dictionary
 # --------------------------
 trait_descriptions = {
     "Originality": {
-        "High": "You thrive on breaking patterns and offering unique perspectives. Others see you as someone who sparks fresh ideas.",
-        "Medium": "You sometimes bring new perspectives but balance this with practical solutions.",
-        "Low": "You tend to stick with tried-and-tested methods. Practicing brainstorming can boost originality."
+        "archetype": "The Innovator",
+        "scientific": "Divergent Thinker",
+        "high": "You thrive on breaking patterns and offering unique perspectives. Others see you as someone who sparks fresh ideas and challenges conventional thinking.",
+        "medium": "You sometimes generate original ideas but often balance them with conventional solutions.",
+        "low": "You prefer tried-and-tested approaches. Growth comes from practicing brainstorming and idea fluency.",
+        "growth": "Practice brainstorming multiple solutions to a problem. Quantity often leads to originality."
     },
     "Curiosity": {
-        "High": "You constantly seek new knowledge, experiences, and perspectives, discovering connections others miss.",
-        "Medium": "You’re open to learning, though sometimes within familiar boundaries.",
-        "Low": "You may prefer routine over exploration. Try a beginner’s mindset to reignite curiosity."
+        "archetype": "The Explorer",
+        "scientific": "Openness-driven Creative",
+        "high": "You are constantly seeking new knowledge, experiences, and perspectives. Your open-mindedness helps you discover connections others miss.",
+        "medium": "You are open to new things occasionally but may prefer familiar territory.",
+        "low": "You stick to what you know. Growth comes from asking more questions and challenging assumptions.",
+        "growth": "Adopt a beginner’s mindset. Ask simple questions even about familiar things."
     },
     "Risk-Taking": {
-        "High": "You embrace uncertainty, which fuels bold and experimental creativity.",
-        "Medium": "You’re cautious but occasionally step into the unknown.",
-        "Low": "You avoid risks. Taking small, low-stakes risks can build confidence."
+        "archetype": "The Adventurer",
+        "scientific": "Tolerance for Uncertainty",
+        "high": "You’re willing to step into the unknown and embrace uncertainty, which fuels bold and experimental creativity.",
+        "medium": "You take risks selectively, balancing comfort with occasional leaps.",
+        "low": "You avoid uncertainty and prefer safe paths. Growth comes from experimenting in low-stakes situations.",
+        "growth": "Start with small, low-stakes risks in your projects to build confidence."
     },
     "Imagination": {
-        "High": "You can easily envision possibilities and think beyond what exists.",
-        "Medium": "You sometimes think creatively but balance this with realism.",
-        "Low": "You prefer concrete facts. Try exercises like free drawing or mind-mapping to build imagination."
+        "archetype": "The Dreamer",
+        "scientific": "Imaginative Creator",
+        "high": "You can easily envision possibilities and think beyond what exists. Your creativity flourishes through imagery, storytelling, and future-focused thinking.",
+        "medium": "You use imagination occasionally but may rely more on logic or facts.",
+        "low": "You prefer concrete thinking and struggle with abstract scenarios. Growth comes from engaging in creative exercises.",
+        "growth": "Try free drawing, mind-mapping, or writing 'what if' scenarios to expand imagination."
     },
     "Discipline": {
-        "High": "You bring structure and persistence to creative work, excelling at polished outcomes.",
-        "Medium": "You’re fairly consistent but sometimes struggle with follow-through.",
-        "Low": "You may find it hard to stay focused. Break goals into smaller steps."
+        "archetype": "The Builder",
+        "scientific": "Conscientious Creator",
+        "high": "You bring structure, persistence, and focus to creative work. You excel at turning ideas into finished, polished outcomes.",
+        "medium": "You follow through on some ideas but may struggle with consistency.",
+        "low": "You find it difficult to persist with projects. Growth comes from building habits and structure.",
+        "growth": "Break creative goals into smaller, manageable steps and set deadlines."
     },
     "Collaboration": {
-        "High": "You thrive in teamwork, feedback, and co-creation, bringing out the best in others.",
-        "Medium": "You balance independent work with occasional collaboration.",
-        "Low": "You prefer working alone. Sharing even half-formed ideas can be valuable."
+        "archetype": "The Connector",
+        "scientific": "Socially-Driven Creative",
+        "high": "You value teamwork, feedback, and co-creation. You bring out the best in others and thrive in collaborative environments.",
+        "medium": "You collaborate when needed but may prefer independent work.",
+        "low": "You prefer working alone and find group dynamics challenging.",
+        "growth": "Share even half-formed ideas with peers—collaboration doesn’t require perfection."
     }
 }
 
-# Archetypes
-archetypes = {
-    "Originality": ("The Innovator", "Divergent Thinker", "Practice brainstorming multiple solutions to boost originality."),
-    "Curiosity": ("The Explorer", "Openness-driven Creative", "Adopt a beginner’s mindset and ask simple questions."),
-    "Risk-Taking": ("The Adventurer", "Tolerance for Uncertainty", "Start with small risks before taking big creative leaps."),
-    "Imagination": ("The Dreamer", "Imaginative Creator", "Use free drawing, mind-mapping, or 'what if' scenarios."),
-    "Discipline": ("The Builder", "Conscientious Creator", "Break goals into smaller, manageable steps."),
-    "Collaboration": ("The Connector", "Socially-Driven Creative", "Share ideas early with trusted peers.")
+# --------------------------
+# Color Palette
+# --------------------------
+trait_colors = {
+    "Originality": "#FF6B6B",
+    "Curiosity": "#6BCB77",
+    "Risk-Taking": "#4D96FF",
+    "Imagination": "#FFC300",
+    "Discipline": "#B983FF",
+    "Collaboration": "#FF8E72",
+    "Openness": "#2EC4B6",
+    "Conscientiousness": "#E71D36",
+    "Extraversion": "#FFD23F",
+    "Agreeableness": "#8AC926",
+    "Neuroticism": "#6A4C93"
 }
+
+# --------------------------
+# Helper Functions
+# --------------------------
+def percentage_score(score):
+    return round((score - 1) / 4 * 100)
+
+def categorize(score):
+    if score >= 4:
+        return "high"
+    elif score >= 2.5:
+        return "medium"
+    else:
+        return "low"
+
+def radar_chart(scores, title):
+    labels = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+    for i, label in enumerate(labels):
+        vals = [scores[label]] * (len(labels) + 1)
+        ax.plot(angles, vals, color=trait_colors[label], linewidth=2, label=label)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])
+    ax.set_title(title, size=14, weight="bold", pad=20)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    st.pyplot(fig)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG")
+    buf.seek(0)
+    return buf
 
 # --------------------------
 # Session State
@@ -131,113 +194,81 @@ if "responses" not in st.session_state:
     st.session_state.responses = {}
 
 # --------------------------
-# Intro Page
+# Pages
 # --------------------------
 if st.session_state.page == "intro":
     st.title("Creative Identity & Personality Profile")
     st.markdown("""
-    Welcome to the **Creative Identity Profile** quiz.  
-    This tool helps you explore your **creative traits** and **personality dimensions**.  
-
-    - You will respond to **33 statements** on a 1–5 scale.  
-    - At the end, you’ll receive:  
-      - A **radar chart** of your scores  
-      - **Personalised trait summaries**  
-      - Your **archetype, sub-archetype, and growth area**  
-      - A downloadable **PDF report**  
-
-    Ready to discover your creative identity?
+    Welcome! This quiz will help you explore your **creative identity** and **personality profile**.  
+    You'll answer statements on a **1–5 scale** (1 = Strongly Disagree, 5 = Strongly Agree).  
+    At the end, you’ll get a **personalised profile with charts and archetypes**.
     """)
     if st.button("Start Quiz"):
         st.session_state.page = "quiz"
         st.rerun()
 
-# --------------------------
-# Quiz Page
-# --------------------------
 elif st.session_state.page == "quiz":
     st.header("Quiz Questions")
 
-    questions = []
+    all_questions = []
     for trait, qs in {**creative_traits, **big_five_traits}.items():
         for q in qs:
-            questions.append((trait, q))
-    random.shuffle(questions)
+            all_questions.append((trait, q))
+    random.shuffle(all_questions)
 
     with st.form("quiz_form"):
-        for trait, q in questions:
+        for trait, q in all_questions:
             key = f"{trait}_{q}"
             st.session_state.responses[key] = st.radio(
                 q,
-                ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"],
+                ["1 - Strongly Disagree", "2 - Disagree", "3 - Neutral", "4 - Agree", "5 - Strongly Agree"],
                 horizontal=True,
-                key=key,
+                key=key
             )
         submitted = st.form_submit_button("Submit Quiz")
         if submitted:
             st.session_state.page = "results"
             st.rerun()
 
-# --------------------------
-# Results Page
-# --------------------------
 elif st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
-    # Compute scores
-    creative_scores = {t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs]) for t, qs in creative_traits.items()}
-    bigfive_scores = {t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs]) for t, qs in big_five_traits.items()}
-
-    # Radar chart
-    def radar_chart(scores, title, color):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]
-        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-        angles += angles[:1]
-
-        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-        ax.plot(angles, values, color=color, linewidth=2)
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_title(title, size=14, weight="bold", pad=20)
-        st.pyplot(fig)
-
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG")
-        buf.seek(0)
-        return buf
+    creative_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in creative_traits.items()
+    }
+    bigfive_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in big_five_traits.items()
+    }
 
     st.subheader("Big Five Personality Dimensions")
-    chart_buf_big5 = radar_chart(bigfive_scores, "Big Five", "#05668D")
+    chart_buf_big5 = radar_chart(bigfive_scores, "Big Five")
 
     st.subheader("Creative Traits")
-    chart_buf_creative = radar_chart(creative_scores, "Creative Traits", "#C5283D")
+    chart_buf_creative = radar_chart(creative_scores, "Creative Traits")
 
-    # Trait Descriptions + Archetypes
-    st.subheader("Trait Insights")
+    # Show trait scores and summaries
     for trait, score in creative_scores.items():
-        level = "High" if score >= 4 else "Medium" if score >= 3 else "Low"
-        desc = trait_descriptions[trait][level]
-        archetype, sub, growth = archetypes[trait]
+        pct = percentage_score(score)
+        category = categorize(score)
+        desc = trait_descriptions[trait][category]
+        st.markdown(f"### {trait} ({pct}%)")
+        st.markdown(f"**Archetype:** {trait_descriptions[trait]['archetype']}  \n"
+                    f"**Sub-Archetype:** {trait_descriptions[trait]['scientific']}  \n"
+                    f"**Summary:** {desc}  \n"
+                    f"**Growth Tip:** {trait_descriptions[trait]['growth']}")
 
-        st.markdown(f"""
-        **{trait} ({level})**  
-        *{desc}*  
+    # Collapsible academic article
+    with st.expander("The Science Behind the Creative Identity & Personality Profile"):
+        try:
+            with open("academic_article.txt", "r") as f:
+                article = f.read()
+            st.markdown(article)
+        except FileNotFoundError:
+            st.warning("academic_article.txt not found. Please add it to the app folder.")
 
-        **Archetype:** {archetype}  
-        **Sub-Archetype:** {sub}  
-        **Growth Area:** {growth}  
-        """)
-
-    # Academic Article
-    with open("creative_identity_academic_article.txt", "r", encoding="utf-8") as f:
-        academic_article = f.read()
-    with st.expander("📖 The Science Behind the Creative Identity & Personality Profile"):
-        st.markdown(academic_article, unsafe_allow_html=True)
-
-    # PDF Export
+    # PDF Generation
     def create_pdf():
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=A4)
@@ -248,23 +279,31 @@ elif st.session_state.page == "results":
 
         img1 = ImageReader(chart_buf_creative)
         img2 = ImageReader(chart_buf_big5)
-        chart_size = 200
-        c.drawImage(img1, 60, height - 280, width=chart_size, height=chart_size)
-        c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size)
+        c.drawImage(img1, 60, height - 300, width=200, height=200, preserveAspectRatio=True, mask='auto')
+        c.drawImage(img2, 320, height - 300, width=200, height=200, preserveAspectRatio=True, mask='auto')
 
-        y = height - 320
-        c.setFont("Helvetica", 12)
+        c.showPage()
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(50, height - 50, "Your Results")
+
+        y = height - 80
+        c.setFont("Helvetica", 10)
         for trait, score in creative_scores.items():
-            level = "High" if score >= 4 else "Medium" if score >= 3 else "Low"
-            desc = trait_descriptions[trait][level]
-            archetype, sub, growth = archetypes[trait]
-            text = f"{trait} ({level})\n{desc}\nArchetype: {archetype}\nSub-Archetype: {sub}\nGrowth Area: {growth}\n"
+            pct = percentage_score(score)
+            category = categorize(score)
+            desc = trait_descriptions[trait][category]
+            text = (f"{trait} ({pct}%)\n"
+                    f"Archetype: {trait_descriptions[trait]['archetype']}\n"
+                    f"Sub-Archetype: {trait_descriptions[trait]['scientific']}\n"
+                    f"Summary: {desc}\n"
+                    f"Growth Tip: {trait_descriptions[trait]['growth']}\n")
             for line in text.split("\n"):
-                c.drawString(60, y, line)
-                y -= 15
-                if y < 100:
-                    c.showPage()
-                    y = height - 60
+                c.drawString(50, y, line)
+                y -= 14
+            y -= 10
+            if y < 100:
+                c.showPage()
+                y = height - 50
 
         c.save()
         buf.seek(0)
