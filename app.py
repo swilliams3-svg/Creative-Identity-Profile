@@ -266,6 +266,23 @@ elif page == "results":
         chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
 
     # --------------------------
+    # Archetype Identification
+    # --------------------------
+def determine_archetype(creativity_scores):
+    # Example logic – adapt to your real rules/mapping
+    if creativity_scores.get("Openness", 0) > 70 and creativity_scores.get("Curiosity", 0) > 70:
+        return "The Explorer", "Innovator"
+    elif creativity_scores.get("Persistence", 0) > 70:
+        return "The Maker", "Builder"
+    else:
+        return "The Thinker", "Philosopher"
+
+archetype, sub_archetype = determine_archetype(creative_perc)
+
+st.subheader("Your Creative Archetype")
+st.markdown(f"**{archetype}** — _{sub_archetype}_")
+
+    # --------------------------
     # Growth Trait (lowest only)
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
