@@ -233,51 +233,24 @@ elif st.session_state.page == "results":
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-# --------------------------
-# Radar Charts
-# --------------------------
 def radar_chart(scores, title):
     labels = list(scores.keys())
     values = list(scores.values())
-    values += values[:1]  # close the loop
+    values += values[:1]  # repeat first value to close the loop
     angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
-    ax.set_yticklabels([])
     ax.set_title(title, size=14, weight="bold", pad=20)
 
-    # Plot filled radar with multi-colour outline per trait
-    for i, label in enumerate(labels[:-1]):  # skip duplicate closing point
-        ax.plot(
-            [angles[i], angles[i+1]],
-            [values[i], values[i+1]],
-            color=palette[label],
-            linewidth=2
-        )
-        ax.fill(
-            [angles[i], angles[i+1]],
-            [values[i], values[i+1]],
-            color=palette[label],
-            alpha=0.1
-        )
+    # Plot one continuous polygon (works for sure)
+    ax.plot(angles, values, color="tab:blue", linewidth=2)
+    ax.fill(angles, values, color="tab:blue", alpha=0.1)
 
-    # Legend: one entry per trait
-    handles = [plt.Line2D([0], [0], color=palette[label], lw=2) for label in scores.keys()]
-    ax.legend(
-        handles, scores.keys(),
-        loc="upper right",
-        bbox_to_anchor=(1.3, 1.1),
-        fontsize=8,
-        frameon=False
-    )
-
-    # Show in Streamlit
     st.pyplot(fig)
 
-    # Save for PDF
     buf = io.BytesIO()
     fig.savefig(buf, format="PNG", bbox_inches="tight")
     buf.seek(0)
