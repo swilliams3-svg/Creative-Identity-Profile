@@ -6,7 +6,9 @@ import io
 import random
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
@@ -221,26 +223,15 @@ def get_level(score: float) -> str:
         return "Low"
 
 def hex_to_rgb_float(hexcolor: str):
-    """Convert '#rrggbb' to tuple of floats 0..1"""
     hexcolor = hexcolor.lstrip("#")
     r = int(hexcolor[0:2], 16) / 255.0
     g = int(hexcolor[2:4], 16) / 255.0
     b = int(hexcolor[4:6], 16) / 255.0
     return (r, g, b)
 
-def lighten_hex(hexcolor: str, factor: float = 0.18):
-    """Mix color with white to create a pastel (factor between 0 and 1).
-       Smaller factor -> lighter"""
-    r, g, b = hex_to_rgb_float(hexcolor)
-    return (r * factor + (1 - factor) * 1.0,
-            g * factor + (1 - factor) * 1.0,
-            b * factor + (1 - factor) * 1.0)
-
 def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     labels = list(scores.keys())
     num_vars = len(labels)
-
-    # angles
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
@@ -254,10 +245,8 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     ax.plot(angles, values, linewidth=1.5, color="black")
     ax.fill(angles, values, alpha=0.05, color="gray")
 
-    # draw colored segments and markers for each trait
     for i, trait in enumerate(labels):
         col = colors.get(trait, "#333333")
-        # line from point i to i+1 (colored)
         ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]],
                 color=col, linewidth=3)
         ax.scatter(angles[i], values[i], color=col, s=60, zorder=10)
@@ -277,15 +266,9 @@ def radar_chart(scores: dict, colors: dict, title="") -> io.BytesIO:
     return buf
 
 # --------------------------
-# Generate PDF
+# PDF Generator (updated clean version)
 # --------------------------
-archetypes_results = {
-    "Main Archetype": (main_trait, archetypes[main_trait]),
-    "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
-    "Growth Area": (weakest_trait, archetypes[weakest_trait]),
-}
-
-pdf_buf = create_pdf(
+def create_pdf(
     creative_scores,
     big5_scores,
     archetypes_results,
@@ -293,31 +276,61 @@ pdf_buf = create_pdf(
     big5_summaries,
     chart_buf_creative,
     chart_buf_big5
-)
+):
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            rightMargin=40, leftMargin=40,
+                            topMargin=50, bottomMargin=40)
+
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="HeadingCenter", parent=styles["Heading1"], alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name="TraitHeading", parent=styles["Heading3"], spaceAfter=6))
+    styles.add(ParagraphStyle(name="BodyText", parent=styles["Normal"], leading=14, alignment=TA_LEFT))
+
+    story = []
+    story.append(Paragraph("Creative Identity & Personality Profile", styles["HeadingCenter"]))
+    story.append(Spacer(1, 20))
+
+    img1 = Image(chart_buf_creative, width=200, height=200)
+    img2 = Image(chart_buf_big5, width=200, height=200)
+    story.append(img1)
+    story.append(Spacer(1, 12))
+    story.append(img2)
+    story.append(Spacer(1, 20))
+
+    story.append(Paragraph("Your Creative Archetypes", styles["Heading2"]))
+    for label, (trait, arch) in archetypes_results.items():
+        if label == "Growth Area":
+            content = arch["improvement"]
+        else:
+            content = arch["description"]
+        story.append(Paragraph(f"<b>{label}: {arch['name']}</b>", styles["TraitHeading"]))
+        story.append(Paragraph(content, styles["BodyText"]))
+        story.append(Spacer(1, 12))
+
+    story.append(Paragraph("Creative Trait Insights", styles["Heading2"]))
+    for trait, score in creative_scores.items():
+        level = get_level(score)
+        story.append(Paragraph(f"<b>{trait} ({level}) — {score:.2f}/5</b>", styles["TraitHeading"]))
+        story.append(Paragraph(creative_summaries[trait][level], styles["BodyText"]))
+        story.append(Spacer(1, 10))
+
+    story.append(Paragraph("Big Five Trait Insights", styles["Heading2"]))
+    for trait, score in big5_scores.items():
+        level = get_level(score)
+        story.append(Paragraph(f"<b>{trait} ({level}) — {score:.2f}/5</b>", styles["TraitHeading"]))
+        story.append(Paragraph(big5_summaries[trait][level], styles["BodyText"]))
+        story.append(Spacer(1, 10))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.getvalue()
 
 # --------------------------
-# Collapsible Report
-# --------------------------
-with st.expander("📄 View Your Full Report", expanded=False):
-    st.write(
-        "Here is your personalised **Creative Identity Profile**. "
-        "You can preview the content below or download a professional PDF report."
-    )
-
-    st.download_button(
-        label="📥 Download Your Report",
-        data=pdf_buf,   # already bytes
-        file_name="creative_identity_profile.pdf",
-        mime="application/pdf"
-    )
-
-
-# --------------------------
-# Streamlit App (main)
+# Streamlit App
 # --------------------------
 st.title("Creative Identity & Personality Profile")
 
-# Initialize session state
 if "current_q" not in st.session_state:
     st.session_state.current_q = 0
 
@@ -354,7 +367,6 @@ if current_q < total_qs:
     key = f"{trait}_{current_q}"
     st.markdown(f"**Q{current_q+1}/{total_qs}:** {question}")
 
-    # --- Likert 1–5 buttons with descriptors ---
     cols = st.columns(5)
     for i, col in enumerate(cols, start=1):
         button_key = f"{key}_btn{i}"
@@ -363,13 +375,11 @@ if current_q < total_qs:
             st.session_state.responses = responses
             st.rerun()
 
-    # Show selection with descriptor
     if key in responses and responses[key] is not None:
         st.markdown(f"✅ You selected: **{likert_short[responses[key]]}**")
     else:
         st.markdown("_Please choose an option above to continue._")
 
-    # Navigation
     col1, col2 = st.columns([1,1])
     with col1:
         if st.button("Back", disabled=(current_q == 0)):
@@ -387,7 +397,6 @@ if current_q < total_qs:
 else:
     st.success("All questions complete — here are your results!")
 
-    # Scores
     creative_scores = {t:0 for t in creative_traits}
     creative_counts = {t:0 for t in creative_traits}
     big5_scores = {t:0 for t in big5_traits}
@@ -404,17 +413,10 @@ else:
                 big5_counts[trait] += 1
 
     for t in creative_scores:
-        if creative_counts[t] > 0:
-            creative_scores[t] /= creative_counts[t]
-        else:
-            creative_scores[t] = 0.0
+        creative_scores[t] = creative_scores[t] / creative_counts[t] if creative_counts[t] > 0 else 0.0
     for t in big5_scores:
-        if big5_counts[t] > 0:
-            big5_scores[t] /= big5_counts[t]
-        else:
-            big5_scores[t] = 0.0
+        big5_scores[t] = big5_scores[t] / big5_counts[t] if big5_counts[t] > 0 else 0.0
 
-    # Charts (buffers)
     c1, c2 = st.columns(2)
     chart_buf_creative = radar_chart(creative_scores, creative_colors, "Creative Traits")
     chart_buf_big5 = radar_chart(big5_scores, big5_colors, "Big Five Traits")
@@ -423,23 +425,17 @@ else:
     with c2:
         st.image(chart_buf_big5, use_container_width=True)
 
-    # Archetypes
     sorted_traits = sorted(creative_scores.items(), key=lambda x: x[1], reverse=True)
-    # ensure we have at least 3 traits
     if len(sorted_traits) >= 3:
         main_trait, sub_trait, weakest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     else:
-        # fallback (shouldn't happen with full set)
         keys = list(creative_traits.keys())
         main_trait, sub_trait, weakest_trait = keys[0], keys[1], keys[-1]
 
     st.subheader("Your Creative Archetypes")
     archetypes_info = {}
     for label, trait in [("Main Archetype", main_trait), ("Sub-Archetype", sub_trait), ("Growth Area", weakest_trait)]:
-        if label == "Growth Area":
-            content = archetypes[trait]["improvement"]
-        else:
-            content = archetypes[trait]["description"]
+        content = archetypes[trait]["improvement"] if label == "Growth Area" else archetypes[trait]["description"]
         archetypes_info[label] = (trait, archetypes[trait])
         st.markdown(
             f"<div style='background-color:{creative_colors[trait]}20; padding:0.7rem; border-radius:10px; margin:0.7rem 0;'>"
@@ -447,7 +443,6 @@ else:
             f"<i>{content}</i></div>", unsafe_allow_html=True
         )
 
-    # Summaries — Creative Traits
     st.subheader("Creative Trait Insights")
     for trait, score in creative_scores.items():
         level = get_level(score)
@@ -458,132 +453,6 @@ else:
             f"<i>{summary}</i></div>", unsafe_allow_html=True
         )
 
-    # Summaries — Big Five Traits
     st.subheader("Big Five Trait Insights")
-    for trait, score in big5_scores.items():
-        level = get_level(score)
-        summary = big5_summaries[trait][level]
-        st.markdown(
-            f"<div style='background-color:{big5_colors[trait]}20; padding:0.5rem; border-radius:8px; margin:0.5rem 0;'>"
-            f"<span style='color:{big5_colors[trait]}; font-weight:bold'>{trait} ({level})</span> — {score:.2f}/5<br>"
-            f"<i>{summary}</i></div>", unsafe_allow_html=True
-        )
-
-# --------------------------
-# Generate PDF
-# --------------------------
-archetypes_results = {
-    "Main Archetype": (main_trait, archetypes[main_trait]),
-    "Sub-Archetype": (sub_trait, archetypes[sub_trait]),
-    "Growth Area": (weakest_trait, archetypes[weakest_trait]),
-}
-
-pdf_buf = create_pdf(
-    creative_scores,
-    big5_scores,
-    archetypes_results,
-    creative_summaries,
-    big5_summaries,
-    chart_buf_creative,
-    chart_buf_big5
-)
-
-# --------------------------
-# Collapsible Report
-# --------------------------
-with st.expander("📄 View Your Full Report", expanded=False):
-    st.write(
-        "Here is your personalised **Creative Identity Profile**. "
-        "You can preview the content below or download a professional PDF report."
-    )
-
-    st.download_button(
-        label="📥 Download Your Report",
-        data=pdf_buf,   # already bytes
-        file_name="creative_identity_profile.pdf",
-        mime="application/pdf"
-    )
-
-
-# --------------------------
-# Collapsible Section
-# --------------------------
-with st.expander("📄 View Your Full Report", expanded=False):
-    st.write(
-        "Here is your personalised **Creative Identity Profile**. "
-        "You can preview the content below or download a professional PDF report."
-    )
-
-    st.download_button(
-        label="📥 Download Your Report",
-        data=pdf_buf,  # pdf_buf is already bytes
-        file_name="creative_identity_profile.pdf",
-        mime="application/pdf"
-    )
-
-
-    # --------------------------
-    # Deeper Insights Section
-    # --------------------------
-    st.markdown("---")
-    st.markdown("Deeper Insights")
-
-    with st.expander("The Science Behind This Quiz"):
-        st.markdown("""
-        This quiz is based on decades of creativity and personality research.  
-        - **Creative Traits** draw on theories of divergent and convergent thinking (Guilford, 1967).  
-        - **Big Five Traits** come from established personality psychology (Costa & McCrae, 1992).  
-        - Together, they provide a balanced view of your creative identity and personal style.
-        """)
-
-    with st.expander("Academic Foundations of the Quiz"):
-        st.markdown("""
-        **Key References**  
-        - Guilford, J. P. (1967). *The Nature of Human Intelligence*.  
-        - Amabile, T. M. (1996). *Creativity in Context*.  
-        - Runco, M. A. (2014). *Creativity: Theories and Themes*.  
-        - Costa, P. T., & McCrae, R. R. (1992). *Revised NEO Personality Inventory*.  
-        - Sternberg, R. J. (2006). *The Nature of Creativity*.  
-
-        These frameworks ensure the quiz isn’t just fun, but also grounded in psychological science.
-        """)
-
-    with st.expander("Divergent vs Convergent Thinking"):
-        st.markdown("This chart shows how your quiz traits map onto **divergent** and **convergent** thinking styles.")
-        
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(7,4))
-        divergent_traits = ["Originality", "Curiosity", "Imagination", "Risk-Taking"]
-        convergent_traits = ["Discipline", "Collaboration", "Conscientiousness"]
-
-        ax.set_title("Divergent vs. Convergent Thinking", fontsize=13, weight="bold")
-
-        ax.text(0.25, 0.9, "Divergent Thinking", fontsize=11, ha="center", weight="bold", color="#2ca02c")
-        for i, trait in enumerate(divergent_traits):
-            ax.text(0.25, 0.75 - i*0.15, f"• {trait}", fontsize=10, ha="center", color="#2ca02c")
-
-        ax.text(0.75, 0.9, "Convergent Thinking", fontsize=11, ha="center", weight="bold", color="#1f77b4")
-        for i, trait in enumerate(convergent_traits):
-            ax.text(0.75, 0.75 - i*0.15, f"• {trait}", fontsize=10, ha="center", color="#1f77b4")
-
-        ax.axis("off")
-        st.pyplot(fig)
-
-    # --------------------------
-    # PDF Download (styled)
-    # --------------------------
-    st.markdown("### 📥 Download Your Full Report")
-    st.markdown("Includes your **radar charts, archetypes, and trait insights** in one personalised PDF.")
-    st.download_button(
-        "📥 Download Your Profile (PDF)", 
-        data=pdf_buf.getvalue(), 
-        file_name="creative_profile.pdf", 
-        mime="application/pdf"
-    )
-
-
-    # Missed questions
-    missed = [q for q, ans in responses.items() if ans is None]
-    if missed:
-        st.warning(f"You skipped {len(missed)} questions. Your scores may be less accurate.")
+    for trait,
 
