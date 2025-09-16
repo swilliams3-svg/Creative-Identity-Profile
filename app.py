@@ -142,6 +142,26 @@ archetypes = {
 }
 
 # --------------------------
+# Trait Summaries
+# --------------------------
+creative_summaries = {
+    "Originality": "Originality reflects your ability to generate new and unique ideas.",
+    "Curiosity": "Curiosity highlights your desire to explore, learn, and seek novelty.",
+    "Risk-Taking": "Risk-taking captures how comfortable you are with uncertainty and experimentation.",
+    "Imagination": "Imagination measures your capacity to think in mental images and possibilities.",
+    "Discipline": "Discipline reflects your persistence, focus, and ability to complete projects.",
+    "Collaboration": "Collaboration shows how much you value teamwork and co-creation."
+}
+
+big5_summaries = {
+    "Openness": "Openness is linked to creativity, imagination, and an appreciation for novelty.",
+    "Conscientiousness": "Conscientiousness reflects organization, persistence, and responsibility.",
+    "Extraversion": "Extraversion highlights energy gained from social interactions and assertiveness.",
+    "Agreeableness": "Agreeableness represents empathy, cooperation, and kindness.",
+    "Neuroticism": "Neuroticism measures emotional stability, stress sensitivity, and anxiety."
+}
+
+# --------------------------
 # Session State
 # --------------------------
 if "page" not in st.session_state:
@@ -160,10 +180,11 @@ def radar_chart(scores, title, palette):
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, color="black", linewidth=1, linestyle="dotted")
+
     for i, (label, value) in enumerate(scores.items()):
         ax.plot([angles[i], angles[i]], [0, value], color=palette[label], linewidth=2)
 
-    ax.plot(angles, values, color="black", linewidth=1, linestyle="dotted")
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
     ax.set_yticklabels([])
@@ -230,6 +251,14 @@ elif st.session_state.page == "results":
     st.subheader("Big Five Personality Dimensions")
     chart_buf_big5 = radar_chart(big5_scores, "Big Five", big5_colors)
 
+    # Trait Summaries
+    st.subheader("Trait Summaries")
+    for trait, score in creative_scores.items():
+        st.markdown(f"**{trait} ({score:.1f})** – {creative_summaries[trait]}")
+
+    for trait, score in big5_scores.items():
+        st.markdown(f"**{trait} ({score:.1f})** – {big5_summaries[trait]}")
+
     # Archetypes
     st.subheader("Your Creative Archetypes")
     for trait, score in creative_scores.items():
@@ -258,6 +287,7 @@ elif st.session_state.page == "results":
         c.setFont("Helvetica-Bold", 18)
         c.drawCentredString(width/2, height - 40, "Creative Identity & Personality Profile")
 
+        # Radar charts
         img1 = ImageReader(chart_buf_creative)
         img2 = ImageReader(chart_buf_big5)
         chart_size = 200
@@ -265,6 +295,21 @@ elif st.session_state.page == "results":
         c.drawImage(img2, 300, height - 280, width=chart_size, height=chart_size, preserveAspectRatio=True, mask='auto')
 
         c.showPage()
+
+        # Trait summaries
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(width/2, height - 40, "Trait Summaries")
+        c.setFont("Helvetica", 10)
+        text_obj = c.beginText(60, height - 70)
+        for trait, score in creative_scores.items():
+            text_obj.textLine(f"{trait} ({score:.1f}) – {creative_summaries[trait]}")
+        for trait, score in big5_scores.items():
+            text_obj.textLine(f"{trait} ({score:.1f}) – {big5_summaries[trait]}")
+        c.drawText(text_obj)
+
+        c.showPage()
+
+        # Academic article
         c.setFont("Helvetica-Bold", 16)
         c.drawCentredString(width/2, height - 40, "The Science Behind the Creative Identity & Personality Profile")
         c.setFont("Helvetica", 10)
