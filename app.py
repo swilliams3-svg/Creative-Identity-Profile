@@ -123,31 +123,6 @@ trait_descriptions = {
         "high": "You thrive in teamwork and enjoy co-creating with others.",
         "medium": "You collaborate when needed but also value independence.",
         "low": "You prefer working alone and rely less on group dynamics."
-    },
-    "Openness": {
-        "high": "You are highly open-minded, curious, and willing to explore new perspectives.",
-        "medium": "You show openness in some areas but remain cautious in others.",
-        "low": "You prefer routine and familiarity over novelty and abstract ideas."
-    },
-    "Conscientiousness": {
-        "high": "You are organized, responsible, and goal-driven.",
-        "medium": "You are dependable in some areas but can be flexible in others.",
-        "low": "You are more spontaneous and less focused on structure."
-    },
-    "Extraversion": {
-        "high": "You feel energized by social interactions and enjoy group activities.",
-        "medium": "You balance social activities with moments of quiet.",
-        "low": "You prefer solitude and smaller, quieter environments."
-    },
-    "Agreeableness": {
-        "high": "You are empathetic, cooperative, and supportive of others.",
-        "medium": "You show kindness but balance it with assertiveness.",
-        "low": "You prioritize your own needs and may come across as competitive."
-    },
-    "Neuroticism": {
-        "high": "You are more likely to experience stress and emotional ups and downs.",
-        "medium": "You manage stress reasonably well with occasional struggles.",
-        "low": "You remain calm, resilient, and emotionally stable under pressure."
     }
 }
 
@@ -234,7 +209,7 @@ elif st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Charts
+    # Radar Charts (side by side)
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
@@ -260,11 +235,15 @@ elif st.session_state.page == "results":
         buf.seek(0)
         return buf
 
-    st.subheader("Big Five Personality Dimensions")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+    col1, col2 = st.columns(2)
 
-    st.subheader("Creative Traits")
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    with col1:
+        st.subheader("Big Five Personality Dimensions")
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+
+    with col2:
+        st.subheader("Creative Traits")
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
 
     # --------------------------
     # Archetypes and Growth Area
@@ -273,15 +252,15 @@ elif st.session_state.page == "results":
     main_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
     st.markdown(f"### Main Archetype: {archetypes[main_trait][0]} ({archetypes[main_trait][1]})")
-    st.write(f"**{main_trait}: {creative_perc[main_trait]}%** — {trait_descriptions[main_trait]['high']}")
+    st.write(trait_descriptions[main_trait]["high"])
     st.write(f"**Growth Tip:** {archetypes[main_trait][2]}")
 
     st.markdown(f"### Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})")
-    st.write(f"**{sub_trait}: {creative_perc[sub_trait]}%** — {trait_descriptions[sub_trait]['medium']}")
+    st.write(trait_descriptions[sub_trait]["medium"])
     st.write(f"**Growth Tip:** {archetypes[sub_trait][2]}")
 
     st.markdown(f"### Growth Area: {lowest_trait}")
-    st.write(f"**{lowest_trait}: {creative_perc[lowest_trait]}%** — {trait_descriptions[lowest_trait]['low']}")
+    st.write(trait_descriptions[lowest_trait]["low"])
     st.write(f"**Growth Tip:** {archetypes[lowest_trait][2]}")
 
     # --------------------------
