@@ -17,74 +17,76 @@ from io import BytesIO
 # --------------------------
 # Academic PDF function
 # --------------------------
-def create_academic_pdf():
-    buffer = BytesIO()
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.pagesizes import A4
+import io
 
-    # Setup document
+def create_academic_pdf():
+    buffer = io.BytesIO()
+
+    # Set up document
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=60,
-        rightMargin=60,
-        topMargin=60,
-        bottomMargin=60,
+        leftMargin=50,
+        rightMargin=50,
+        topMargin=50,
+        bottomMargin=50
     )
 
-    styles = getSampleStyleSheet()
-
-    # Define custom styles
-    title_style = ParagraphStyle(
-        "TitleStyle",
-        parent=styles["Heading1"],
-        fontSize=14,
-        leading=22,
-        alignment=TA_CENTER,
-        spaceAfter=20,
-    )
-
-    header_style = ParagraphStyle(
-        "HeaderStyle",
-        parent=styles["Heading2"],
-        fontSize=12,
-        leading=18,
-        spaceBefore=12,
-        spaceAfter=6,
-    )
-
-    body_style = ParagraphStyle(
-        "BodyStyle",
-        parent=styles["Normal"],
-        fontSize=10,
-        leading=15,
-        spaceAfter=10,
-    )
-
-    # Load academic text file
-    with open("academic_article.txt", "r", encoding="utf-8") as f:
-        content = f.read()
+    # Define styles
+    styles = {
+        "title": ParagraphStyle(
+            "title",
+            fontSize=16,
+            leading=20,
+            alignment=TA_CENTER,
+            spaceAfter=12,
+            underline=True,
+            fontName="Helvetica-Bold"
+        ),
+        "heading": ParagraphStyle(
+            "heading",
+            fontSize=13,
+            leading=16,
+            alignment=TA_LEFT,
+            spaceBefore=10,
+            spaceAfter=6,
+            underline=True,
+            fontName="Helvetica-Bold"
+        ),
+        "body": ParagraphStyle(
+            "body",
+            fontSize=11,
+            leading=14,
+            alignment=TA_LEFT,
+            spaceAfter=6,
+            fontName="Helvetica"
+        ),
+    }
 
     story = []
 
-    # First line = title
-    lines = content.strip().splitlines()
-    if lines:
-        story.append(Paragraph(lines[0], title_style))
-        story.append(Spacer(1, 12))
-        lines = lines[1:]
+    # Read the academic text file
+    with open("academic_section.txt", "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 12))
+            elif line.startswith("# "):  # Main heading
+                story.append(Paragraph(line[2:], styles["title"]))
+            elif line.startswith("## "):  # Subheading
+                story.append(Paragraph(line[3:], styles["heading"]))
+            else:
+                story.append(Paragraph(line, styles["body"]))
 
-    # Process remaining lines
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith("## "):  # Section header
-            story.append(Paragraph(line.replace("## ", ""), header_style))
-        else:  # Body text
-            story.append(Paragraph(line, body_style))
-
+    # Build PDF
     doc.build(story)
     buffer.seek(0)
     return buffer
+
 
 # --------------------------
 # Colours
