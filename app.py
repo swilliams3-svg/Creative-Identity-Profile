@@ -232,16 +232,16 @@ elif st.session_state.page == "quiz":
     col1, col2 = st.columns([1, 1])
     with col1:
         if current_index > 0:
-            if st.button("⬅️ Back"):
+            if st.button("Back"):
                 st.session_state.current_question -= 1
                 st.rerun()
     with col2:
         if current_index < total_questions - 1:
-            if st.button("Next ➡️", disabled=response is None):
+            if st.button("Next", disabled=response is None):
                 st.session_state.current_question += 1
                 st.rerun()
         else:
-            if st.button("Submit Quiz ✅", disabled=response is None):
+            if st.button("Submit Quiz", disabled=response is None):
                 st.session_state.page = "results"
                 st.rerun()
 
