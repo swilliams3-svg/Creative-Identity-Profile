@@ -543,90 +543,73 @@ elif st.session_state.page == "results":
         with open("academic_article.txt", "r") as f:
             st.markdown(f.read())
 
-from reportlab.lib.pagesizes import A4
+# --------------------------
+# Academic Research PDF
+# --------------------------
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem
-from reportlab.lib.enums import TA_LEFT
-import io
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.enums import TA_CENTER
 
 def create_academic_pdf():
-    buffer = io.BytesIO()
+    """Generate a nicely formatted PDF of the academic research text."""
+    from io import BytesIO
+    buffer = BytesIO()
+
     doc = SimpleDocTemplate(buffer, pagesize=A4,
-                            rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=72)
+                            rightMargin=50, leftMargin=50,
+                            topMargin=50, bottomMargin=50)
 
     styles = getSampleStyleSheet()
-    normal = styles["Normal"]
-    normal.fontName = "Helvetica"
-    normal.fontSize = 11
-    normal.leading = 14
 
-    heading = ParagraphStyle(
-        "Heading",
-        parent=normal,
-        fontName="Helvetica-Bold",
-        fontSize=13,
+    # Custom styles
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=18,
+        leading=22,
+        alignment=TA_CENTER,
+        spaceAfter=20
+    )
+
+    header_style = ParagraphStyle(
+        'Header',
+        parent=styles['Heading2'],
+        fontSize=14,
+        leading=18,
         spaceBefore=12,
-        spaceAfter=6
+        spaceAfter=6,
+        textColor="#333333",
     )
 
-    reference = ParagraphStyle(
-        "Reference",
-        parent=normal,
-        fontSize=9,
-        leading=11
-    )
+    body_style = styles["Normal"]
 
     story = []
 
-    # Read academic_section.txt
-    with open("academic_article.txt", "r") as f:
-        lines = f.readlines()
+    # Load text from the academic_article.txt file
+    with open("academic_section.txt", "r", encoding="utf-8") as f:
+        content = f.read()
 
-    in_references = False
-    for line in lines:
-        line = line.strip()
-        if not line:
-            story.append(Spacer(1, 8))
+    # Basic parsing: treat "—" lines as separators, first line as title, 
+    # and section headers as lines that are not too long and end with no period.
+    paragraphs = content.split("\n\n")
+
+    for i, para in enumerate(paragraphs):
+        para = para.strip()
+        if not para:
             continue
 
-        # Detect headings (ALL CAPS or ### style)
-        if line.isupper() or line.startswith("###"):
-            story.append(Paragraph(line.replace("###", "").strip(), heading))
-            continue
+        if i == 0:  # First paragraph = Title
+            story.append(Paragraph(para, title_style))
+        elif para.isupper() or para.istitle():  # Simple rule for section headers
+            story.append(Paragraph(para, header_style))
+        else:  # Default body text
+            story.append(Paragraph(para, body_style))
 
-        # Detect start of References
-        if "REFERENCES" in line.upper():
-            in_references = True
-            story.append(Paragraph(line, heading))
-            continue
-
-        # Bullet points
-        if line.startswith(("-", "•")):
-            bullet = ListItem(Paragraph(line[1:].strip(), normal), leftIndent=12)
-            story.append(ListFlowable([bullet], bulletType="bullet", start="•"))
-            continue
-
-        # Normal paragraph or reference
-        if in_references:
-            story.append(Paragraph(line, reference))
-        else:
-            story.append(Paragraph(line, normal))
+        story.append(Spacer(1, 12))
 
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-# Add download button in Streamlit
-st.subheader("Academic Research")
-with open("academic_article.txt", "r") as f:
-    st.markdown(f.read())
-
-academic_pdf = create_academic_pdf()
-st.download_button(
-    label="📄 Download Academic Research (PDF)",
-    data=academic_pdf,
-    file_name="academic_research.pdf",
-    mime="application/pdf",
-)
 
