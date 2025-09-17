@@ -470,12 +470,10 @@ with col3:
             st.session_state.page = "results"
             st.rerun()
 
-
-
 # --------------------------
 # Results Page
 # --------------------------
-elif st.session_state.page == "results":
+if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
     # Calculate scores
