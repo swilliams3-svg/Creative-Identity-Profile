@@ -215,7 +215,15 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-
+# Custom CSS for progress bar (grey)
+st.markdown("""
+    <style>
+    /* Target Streamlit progress bar */
+    .stProgress > div > div > div > div {
+        background-color: #b0b0b0; /* soft grey */
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 
 # --------------------------
