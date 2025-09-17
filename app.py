@@ -448,22 +448,28 @@ elif st.session_state.page == "quiz":
     )
     st.session_state.responses[widget_key] = response
 
-    # Navigation buttons
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if current_index > 0:
-            if st.button("Back"):
-                st.session_state.current_question -= 1
-                st.rerun()
-    with col2:
-        if current_index < total_questions - 1:
-            if st.button("Next", disabled=response is None):
-                st.session_state.current_question += 1
-                st.rerun()
-        else:
-            if st.button("Submit Quiz", disabled=response is None):
-                st.session_state.page = "results"
-                st.rerun()
+   # Quiz navigation buttons
+col1, col2, col3 = st.columns([1, 2, 1])  # adjust ratios if needed
+
+with col1:
+    if st.session_state.current_question > 0:
+        if st.button("⬅️ Back"):
+            st.session_state.current_question -= 1
+            st.rerun()
+
+with col2:
+    st.empty()  # keeps spacing clean in the middle
+
+with col3:
+    if st.session_state.current_question < len(st.session_state.shuffled_questions) - 1:
+        if st.button("Next ➡️"):
+            st.session_state.current_question += 1
+            st.rerun()
+    else:
+        if st.button("Finish ➡️"):
+            st.session_state.page = "results"
+            st.rerun()
+
 
 
 # --------------------------
