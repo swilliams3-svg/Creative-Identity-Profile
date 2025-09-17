@@ -175,7 +175,7 @@ if "responses" not in st.session_state:
 # Intro Page
 # --------------------------
 if st.session_state.page == "intro":
-    st.title("✨ Creative Personality Profile ✨")
+    st.title("Creative Personality Profile")
 
     st.markdown("""
     Welcome to the **Creative Identity & Personality Profile**.  
@@ -185,7 +185,7 @@ if st.session_state.page == "intro":
     # What to Expect
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown("1")
+        st.markdown("-")
     with col2:
         st.subheader("What to Expect")
         st.markdown("""
@@ -198,7 +198,7 @@ if st.session_state.page == "intro":
     # What You’ll Get
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown("2")
+        st.markdown("-")
     with col2:
         st.subheader("What You’ll Get")
         st.markdown("""
@@ -211,7 +211,7 @@ if st.session_state.page == "intro":
     # Why This Matters
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown("3")
+        st.markdown("-")
     with col2:
         st.subheader("Why This Matters")
         st.markdown("""
