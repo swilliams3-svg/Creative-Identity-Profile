@@ -547,10 +547,12 @@ elif st.session_state.page == "quiz":
 # --------------------------
 # Results Page
 # --------------------------
-elif st.session_state.page == "results":
+if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
+    # --------------------------
     # Calculate scores
+    # --------------------------
     creative_scores = {
         t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
         for t, qs in creative_traits.items()
@@ -563,7 +565,9 @@ elif st.session_state.page == "results":
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-    # Radar chart function
+    # --------------------------
+    # Radar Charts
+    # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
@@ -582,6 +586,7 @@ elif st.session_state.page == "results":
             ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
 
         st.pyplot(fig)
+
         buf = io.BytesIO()
         fig.savefig(buf, format="PNG")
         buf.seek(0)
@@ -596,7 +601,9 @@ elif st.session_state.page == "results":
         st.subheader("Big Five")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
+    # --------------------------
     # Archetypes
+    # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
@@ -621,7 +628,7 @@ elif st.session_state.page == "results":
         </div>
         """
 
-    # Display archetype cards
+    # Primary Archetype
     if top_score >= 67:
         desc = trait_descriptions[top_trait]["high"]
     elif top_score >= 34:
@@ -636,6 +643,7 @@ elif st.session_state.page == "results":
         archetypes[top_trait][2]
     ), unsafe_allow_html=True)
 
+    # Sub-Archetype
     if sub_score >= 67:
         desc = trait_descriptions[sub_trait]["high"]
     elif sub_score >= 34:
@@ -650,6 +658,7 @@ elif st.session_state.page == "results":
         archetypes[sub_trait][2]
     ), unsafe_allow_html=True)
 
+    # Growth Area
     st.markdown(archetype_card(
         lowest_trait,
         f"🌱 Growth Area: {lowest_trait}",
@@ -657,7 +666,9 @@ elif st.session_state.page == "results":
         archetypes[lowest_trait][2]
     ), unsafe_allow_html=True)
 
-    # Trait scores with descriptions
+    # --------------------------
+    # Trait Scores
+    # --------------------------
     st.subheader("Your Trait Scores")
     for t, p in creative_perc.items():
         st.write(f"**{t}:** {p}%")
@@ -677,36 +688,36 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
 
-    st.markdown("### Academic Research")
-    st.markdown("You can download the full academic background behind this quiz as a PDF:")
-
+    # --------------------------
+    # Download PDFs
+    # --------------------------
     st.subheader("Download PDFs")
+    col1, col2 = st.columns(2)
 
-col1, col2 = st.columns(2)
+    with col1:
+        results_pdf = create_results_pdf(
+            creative_perc,
+            bigfive_perc,
+            trait_descriptions,
+            archetypes,
+            chart_buf_creative,
+            chart_buf_big5
+        )
+        st.download_button(
+            "Download Your Results PDF",
+            data=results_pdf,
+            file_name="creative_results.pdf",
+            mime="application/pdf"
+        )
 
-with col1:
-    results_pdf = create_results_pdf(
-        creative_perc,
-        bigfive_perc,
-        trait_descriptions,
-        archetypes,
-        chart_buf_creative,
-        chart_buf_big5
-    )
-    st.download_button(
-        "Download Your Results PDF",
-        data=results_pdf,
-        file_name="creative_results.pdf",
-        mime="application/pdf"
-    )
+    with col2:
+        academic_pdf = create_academic_pdf()
+        st.download_button(
+            "Download Academic Research PDF",
+            data=academic_pdf,
+            file_name="academic_research.pdf",
+            mime="application/pdf"
+        )
 
-with col2:
-    academic_pdf = create_academic_pdf()
-    st.download_button(
-        "Download Academic Research PDF",
-        data=academic_pdf,
-        file_name="academic_research.pdf",
-        mime="application/pdf"
-    )
 
 
