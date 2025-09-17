@@ -163,10 +163,21 @@ archetypes = {
     "Collaboration": ("The Connector", "Socially-Driven Creative", "Share even half-formed ideas to invite feedback and growth.")
 }
 
-# Inject CSS for all buttons (Start, Next, Back, PDF)
+# --------------------------
+# Shared Button Styling (Intro + Quiz Nav)
+# --------------------------
+import random
+
+gradients = [
+    "linear-gradient(90deg, #7b2ff7, #f107a3)",  # Purple gradient (imagination)
+    "linear-gradient(90deg, #06beb6, #48b1bf)",  # Teal/blue (flow)
+    "linear-gradient(90deg, #ff6a00, #ee0979)",  # Coral/pink (playfulness)
+]
+
+chosen_gradient = random.choice(gradients)
+
 st.markdown(f"""
     <style>
-    /* General button styling (Start, Next, Back) */
     div.stButton > button {{
         background: {chosen_gradient};
         color: white;
@@ -178,7 +189,7 @@ st.markdown(f"""
         transition: 0.3s;
         border: none;
         margin: 0.2em;
-    }}
+     }}
     div.stButton > button:hover {{
         filter: brightness(1.1);
         transform: scale(1.03);
@@ -203,6 +214,7 @@ st.markdown(f"""
     }}
     </style>
 """, unsafe_allow_html=True)
+
 
 
 
