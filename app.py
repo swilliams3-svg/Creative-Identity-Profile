@@ -175,7 +175,7 @@ if "responses" not in st.session_state:
 # Intro Page
 # --------------------------
 if st.session_state.page == "intro":
-    st.title("✨ Creative Identity & Personality Profile ✨")
+    st.title("✨ Creative Personality Profile ✨")
 
     st.markdown("""
     Welcome to the **Creative Identity & Personality Profile**.  
@@ -185,7 +185,7 @@ if st.session_state.page == "intro":
     # What to Expect
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown("⏱️")
+        st.markdown("1")
     with col2:
         st.subheader("What to Expect")
         st.markdown("""
@@ -198,7 +198,7 @@ if st.session_state.page == "intro":
     # What You’ll Get
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown("🎯")
+        st.markdown("2")
     with col2:
         st.subheader("What You’ll Get")
         st.markdown("""
@@ -211,7 +211,7 @@ if st.session_state.page == "intro":
     # Why This Matters
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown("💡")
+        st.markdown("3")
     with col2:
         st.subheader("Why This Matters")
         st.markdown("""
@@ -223,9 +223,9 @@ if st.session_state.page == "intro":
         """)
 
     st.markdown("---")
-    st.markdown("✅ Take your time, reflect honestly, and enjoy discovering your creative identity.")
+    st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
-    if st.button("🚀 Start Quiz"):
+    if st.button("Start Quiz"):
         # Reset state if retaking
         st.session_state.responses = {}
         if "shuffled_questions" in st.session_state:
