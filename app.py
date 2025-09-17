@@ -164,6 +164,41 @@ archetypes = {
 }
 
 # --------------------------
+# Shared Button Styling (Intro + Quiz Nav)
+# --------------------------
+import random
+
+gradients = [
+    "linear-gradient(90deg, #7b2ff7, #f107a3)",  # Purple gradient (imagination)
+    "linear-gradient(90deg, #06beb6, #48b1bf)",  # Teal/blue (flow)
+    "linear-gradient(90deg, #ff6a00, #ee0979)",  # Coral/pink (playfulness)
+]
+
+chosen_gradient = random.choice(gradients)
+
+st.markdown(f"""
+    <style>
+    div.stButton > button {{
+        background: {chosen_gradient};
+        color: white;
+        border-radius: 12px;
+        height: 2.5em;
+        min-width: 8em;
+        font-size: 16px;
+        font-weight: bold;
+        transition: 0.3s;
+        border: none;
+        margin: 0.2em;
+    }}
+    div.stButton > button:hover {{
+        filter: brightness(1.1);
+        transform: scale(1.03);
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+
+# --------------------------
 # Page Flow Setup
 # --------------------------
 if "page" not in st.session_state:
