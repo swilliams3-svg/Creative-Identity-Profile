@@ -36,7 +36,7 @@ def create_academic_pdf():
     title_style = ParagraphStyle(
         "TitleStyle",
         parent=styles["Heading1"],
-        fontSize=18,
+        fontSize=14,
         leading=22,
         alignment=TA_CENTER,
         spaceAfter=20,
@@ -45,7 +45,7 @@ def create_academic_pdf():
     header_style = ParagraphStyle(
         "HeaderStyle",
         parent=styles["Heading2"],
-        fontSize=14,
+        fontSize=12,
         leading=18,
         spaceBefore=12,
         spaceAfter=6,
@@ -54,7 +54,7 @@ def create_academic_pdf():
     body_style = ParagraphStyle(
         "BodyStyle",
         parent=styles["Normal"],
-        fontSize=11,
+        fontSize=10,
         leading=15,
         spaceAfter=10,
     )
