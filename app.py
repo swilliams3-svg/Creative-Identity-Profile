@@ -77,10 +77,16 @@ def create_academic_pdf():
 # --------------------------
 # Results PDF function
 # --------------------------
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib import colors
+import io
+
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5):
     buffer = io.BytesIO()
 
-    # Set up document
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -100,13 +106,12 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             spaceAfter=12,
             fontName="Helvetica-Bold"
         ),
-        "heading": ParagraphStyle(
-            "heading",
+        "subtitle": ParagraphStyle(
+            "subtitle",
             fontSize=14,
             leading=18,
             alignment=TA_LEFT,
-            spaceBefore=12,
-            spaceAfter=6,
+            spaceAfter=8,
             fontName="Helvetica-Bold"
         ),
         "body": ParagraphStyle(
@@ -125,72 +130,59 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
     story.append(Spacer(1, 12))
 
-    # Add radar charts
-    if chart_buf_creative:
-        story.append(Paragraph("Creative Traits", styles["heading"]))
-        img = ImageReader(chart_buf_creative)
-        story.append(Spacer(1, 6))
-        story.append(Paragraph('<img src="{}" width="400" />'.format(chart_buf_creative), styles["body"]))
-        story.append(Spacer(1, 12))
+    # Add Radar Charts side by side
+    img_creative = Image(chart_buf_creative, width=250, height=250)
+    img_big5 = Image(chart_buf_big5, width=250, height=250)
 
-    if chart_buf_big5:
-        story.append(Paragraph("Big Five Traits", styles["heading"]))
-        img = ImageReader(chart_buf_big5)
-        story.append(Spacer(1, 6))
-        story.append(Paragraph('<img src="{}" width="400" />'.format(chart_buf_big5), styles["body"]))
-        story.append(Spacer(1, 12))
-
-    # Trait Scores and Descriptions
-    story.append(Paragraph("Trait Scores", styles["heading"]))
-    for t, p in creative_perc.items():
-        story.append(Paragraph(f"<b>{t}:</b> {p}%", styles["body"]))
-        if p >= 67:
-            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
-        elif p >= 34:
-            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
-        else:
-            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
-
-    for t, p in bigfive_perc.items():
-        story.append(Paragraph(f"<b>{t}:</b> {p}%", styles["body"]))
-        if p >= 67:
-            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
-        elif p >= 34:
-            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
-        else:
-            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
-
-    # Archetypes
+    chart_table = Table([[img_creative, img_big5]], colWidths=[270, 270])
+    story.append(chart_table)
     story.append(Spacer(1, 12))
-    story.append(Paragraph("Archetypes", styles["heading"]))
+
+    # Archetypes (Primary, Sub, Growth)
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
 
-    def add_archetype(trait, role_type):
-        role, subtitle, tip = archetypes[trait]
-        if role_type == "Primary":
-            score = top_score
-        elif role_type == "Sub":
-            score = sub_score
-        else:
-            score = low_score
-
+    def add_archetype(trait, score, title_label):
         if score >= 67:
             desc = trait_descriptions[trait]["high"]
         elif score >= 34:
             desc = trait_descriptions[trait]["medium"]
         else:
             desc = trait_descriptions[trait]["low"]
-
-        story.append(Paragraph(f"{role_type} Archetype: {role} ({subtitle})", styles["body"]))
+        story.append(Paragraph(f"{title_label}: {archetypes[trait][0]} ({archetypes[trait][1]})", styles["subtitle"]))
         story.append(Paragraph(desc, styles["body"]))
-        story.append(Paragraph(f"<b>Growth Tip:</b> {tip}", styles["body"]))
-        story.append(Spacer(1, 6))
+        story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[trait][2]}", styles["body"]))
+        story.append(Spacer(1, 8))
 
-    add_archetype(top_trait, "Primary")
-    add_archetype(sub_trait, "Sub")
-    add_archetype(lowest_trait, "Growth Area")
+    add_archetype(top_trait, top_score, "Primary Archetype")
+    add_archetype(sub_trait, sub_score, "Sub-Archetype")
+    add_archetype(lowest_trait, low_score, "Growth Area")
+
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Trait Scores", styles["subtitle"]))
+
+    # List all creative traits
+    for t, p in creative_perc.items():
+        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
+        if p >= 67:
+            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
+        elif p >= 34:
+            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
+        else:
+            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
+        story.append(Spacer(1, 4))
+
+    # List all Big Five traits
+    for t, p in bigfive_perc.items():
+        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
+        if p >= 67:
+            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
+        elif p >= 34:
+            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
+        else:
+            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
+        story.append(Spacer(1, 4))
 
     doc.build(story)
     buffer.seek(0)
@@ -693,7 +685,14 @@ elif st.session_state.page == "results":
 col1, col2 = st.columns(2)
 
 with col1:
-    results_pdf = create_results_pdf()  # your existing function to generate results PDF
+    results_pdf = create_results_pdf(
+        creative_perc,
+        bigfive_perc,
+        trait_descriptions,
+        archetypes,
+        chart_buf_creative,
+        chart_buf_big5
+    )
     st.download_button(
         "Download Your Results PDF",
         data=results_pdf,
@@ -702,11 +701,12 @@ with col1:
     )
 
 with col2:
-    academic_pdf = create_academic_pdf()  # your existing academic PDF function
+    academic_pdf = create_academic_pdf()
     st.download_button(
         "Download Academic Research PDF",
         data=academic_pdf,
         file_name="academic_research.pdf",
         mime="application/pdf"
     )
+
 
