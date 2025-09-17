@@ -14,21 +14,12 @@ from io import BytesIO
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Initialize session state
-# --------------------------
-if "page" not in st.session_state:
-    st.session_state.page = "intro"
-if "current_question" not in st.session_state:
-    st.session_state.current_question = 0
-if "responses" not in st.session_state:
-    st.session_state.responses = {}
-
-# --------------------------
 # Academic PDF function
 # --------------------------
 def create_academic_pdf():
     buffer = io.BytesIO()
 
+    # Set up document
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -38,6 +29,7 @@ def create_academic_pdf():
         bottomMargin=50
     )
 
+    # Define styles
     styles = {
         "title": ParagraphStyle(
             "title",
@@ -70,21 +62,24 @@ def create_academic_pdf():
 
     story = []
 
+    # Read the academic text file
     with open("academic_article.txt", "r") as f:
         for line in f:
             line = line.strip()
             if not line:
                 story.append(Spacer(1, 12))
-            elif line.startswith("# "):
+            elif line.startswith("# "):  # Main heading
                 story.append(Paragraph(line[2:], styles["title"]))
-            elif line.startswith("## "):
+            elif line.startswith("## "):  # Subheading
                 story.append(Paragraph(line[3:], styles["heading"]))
             else:
                 story.append(Paragraph(line, styles["body"]))
 
+    # Build PDF
     doc.build(story)
     buffer.seek(0)
     return buffer
+
 
 # --------------------------
 # Colours
@@ -168,77 +163,14 @@ big_five_traits = {
 }
 
 # --------------------------
-# Trait Descriptions
+# Trait Descriptions (High/Med/Low)
 # --------------------------
-trait_descriptions = {
-    "Originality": {
-        "high": "You thrive on breaking patterns and offering unique perspectives. Others often see you as a source of fresh, unconventional ideas.",
-        "medium": "You sometimes show originality but balance it with conventional approaches, depending on the situation.",
-        "low": "You prefer tried-and-tested methods over generating novel ideas, valuing familiarity over experimentation."
-    },
-    "Curiosity": {
-        "high": "You are constantly seeking new knowledge and experiences. You love questioning and exploring beyond the obvious.",
-        "medium": "You are curious when prompted but don’t always explore further without external motivation.",
-        "low": "You are less driven to question or seek out new experiences, preferring stability and routine."
-    },
-    "Risk-Taking": {
-        "high": "You embrace uncertainty and are willing to take creative risks, seeing setbacks as part of the journey.",
-        "medium": "You sometimes take risks but often prefer security, weighing potential downsides before acting.",
-        "low": "You prefer safe, predictable routes and avoid uncertainty whenever possible."
-    },
-    "Imagination": {
-        "high": "You easily envision new possibilities and future scenarios. Your ability to think beyond the present helps you innovate.",
-        "medium": "You imagine ideas sometimes but often remain practical and grounded in the here-and-now.",
-        "low": "You focus more on concrete realities than imaginative possibilities, preferring clarity over abstraction."
-    },
-    "Discipline": {
-        "high": "You bring persistence and structure to creative projects, often ensuring ideas reach completion.",
-        "medium": "You stay disciplined when motivated but can lose focus if enthusiasm drops.",
-        "low": "You often find it hard to sustain focus and follow-through, which can stall projects."
-    },
-    "Collaboration": {
-        "high": "You thrive in teamwork and enjoy co-creating with others, seeing group input as energising.",
-        "medium": "You collaborate when needed but also value independence and personal space.",
-        "low": "You prefer working alone and rely less on group dynamics for creativity."
-    },
-    "Openness": {
-        "high": "You are highly receptive to new experiences and perspectives, thriving in environments that encourage growth.",
-        "medium": "You are somewhat open to new experiences but prefer familiar territory for security.",
-        "low": "You resist change and prefer predictable, familiar approaches over new perspectives."
-    },
-    "Conscientiousness": {
-        "high": "You are dependable, organized, and detail-oriented, which supports long-term goals and achievements.",
-        "medium": "You show conscientiousness when motivated but don’t always stay consistent.",
-        "low": "You struggle with structure and consistency, often preferring spontaneity."
-    },
-    "Extraversion": {
-        "high": "You are highly energized by social interaction and seek out group experiences.",
-        "medium": "You enjoy socializing but also value time alone to recharge.",
-        "low": "You are more reserved and often prefer solitary or small-group settings."
-    },
-    "Agreeableness": {
-        "high": "You are cooperative, empathetic, and considerate, often putting group harmony above personal preference.",
-        "medium": "You are agreeable in many cases but still assert your own needs when necessary.",
-        "low": "You are less concerned with harmony and prioritize your own goals or principles."
-    },
-    "Neuroticism": {
-        "high": "You often feel strong emotions such as stress or worry, which can shape how you react under pressure.",
-        "medium": "You sometimes feel anxious or stressed but can usually manage your emotions.",
-        "low": "You are emotionally stable, resilient, and less prone to anxiety or negative moods."
-    }
-}
+trait_descriptions = { ... }  # Keep your existing descriptions here
 
 # --------------------------
 # Archetypes
 # --------------------------
-archetypes = {
-    "Originality": ("The Innovator", "Divergent Thinker", "Practice brainstorming multiple solutions."),
-    "Curiosity": ("The Explorer", "Openness-driven Creative", "Adopt a beginner’s mindset, asking simple questions."),
-    "Risk-Taking": ("The Adventurer", "Tolerance for Uncertainty", "Start with small, low-stakes risks to build confidence."),
-    "Imagination": ("The Dreamer", "Imaginative Creator", "Engage in exercises like mind-mapping or ‘what if’ scenarios."),
-    "Discipline": ("The Builder", "Conscientious Creator", "Break goals into smaller steps and set clear deadlines."),
-    "Collaboration": ("The Connector", "Socially-Driven Creative", "Share even half-formed ideas to invite feedback and growth.")
-}
+archetypes = { ... }  # Keep your existing archetypes here
 
 # --------------------------
 # Shared Button Styling
@@ -249,7 +181,6 @@ gradients = [
     "linear-gradient(90deg, #ff6a00, #ee0979)",
 ]
 chosen_gradient = random.choice(gradients)
-
 st.markdown(f"""
 <style>
 div.stButton > button {{
@@ -263,7 +194,7 @@ div.stButton > button {{
     transition: 0.3s;
     border: none;
     margin: 0.2em;
-}}
+ }}
 div.stButton > button:hover {{
     filter: brightness(1.1);
     transform: scale(1.03);
@@ -287,59 +218,18 @@ div.stDownloadButton > button:hover {{
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<style>
-.stProgress > div > div > div > div {
-    background-color: #b0b0b0;
-}
-</style>
-""", unsafe_allow_html=True)
+# --------------------------
+# Page Flow Setup
+# --------------------------
+if "page" not in st.session_state:
+    st.session_state.page = "intro"
 
 # --------------------------
 # Intro Page
 # --------------------------
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
-    st.markdown("""
-    Welcome to the **Creative Identity & Personality Profile**.  
-    This short self-reflection quiz combines insights from creativity research and the **Big Five personality framework**.  
-    """)
-
-    col1, col2 = st.columns([1, 5])
-    with col1: st.markdown("-")
-    with col2:
-        st.subheader("What to Expect")
-        st.markdown("""
-        - **33 short statements**, answered one at a time.  
-        - Each uses a **1–5 scale** (*Strongly Disagree → Strongly Agree*).  
-        - Takes about **5–7 minutes** to complete.  
-        - No right or wrong answers — just be honest about what feels true for you.  
-        """)
-    col1, col2 = st.columns([1, 5])
-    with col1: st.markdown("-")
-    with col2:
-        st.subheader("What You’ll Get")
-        st.markdown("""
-        - A personalised profile of your **creative traits** and **personality traits**.  
-        - A **visual breakdown** of your results (radar charts).  
-        - Your **creative archetype** and growth areas.  
-        - Practical **tips** to develop your creativity further.  
-        """)
-    col1, col2 = st.columns([1, 5])
-    with col1: st.markdown("-")
-    with col2:
-        st.subheader("Why This Matters")
-        st.markdown("""
-        Creativity and personality shape how you **approach challenges, generate ideas, and collaborate**.  
-        By understanding your unique profile, you can:  
-        - Play to your strengths.  
-        - Recognise and improve growth areas.  
-        - Gain deeper insight into your personal and professional identity.  
-        """)
-
-    st.markdown("---")
-    st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
-
+    st.markdown("Welcome to the **Creative Identity & Personality Profile**. This short self-reflection quiz combines insights from creativity research and the **Big Five personality framework**.")
     if st.button("Start Quiz", key="start_quiz"):
         st.session_state.responses = {}
         if "shuffled_questions" in st.session_state:
@@ -349,11 +239,9 @@ if st.session_state.page == "intro":
         st.rerun()
 
 # --------------------------
-# Quiz Page (one question per page)
+# Quiz Page
 # --------------------------
 elif st.session_state.page == "quiz":
-
-    # Shuffle questions once at the start
     if "shuffled_questions" not in st.session_state:
         questions = []
         for trait, qs in {**creative_traits, **big_five_traits}.items():
@@ -369,82 +257,78 @@ elif st.session_state.page == "quiz":
 
     st.header("Quiz")
     st.markdown(f"**Question {current_index + 1} of {total_questions}**")
-
-    # Progress bar
     st.progress((current_index + 1) / total_questions)
 
-    # Display question (without trait name)
     widget_key = f"{trait}_{q_text}"
     prev_answer = st.session_state.responses.get(widget_key, None)
     response = st.radio(
         q_text,
         ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"],
         horizontal=True,
-        index=None if prev_answer is None else ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"].index(prev_answer),
+        index=None if prev_answer is None else ["1 Strongly Disagree","2 Disagree","3 Neutral","4 Agree","5 Strongly Agree"].index(prev_answer),
         key=widget_key
     )
     st.session_state.responses[widget_key] = response
 
-    # --------------------------
-# Quiz navigation buttons (aligned with progress bar)
-# --------------------------
-col1, col2, col3, col4 = st.columns([1, 5, 0.5, 1])  # adjust ratios for alignment
+    # Navigation buttons aligned
+    col1, col2, col3, col4 = st.columns([1, 3, 0.5, 1])
+    with col1:
+        if st.session_state.current_question > 0:
+            if st.button("⬅️ Back"):
+                st.session_state.current_question -= 1
+                st.rerun()
+    with col2: st.empty()
+    with col3:
+        if st.session_state.current_question < total_questions - 1:
+            if st.button("Next ➡️"):
+                st.session_state.current_question += 1
+                st.rerun()
+        else:
+            if st.button("Finish ➡️"):
+                st.session_state.page = "results"
+                st.rerun()
+    with col4: st.empty()
 
-with col1:
-    if st.session_state.current_question > 0:
-        if st.button("⬅️ Back"):
-            st.session_state.current_question -= 1
-            st.rerun()
-
-with col2:
-    st.empty()  # middle spacer
-
-with col3:
-    current_widget_key = f"{trait}_{q_text}"
-    answer_selected = current_widget_key in st.session_state.responses
-
-    # Next or Finish button
-    if st.session_state.current_question < len(st.session_state.shuffled_questions) - 1:
-        if st.button("Next ➡️", disabled=not answer_selected):
-            st.session_state.current_question += 1
-            st.rerun()
-    else:
-        if st.button("Finish ➡️", disabled=not answer_selected):
-            st.session_state.page = "results"
-            st.rerun()
-
-with col4:
-    st.empty()  # right spacer to push button further right
-
-
-
-# --------------------------
-# Results Page
-# --------------------------
 elif st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
-    creative_scores = {t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs]) for t, qs in creative_traits.items()}
-    bigfive_scores = {t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs]) for t, qs in big_five_traits.items()}
+    # --------------------------
+    # Calculate Scores
+    # --------------------------
+    creative_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in creative_traits.items()
+    }
+    bigfive_scores = {
+        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
+        for t, qs in big_five_traits.items()
+    }
+
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-    # Radar chart function
+    # --------------------------
+    # Radar Chart Function
+    # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
         values += values[:1]
         angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
         angles += angles[:1]
+
         fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
         ax.set_title(title, size=14, weight="bold", pad=20)
+
         for i, label in enumerate(labels):
             val = values[i]
             ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
+
         st.pyplot(fig)
+
         buf = io.BytesIO()
         fig.savefig(buf, format="PNG")
         buf.seek(0)
@@ -459,13 +343,15 @@ elif st.session_state.page == "results":
         st.subheader("Big Five")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
-    # Archetype cards
+    # --------------------------
+    # Archetypes Cards
+    # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
 
     def archetype_card(trait, title, description, tip):
-        color = palette.get(trait, "#7b2ff7")
+        color = palette.get(trait, "#7b2ff7")  # fallback purple
         return f"""
         <div style="
             background: {color};
@@ -522,7 +408,9 @@ elif st.session_state.page == "results":
         archetypes[lowest_trait][2]
     ), unsafe_allow_html=True)
 
-    # Trait scores
+    # --------------------------
+    # Trait Scores List
+    # --------------------------
     st.subheader("Your Trait Scores")
     for t, p in creative_perc.items():
         st.write(f"**{t}:** {p}%")
@@ -542,8 +430,12 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
 
+    # --------------------------
+    # Academic PDF Download
+    # --------------------------
     st.markdown("### Academic Research")
     st.markdown("You can download the full academic background behind this quiz as a PDF:")
+
     academic_pdf = create_academic_pdf()
     st.download_button(
         "Download Academic PDF",
@@ -551,3 +443,4 @@ elif st.session_state.page == "results":
         file_name="academic_research.pdf",
         mime="application/pdf",
     )
+
