@@ -9,6 +9,83 @@ from reportlab.lib.utils import ImageReader
 
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.enums import TA_CENTER
+from io import BytesIO
+
+# --------------------------
+# Academic PDF function
+# --------------------------
+def create_academic_pdf():
+    buffer = BytesIO()
+
+    # Setup document
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=60,
+        rightMargin=60,
+        topMargin=60,
+        bottomMargin=60,
+    )
+
+    styles = getSampleStyleSheet()
+
+    # Define custom styles
+    title_style = ParagraphStyle(
+        "TitleStyle",
+        parent=styles["Heading1"],
+        fontSize=18,
+        leading=22,
+        alignment=TA_CENTER,
+        spaceAfter=20,
+    )
+
+    header_style = ParagraphStyle(
+        "HeaderStyle",
+        parent=styles["Heading2"],
+        fontSize=14,
+        leading=18,
+        spaceBefore=12,
+        spaceAfter=6,
+    )
+
+    body_style = ParagraphStyle(
+        "BodyStyle",
+        parent=styles["Normal"],
+        fontSize=11,
+        leading=15,
+        spaceAfter=10,
+    )
+
+    # Load academic text file
+    with open("academic_article.txt", "r", encoding="utf-8") as f:
+        content = f.read()
+
+    story = []
+
+    # First line = title
+    lines = content.strip().splitlines()
+    if lines:
+        story.append(Paragraph(lines[0], title_style))
+        story.append(Spacer(1, 12))
+        lines = lines[1:]
+
+    # Process remaining lines
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("## "):  # Section header
+            story.append(Paragraph(line.replace("## ", ""), header_style))
+        else:  # Body text
+            story.append(Paragraph(line, body_style))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
 # --------------------------
 # Colours
 # --------------------------
@@ -535,7 +612,18 @@ elif st.session_state.page == "results":
             st.write(trait_descriptions[t]["medium"])
         else:
             st.write(trait_descriptions[t]["low"])
-    
+
+    st.markdown("### 📘 Academic Research")
+    st.markdown("You can download the full academic background behind this quiz as a PDF:")
+
+    academic_pdf = create_academic_pdf()
+    st.download_button(
+        "Download Academic PDF",
+        data=academic_pdf,
+        file_name="academic_research.pdf",
+        mime="application/pdf",
+)
+
 
 
 
