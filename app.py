@@ -458,7 +458,7 @@ st.markdown(archetype_card(
     # --------------------------
     # List of Traits with descriptors
     # --------------------------
-    st.subheader("Your Trait Scores")
+st.subheader("Your Trait Scores")
     for t, p in creative_perc.items():
         st.write(f"**{t}:** {p}%")
         if p >= 67:
