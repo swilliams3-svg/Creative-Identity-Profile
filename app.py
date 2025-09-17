@@ -536,7 +536,7 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
     
-
+)
 # --------------------------
 # Academic Research PDF
 # --------------------------
