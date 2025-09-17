@@ -70,7 +70,7 @@ def create_academic_pdf():
     story = []
 
     # Read the academic text file
-    with open("academic_section.txt", "r") as f:
+    with open("academic_article.txt", "r") as f:
         for line in f:
             line = line.strip()
             if not line:
