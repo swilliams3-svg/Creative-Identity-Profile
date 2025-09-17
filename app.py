@@ -74,6 +74,23 @@ def create_academic_pdf():
     buffer.seek(0)
     return buffer
 
+# Create PDF
+results_pdf = create_results_pdf(
+    creative_perc,
+    bigfive_perc,
+    trait_descriptions,
+    archetypes,
+    chart_buf_creative,
+    chart_buf_big5
+)
+
+# Download button
+st.download_button(
+    "Download Your Results PDF",
+    data=results_pdf,
+    file_name="creative_profile_results.pdf",
+    mime="application/pdf"
+)
 
 # --------------------------
 # Colours
@@ -283,6 +300,29 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+st.markdown(f"""
+    <style>
+    /* Styled download buttons */
+    div.stDownloadButton > button {{
+        background: {chosen_gradient};
+        color: white;
+        border-radius: 12px;
+        height: 2.8em;
+        min-width: 12em;
+        font-size: 16px;
+        font-weight: bold;
+        transition: 0.3s;
+        border: none;
+        margin: 0.3em;
+    }}
+    div.stDownloadButton > button:hover {{
+        filter: brightness(1.1);
+        transform: scale(1.03);
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
 
 # --------------------------
 # Page flow setup
@@ -544,10 +584,25 @@ elif st.session_state.page == "results":
     st.markdown("### Academic Research")
     st.markdown("You can download the full academic background behind this quiz as a PDF:")
 
-    academic_pdf = create_academic_pdf()
+    st.subheader("Download PDFs")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    results_pdf = create_results_pdf()  # your existing function to generate results PDF
     st.download_button(
-        "Download Academic PDF",
+        "Download Your Results PDF",
+        data=results_pdf,
+        file_name="creative_results.pdf",
+        mime="application/pdf"
+    )
+
+with col2:
+    academic_pdf = create_academic_pdf()  # your existing academic PDF function
+    st.download_button(
+        "Download Academic Research PDF",
         data=academic_pdf,
         file_name="academic_research.pdf",
-        mime="application/pdf",
+        mime="application/pdf"
     )
+
