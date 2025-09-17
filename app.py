@@ -337,9 +337,11 @@ if st.session_state.page == "intro":
         st.rerun()
 
 # --------------------------
-# Quiz Page
+# Quiz Page (one question per page)
 # --------------------------
 elif st.session_state.page == "quiz":
+
+    # Shuffle questions once at the start
     if "shuffled_questions" not in st.session_state:
         questions = []
         for trait, qs in {**creative_traits, **big_five_traits}.items():
@@ -356,39 +358,55 @@ elif st.session_state.page == "quiz":
     st.header("Quiz")
     st.markdown(f"**Question {current_index + 1} of {total_questions}**")
 
-    # Progress bar
+    # Grey progress bar
+    st.markdown("""
+        <style>
+        .stProgress > div > div > div > div {
+            background-color: #b0b0b0; /* soft grey */
+        }
+        </style>
+    """, unsafe_allow_html=True)
     st.progress((current_index + 1) / total_questions)
 
-    # Question radio
+    # Display question
     widget_key = f"{trait}_{q_text}"
     prev_answer = st.session_state.responses.get(widget_key, None)
     response = st.radio(
         q_text,
         ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"],
         horizontal=True,
-        index=None if prev_answer is None else ["1 Strongly Disagree","2 Disagree","3 Neutral","4 Agree","5 Strongly Agree"].index(prev_answer),
+        index=None if prev_answer is None else 
+              ["1 Strongly Disagree", "2 Disagree", "3 Neutral", "4 Agree", "5 Strongly Agree"].index(prev_answer),
         key=widget_key
     )
     st.session_state.responses[widget_key] = response
 
-    # Navigation buttons aligned with progress
+    # Navigation buttons in columns
     col1, col2, col3 = st.columns([1, 2, 1])
+
     with col1:
         if st.session_state.current_question > 0:
             if st.button("⬅️ Back"):
                 st.session_state.current_question -= 1
                 st.rerun()
+
     with col2:
-        st.empty()
+        st.empty()  # spacer in middle
+
     with col3:
-        if st.session_state.current_question < len(st.session_state.shuffled_questions) - 1:
-            if st.button("Next ➡️"):
-                st.session_state.current_question += 1
-                st.rerun()
+        # Only enable next/finish if answered
+        if widget_key in st.session_state.responses and st.session_state.responses[widget_key]:
+            if st.session_state.current_question < total_questions - 1:
+                if st.button("Next ➡️"):
+                    st.session_state.current_question += 1
+                    st.rerun()
+            else:
+                if st.button("Finish ➡️"):
+                    st.session_state.page = "results"
+                    st.rerun()
         else:
-            if st.button("Finish ➡️"):
-                st.session_state.page = "results"
-                st.rerun()
+            st.button("Next ➡️", disabled=True)
+
 
 # --------------------------
 # Results Page
