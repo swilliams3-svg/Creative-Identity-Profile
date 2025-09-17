@@ -390,75 +390,75 @@ elif st.session_state.page == "results":
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
 
-   # --------------------------
-# Archetypes (Coloured Cards)
-# --------------------------
-sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
+    # --------------------------
+    # Archetypes (Coloured Cards)
+    # --------------------------
+    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+    top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
 
-def archetype_card(trait, title, description, tip):
-    color = palette.get(trait, "#7b2ff7")  # fallback purple
-    return f"""
-    <div style="
-        background: {color};
-        padding: 1.2em;
-        border-radius: 12px;
-        margin-bottom: 1.2em;
-        text-align: left;
-        color: white;
-        font-size: 16px;
-        font-weight: normal;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
-    ">
-        <h3 style="margin-top:0; font-size:20px; font-weight:bold;">{title}</h3>
-        <p style="margin:0.4em 0;">{description}</p>
-        <p style="margin:0.4em 0;"><b>Growth Tip:</b> {tip}</p>
-    </div>
-    """
+    def archetype_card(trait, title, description, tip):
+        color = palette.get(trait, "#7b2ff7")  # fallback purple
+        return f"""
+        <div style="
+            background: {color};
+            padding: 1.2em;
+            border-radius: 12px;
+            margin-bottom: 1.2em;
+            text-align: left;
+            color: white;
+            font-size: 16px;
+            font-weight: normal;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+        ">
+            <h3 style="margin-top:0; font-size:20px; font-weight:bold;">{title}</h3>
+            <p style="margin:0.4em 0;">{description}</p>
+            <p style="margin:0.4em 0;"><b>Growth Tip:</b> {tip}</p>
+        </div>
+        """
 
-# Primary Archetype
-if top_score >= 67:
-    desc = trait_descriptions[top_trait]["high"]
-elif top_score >= 34:
-    desc = trait_descriptions[top_trait]["medium"]
-else:
-    desc = trait_descriptions[top_trait]["low"]
+    # Primary Archetype
+    if top_score >= 67:
+        desc = trait_descriptions[top_trait]["high"]
+    elif top_score >= 34:
+        desc = trait_descriptions[top_trait]["medium"]
+    else:
+        desc = trait_descriptions[top_trait]["low"]
 
-st.markdown(archetype_card(
-    top_trait,
-    f"🌟 Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
-    desc,
-    archetypes[top_trait][2]
-), unsafe_allow_html=True)
+    st.markdown(archetype_card(
+        top_trait,
+        f"🌟 Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
+        desc,
+        archetypes[top_trait][2]
+    ), unsafe_allow_html=True)
 
-# Sub-Archetype
-if sub_score >= 67:
-    desc = trait_descriptions[sub_trait]["high"]
-elif sub_score >= 34:
-    desc = trait_descriptions[sub_trait]["medium"]
-else:
-    desc = trait_descriptions[sub_trait]["low"]
+    # Sub-Archetype
+    if sub_score >= 67:
+        desc = trait_descriptions[sub_trait]["high"]
+    elif sub_score >= 34:
+        desc = trait_descriptions[sub_trait]["medium"]
+    else:
+        desc = trait_descriptions[sub_trait]["low"]
 
-st.markdown(archetype_card(
-    sub_trait,
-    f"✨ Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
-    desc,
-    archetypes[sub_trait][2]
-), unsafe_allow_html=True)
+    st.markdown(archetype_card(
+        sub_trait,
+        f"✨ Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
+        desc,
+        archetypes[sub_trait][2]
+    ), unsafe_allow_html=True)
 
-# Growth Area
-st.markdown(archetype_card(
-    lowest_trait,
-    f"🌱 Growth Area: {lowest_trait}",
-    trait_descriptions[lowest_trait]["low"],
-    archetypes[lowest_trait][2]
-), unsafe_allow_html=True)
+    # Growth Area
+    st.markdown(archetype_card(
+        lowest_trait,
+        f"🌱 Growth Area: {lowest_trait}",
+        trait_descriptions[lowest_trait]["low"],
+        archetypes[lowest_trait][2]
+    ), unsafe_allow_html=True)
 
     # --------------------------
     # List of Traits with descriptors
     # --------------------------
-st.subheader("Your Trait Scores")
+    st.subheader("Your Trait Scores")
     for t, p in creative_perc.items():
         st.write(f"**{t}:** {p}%")
         if p >= 67:
