@@ -535,20 +535,6 @@ elif st.session_state.page == "results":
             st.write(trait_descriptions[t]["medium"])
         else:
             st.write(trait_descriptions[t]["low"])
-
-# --- Summary Expander (NEW) ---
-with st.expander("📖 The Science Behind the Profile (Summary)"):
-    st.markdown("""
-    **The Creative Identity & Personality Profile** is built on two foundations:
-
-    - 🎨 *Creative Traits*: Originality, Curiosity, Risk-Taking, Imagination, Discipline, Collaboration.  
-    - 🧠 *Big Five Personality Dimensions*: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism.  
-
-    These insights draw on decades of research (Amabile, Sternberg, Torrance, etc.), combining creativity studies with personality psychology.  
-    """)
-
-    st.caption("Download the full research paper below for complete references and academic background.")
-
     
     # --------------------------
     # Academic Section (from file)
@@ -556,6 +542,94 @@ with st.expander("📖 The Science Behind the Profile (Summary)"):
     with st.expander("The Science Behind the Creative Identity & Personality Profile"):
         with open("academic_article.txt", "r") as f:
             st.markdown(f.read())
+
+    from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem
+from reportlab.lib.enums import TA_LEFT
+import io
+
+def create_academic_pdf():
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                            rightMargin=72, leftMargin=72,
+                            topMargin=72, bottomMargin=72)
+
+    styles = getSampleStyleSheet()
+    normal = styles["Normal"]
+    normal.fontName = "Helvetica"
+    normal.fontSize = 11
+    normal.leading = 14
+
+    heading = ParagraphStyle(
+        "Heading",
+        parent=normal,
+        fontName="Helvetica-Bold",
+        fontSize=13,
+        spaceBefore=12,
+        spaceAfter=6
+    )
+
+    reference = ParagraphStyle(
+        "Reference",
+        parent=normal,
+        fontSize=9,
+        leading=11
+    )
+
+    story = []
+
+    # Read academic_section.txt
+    with open("academic_article.txt", "r") as f:
+        lines = f.readlines()
+
+    in_references = False
+    for line in lines:
+        line = line.strip()
+        if not line:
+            story.append(Spacer(1, 8))
+            continue
+
+        # Detect headings (ALL CAPS or ### style)
+        if line.isupper() or line.startswith("###"):
+            story.append(Paragraph(line.replace("###", "").strip(), heading))
+            continue
+
+        # Detect start of References
+        if "REFERENCES" in line.upper():
+            in_references = True
+            story.append(Paragraph(line, heading))
+            continue
+
+        # Bullet points
+        if line.startswith(("-", "•")):
+            bullet = ListItem(Paragraph(line[1:].strip(), normal), leftIndent=12)
+            story.append(ListFlowable([bullet], bulletType="bullet", start="•"))
+            continue
+
+        # Normal paragraph or reference
+        if in_references:
+            story.append(Paragraph(line, reference))
+        else:
+            story.append(Paragraph(line, normal))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+# Add download button in Streamlit
+st.subheader("Academic Research")
+with open("academic_article.txt", "r") as f:
+    st.markdown(f.read())
+
+academic_pdf = create_academic_pdf()
+st.download_button(
+    label="📄 Download Academic Research (PDF)",
+    data=academic_pdf,
+    file_name="academic_research.pdf",
+    mime="application/pdf",
+)
+
 
     # --------------------------
     # PDF Generation
