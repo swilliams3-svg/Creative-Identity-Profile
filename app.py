@@ -386,28 +386,36 @@ elif st.session_state.page == "quiz":
     st.session_state.responses[widget_key] = response
 
     # --------------------------
-    # Quiz navigation buttons (Next aligned right)
-    # --------------------------
-    col1, col2, col3 = st.columns([1, 2, 1])  # adjust ratios to push Next further right
-    with col1:
-        if st.session_state.current_question > 0:
-            if st.button("⬅️ Back"):
-                st.session_state.current_question -= 1
-                st.rerun()
-    with col2:
-        st.empty()  # keeps spacing clean in the middle
-    with col3:
-        if response:  # Only enable Next/Finish if answered
-            if st.session_state.current_question < total_questions - 1:
-                if st.button("Next ➡️"):
-                    st.session_state.current_question += 1
-                    st.rerun()
-            else:
-                if st.button("Finish ➡️"):
-                    st.session_state.page = "results"
-                    st.rerun()
-        else:
-            st.warning("Please select an answer to proceed.")
+# Quiz navigation buttons (aligned with progress bar)
+# --------------------------
+col1, col2, col3, col4 = st.columns([1, 5, 0.5, 1])  # adjust ratios for alignment
+
+with col1:
+    if st.session_state.current_question > 0:
+        if st.button("⬅️ Back"):
+            st.session_state.current_question -= 1
+            st.rerun()
+
+with col2:
+    st.empty()  # middle spacer
+
+with col3:
+    current_widget_key = f"{trait}_{q_text}"
+    answer_selected = current_widget_key in st.session_state.responses
+
+    # Next or Finish button
+    if st.session_state.current_question < len(st.session_state.shuffled_questions) - 1:
+        if st.button("Next ➡️", disabled=not answer_selected):
+            st.session_state.current_question += 1
+            st.rerun()
+    else:
+        if st.button("Finish ➡️", disabled=not answer_selected):
+            st.session_state.page = "results"
+            st.rerun()
+
+with col4:
+    st.empty()  # right spacer to push button further right
+
 
 
 # --------------------------
