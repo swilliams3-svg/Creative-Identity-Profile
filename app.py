@@ -536,27 +536,6 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
     
-    # --------------------------
-    # Academic Section (from file)
-    # --------------------------
-    with st.expander("The Science Behind the Creative Identity & Personality Profile"):
-        with open("academic_article.txt", "r") as f:
-            st.markdown(f.read())
-
-# --- Academic Research PDF download section ---
-st.markdown("---")
-st.subheader("Further Reading")
-
-# Generate the academic research PDF
-academic_pdf = create_academic_pdf()
-
-# Show download button
-st.download_button(
-    label="📖 Download Academic Research",
-    data=academic_pdf,
-    file_name="Creative_Identity_Academic_Research.pdf",
-    mime="application/pdf",
-)
 
 # --------------------------
 # Academic Research PDF
@@ -567,7 +546,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.enums import TA_CENTER
 
 def create_academic_pdf():
-    """Generate a nicely formatted PDF of the academic research text."""
+    """Generate a nicely formatted PDF of the academic article text."""
     from io import BytesIO
     buffer = BytesIO()
 
@@ -626,5 +605,20 @@ def create_academic_pdf():
     doc.build(story)
     buffer.seek(0)
     return buffer
+
+# --- Academic Research PDF download section ---
+st.markdown("---")
+st.subheader("Further Reading")
+
+# Generate the academic research PDF
+academic_pdf = create_academic_pdf()
+
+# Show download button
+st.download_button(
+    label="📖 Download Academic Research",
+    data=academic_pdf,
+    file_name="Creative_Identity_Academic_Research.pdf",
+    mime="application/pdf",
+
 
 
