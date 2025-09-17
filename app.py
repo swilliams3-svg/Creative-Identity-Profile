@@ -256,7 +256,7 @@ if st.session_state.page == "intro":
         </style>
     """, unsafe_allow_html=True)
 
-    if st.button("🌟 Start Quiz", key="start_quiz"):
+    if st.button("Start Quiz", key="start_quiz"):
         # Reset state if retaking
         st.session_state.responses = {}
         if "shuffled_questions" in st.session_state:
