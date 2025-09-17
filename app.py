@@ -543,6 +543,21 @@ elif st.session_state.page == "results":
         with open("academic_article.txt", "r") as f:
             st.markdown(f.read())
 
+# --- Academic Research PDF download section ---
+st.markdown("---")
+st.subheader("Further Reading")
+
+# Generate the academic research PDF
+academic_pdf = create_academic_pdf()
+
+# Show download button
+st.download_button(
+    label="📖 Download Academic Research",
+    data=academic_pdf,
+    file_name="Creative_Identity_Academic_Research.pdf",
+    mime="application/pdf",
+)
+
 # --------------------------
 # Academic Research PDF
 # --------------------------
