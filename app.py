@@ -536,6 +536,20 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
 
+# --- Summary Expander (NEW) ---
+with st.expander("📖 The Science Behind the Profile (Summary)"):
+    st.markdown("""
+    **The Creative Identity & Personality Profile** is built on two foundations:
+
+    - 🎨 *Creative Traits*: Originality, Curiosity, Risk-Taking, Imagination, Discipline, Collaboration.  
+    - 🧠 *Big Five Personality Dimensions*: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism.  
+
+    These insights draw on decades of research (Amabile, Sternberg, Torrance, etc.), combining creativity studies with personality psychology.  
+    """)
+
+    st.caption("Download the full research paper below for complete references and academic background.")
+
+    
     # --------------------------
     # Academic Section (from file)
     # --------------------------
