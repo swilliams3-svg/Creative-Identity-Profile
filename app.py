@@ -386,7 +386,7 @@ elif st.session_state.page == "quiz":
 
     with col1:
         if st.session_state.current_question > 0:
-            if st.button("⬅️ Back"):
+            if st.button("Back"):
                 st.session_state.current_question -= 1
                 st.rerun()
 
@@ -397,15 +397,15 @@ elif st.session_state.page == "quiz":
         # Only enable next/finish if answered
         if widget_key in st.session_state.responses and st.session_state.responses[widget_key]:
             if st.session_state.current_question < total_questions - 1:
-                if st.button("Next ➡️"):
+                if st.button("Next"):
                     st.session_state.current_question += 1
                     st.rerun()
             else:
-                if st.button("Finish ➡️"):
+                if st.button("Finish"):
                     st.session_state.page = "results"
                     st.rerun()
         else:
-            st.button("Next ➡️", disabled=True)
+            st.button("Next", disabled=True)
 
 
 # --------------------------
