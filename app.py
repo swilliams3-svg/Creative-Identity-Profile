@@ -258,7 +258,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-if st.button("🚀 Start Quiz"):
+if st.button("Start Quiz"):
     # Reset state if retaking
     st.session_state.responses = {}
     if "shuffled_questions" in st.session_state:
