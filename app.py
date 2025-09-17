@@ -615,7 +615,7 @@ elif st.session_state.page == "results":
         else:
             st.write(trait_descriptions[t]["low"])
 
-    st.markdown("### 📘 Academic Research")
+    st.markdown("###Academic Research")
     st.markdown("You can download the full academic background behind this quiz as a PDF:")
 
     academic_pdf = create_academic_pdf()
