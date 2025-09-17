@@ -175,18 +175,65 @@ if "responses" not in st.session_state:
 # Intro Page
 # --------------------------
 if st.session_state.page == "intro":
-    st.title("Creative Identity & Personality Profile")
+    st.title("✨ Creative Identity & Personality Profile ✨")
+
     st.markdown("""
     Welcome to the **Creative Identity & Personality Profile**.  
-    This quiz explores both your **creative traits** and your **Big Five personality traits**.  
-
-    - You’ll answer **33 statements** on a 1–5 scale.  
-    - The quiz is based on established research in creativity and psychology.  
-    - At the end, you’ll get a personalised profile, archetype, and tips.  
+    This short self-reflection quiz combines insights from creativity research and the **Big Five personality framework**.  
     """)
-    if st.button("Start Quiz"):
+
+    # What to Expect
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.markdown("⏱️")
+    with col2:
+        st.subheader("What to Expect")
+        st.markdown("""
+        - **33 short statements**, answered one at a time.  
+        - Each uses a **1–5 scale** (*Strongly Disagree → Strongly Agree*).  
+        - Takes about **5–7 minutes** to complete.  
+        - No right or wrong answers — just be honest about what feels true for you.  
+        """)
+
+    # What You’ll Get
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.markdown("🎯")
+    with col2:
+        st.subheader("What You’ll Get")
+        st.markdown("""
+        - A personalised profile of your **creative traits** and **personality traits**.  
+        - A **visual breakdown** of your results (radar charts).  
+        - Your **creative archetype** and growth areas.  
+        - Practical **tips** to develop your creativity further.  
+        """)
+
+    # Why This Matters
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.markdown("💡")
+    with col2:
+        st.subheader("Why This Matters")
+        st.markdown("""
+        Creativity and personality shape how you **approach challenges, generate ideas, and collaborate**.  
+        By understanding your unique profile, you can:  
+        - Play to your strengths.  
+        - Recognise and improve growth areas.  
+        - Gain deeper insight into your personal and professional identity.  
+        """)
+
+    st.markdown("---")
+    st.markdown("✅ Take your time, reflect honestly, and enjoy discovering your creative identity.")
+
+    if st.button("🚀 Start Quiz"):
+        # Reset state if retaking
+        st.session_state.responses = {}
+        if "shuffled_questions" in st.session_state:
+            del st.session_state.shuffled_questions
+        st.session_state.current_question = 0
         st.session_state.page = "quiz"
         st.rerun()
+
 
 # --------------------------
 # Quiz Page (one question per page)
