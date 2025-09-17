@@ -225,14 +225,48 @@ if st.session_state.page == "intro":
     st.markdown("---")
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
-    if st.button("Start Quiz"):
-        # Reset state if retaking
-        st.session_state.responses = {}
-        if "shuffled_questions" in st.session_state:
-            del st.session_state.shuffled_questions
-        st.session_state.current_question = 0
-        st.session_state.page = "quiz"
-        st.rerun()
+    import random
+
+# Define some creative gradient options
+gradients = [
+    "linear-gradient(90deg, #7b2ff7, #f107a3)",  # Purple gradient (imagination)
+    "linear-gradient(90deg, #06beb6, #48b1bf)",  # Teal/blue (flow)
+    "linear-gradient(90deg, #ff6a00, #ee0979)",  # Coral/pink (playfulness)
+]
+
+# Pick one at random each session
+chosen_gradient = random.choice(gradients)
+
+# Inject CSS for the button
+st.markdown(f"""
+    <style>
+    div.stButton > button:first-child {{
+        background: {chosen_gradient};
+        color: white;
+        border-radius: 12px;
+        height: 3em;
+        width: 100%;
+        font-size: 18px;
+        font-weight: bold;
+        transition: 0.3s;
+        border: none;
+    }}
+    div.stButton > button:first-child:hover {{
+        filter: brightness(1.1);
+        transform: scale(1.03);
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+if st.button("🚀 Start Quiz"):
+    # Reset state if retaking
+    st.session_state.responses = {}
+    if "shuffled_questions" in st.session_state:
+        del st.session_state.shuffled_questions
+    st.session_state.current_question = 0
+    st.session_state.page = "quiz"
+    st.rerun()
+
 
 
 # --------------------------
