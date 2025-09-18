@@ -564,100 +564,72 @@ elif st.session_state.page == "quiz":
         else:
             st.button("Next", disabled=True)
 
-
 # --------------------------
 # Results Page
 # --------------------------
 if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
-if st.session_state.page == "results":
-    st.title("Your Creative Identity Profile")
+    # --------------------------
+    # Calculate scores
+    # --------------------------
+    creative_scores = calculate_scores(creative_traits, st.session_state.responses)
+    bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
 
-# --------------------------
-# Calculate scores
-# --------------------------
-def calculate_scores(traits, responses):
-    scores = {}
-    for trait, qs in traits.items():
-        trait_values = []
-        for i, q in enumerate(qs):
-            key = f"{trait}_{q}"
-            if key not in responses:
-                continue
-            val = int(responses[key][0])  # extract 1–5 from string
-            if trait in reverse_items and i in reverse_items[trait]:
-                val = 6 - val
-            trait_values.append(val)
-        if trait_values:
-            scores[trait] = np.mean(trait_values)
-    return scores
+    # Convert to percentage (1 → 0%, 5 → 100%)
+    creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
+    bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-creative_scores = calculate_scores(creative_traits, st.session_state.responses)
-bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
-creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
-bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
+    # --------------------------
+    # Radar Chart Function
+    # --------------------------
+    def radar_chart(scores, title):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]  # close the loop
+        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        angles += angles[:1]
 
-# Example usage:
-creative_scores = calculate_scores(creative_traits, st.session_state.responses)
-bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
+        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_title(title, size=14, weight="bold", pad=20)
 
-# Convert to percentage (1 → 0%, 5 → 100%)
-creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
-bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
+        # Draw each segment in its palette color
+        for i, label in enumerate(labels[:-1]):  # avoid duplicate last point
+            ax.plot(
+                [angles[i], angles[i + 1]],
+                [values[i], values[i + 1]],
+                color=palette.get(label, "blue"),
+                linewidth=2
+            )
 
+        # Legend
+        handles = [
+            plt.Line2D([0], [0], color=palette.get(label, "blue"), lw=2, label=label)
+            for label in labels[:-1]
+        ]
+        ax.legend(handles=handles, bbox_to_anchor=(1.1, 1.05), fontsize=8)
 
-    ## --------------------------
-# Radar Charts
-# --------------------------
-def radar_chart(scores, title):
-    labels = list(scores.keys())
-    values = list(scores.values())
-    values += values[:1]  # close the loop
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-    angles += angles[:1]
+        st.pyplot(fig)
 
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels([])
-    ax.set_title(title, size=14, weight="bold", pad=20)
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG")
+        buf.seek(0)
+        plt.close(fig)
+        return buf
 
-    # Draw each segment in its palette color
-    for i, label in enumerate(labels):
-        ax.plot(
-            [angles[i], angles[i + 1]],
-            [values[i], values[i + 1]],
-            color=palette.get(label, "blue"),
-            linewidth=2,
-            label=label if i == 0 else ""  # prevent duplicate legend entries
-        )
-
-    # Create a legend using trait colors
-    handles = [
-        plt.Line2D([0], [0], color=palette.get(label, "blue"), lw=2, label=label)
-        for label in labels[:-1]
-    ]
-    ax.legend(handles=handles, bbox_to_anchor=(1.1, 1.05), fontsize=8)
-
-    st.pyplot(fig)
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="PNG")
-    buf.seek(0)
-    plt.close(fig)
-    return buf
-
-
-# ✅ Usage outside the function (you already have this)
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader("Creative Traits")
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-with col2:
-    st.subheader("Big Five")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-
+    # --------------------------
+    # Display Radar Charts
+    # --------------------------
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Creative Traits")
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    with col2:
+        st.subheader("Big Five")
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
     # --------------------------
     # Archetypes
@@ -776,6 +748,7 @@ with col2:
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
 
 
