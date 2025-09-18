@@ -658,11 +658,9 @@ elif st.session_state.page == "quiz":
 # Block 5: Results Page
 # --------------------------
 
-import matplotlib.pyplot as plt
-import numpy as np
-import io
-import streamlit as st
-
+# --------------------------
+# Results Page
+# --------------------------
 if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
@@ -677,10 +675,9 @@ if st.session_state.page == "results":
                 key = f"{trait}_{q}"
                 if key not in responses:
                     continue
-                val = int(responses[key][0])
-                # Reverse-coded adjustment
+                val = int(responses[key][0])  # extract 1–5 from string
                 if trait in reverse_items and i in reverse_items[trait]:
-                    val = 6 - val
+                    val = 6 - val  # reverse-coded
                 trait_values.append(val)
             if trait_values:
                 scores[trait] = np.mean(trait_values)
@@ -689,11 +686,12 @@ if st.session_state.page == "results":
     creative_scores = calculate_scores(creative_traits, st.session_state.responses)
     bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
 
+    # Convert to percentages
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Chart Function
+    # Radar Charts with legends
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
@@ -707,36 +705,44 @@ if st.session_state.page == "results":
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
         ax.set_title(title, size=14, weight="bold", pad=20)
-        ax.set_ylim(0, 100)  # Ensure same scale
+        ax.set_ylim(0, 100)
 
         for i, label in enumerate(labels):
-            val = values[i]
-            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2, marker='o')
-            ax.fill_between(angles, 0, values, color='grey', alpha=0.05)
-
-        # Legend
-        for trait, color in palette.items():
-            ax.plot([], [], color=color, label=trait, linewidth=3)
-        ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1.1))
+            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2, marker='o')
 
         buf = io.BytesIO()
         fig.savefig(buf, format="PNG", bbox_inches="tight")
         buf.seek(0)
         plt.close(fig)
-        return buf
+
+        # Legend
+        legend_fig, legend_ax = plt.subplots(figsize=(2, 2))
+        for trait, color in palette.items():
+            legend_ax.plot([], [], color=color, label=trait, linewidth=3)
+        legend_ax.axis("off")
+        legend_ax.legend(loc='center')
+        legend_buf = io.BytesIO()
+        legend_fig.savefig(legend_buf, format="PNG", bbox_inches="tight")
+        legend_buf.seek(0)
+        plt.close(legend_fig)
+
+        return buf, legend_buf
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+        chart_buf_creative, legend_buf_creative = radar_chart(creative_perc, "Creative Traits")
         st.image(chart_buf_creative)
+        st.image(legend_buf_creative)
+
     with col2:
         st.subheader("Big Five")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+        chart_buf_big5, legend_buf_big5 = radar_chart(bigfive_perc, "Big Five")
         st.image(chart_buf_big5)
+        st.image(legend_buf_big5)
 
     # --------------------------
-    # Archetype Cards
+    # Archetypes with smaller padding
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -754,11 +760,11 @@ if st.session_state.page == "results":
             color: white;
             font-size: 15px;
             font-weight: normal;
-            box-shadow: 0px 3px 8px rgba(0,0,0,0.2);
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
         ">
             <h3 style="margin-top:0; font-size:18px; font-weight:bold;">{title}</h3>
-            <p style="margin:0.2em 0;">{description}</p>
-            <p style="margin:0.2em 0;"><b>Growth Tip:</b> {tip}</p>
+            <p style="margin:0.3em 0;">{description}</p>
+            <p style="margin:0.3em 0;"><b>Growth Tip:</b> {tip}</p>
         </div>
         """
 
@@ -801,24 +807,26 @@ if st.session_state.page == "results":
     ), unsafe_allow_html=True)
 
     # --------------------------
-    # Trait Scores Columns
+    # Trait Scores in Columns
     # --------------------------
     st.subheader("Your Trait Scores")
     col1, col2 = st.columns(2)
+
     with col1:
         st.markdown("**Creative Traits**")
         for t, p in creative_perc.items():
-            st.markdown(f"<b>{t}: {p}%</b>", unsafe_allow_html=True)
+            st.markdown(f"**{t}: {p}%**")
             if p >= 67:
                 st.write(trait_descriptions[t]["high"])
             elif p >= 34:
                 st.write(trait_descriptions[t]["medium"])
             else:
                 st.write(trait_descriptions[t]["low"])
+
     with col2:
         st.markdown("**Big Five Traits**")
         for t, p in bigfive_perc.items():
-            st.markdown(f"<b>{t}: {p}%</b>", unsafe_allow_html=True)
+            st.markdown(f"**{t}: {p}%**")
             if p >= 67:
                 st.write(trait_descriptions[t]["high"])
             elif p >= 34:
@@ -831,6 +839,7 @@ if st.session_state.page == "results":
     # --------------------------
     st.subheader("Download PDFs")
     col1, col2 = st.columns(2)
+
     with col1:
         results_pdf = create_results_pdf(
             creative_perc,
@@ -846,6 +855,7 @@ if st.session_state.page == "results":
             file_name="creative_results.pdf",
             mime="application/pdf"
         )
+
     with col2:
         academic_pdf = create_academic_pdf()
         st.download_button(
@@ -854,3 +864,4 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
