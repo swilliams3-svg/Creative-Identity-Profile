@@ -676,8 +676,9 @@ if st.session_state.page == "results":
                 if key not in responses:
                     continue
                 val = int(responses[key][0])  # extract 1–5 from string
+                # Reverse-coded adjustment
                 if trait in reverse_items and i in reverse_items[trait]:
-                    val = 6 - val  # reverse-coded
+                    val = 6 - val
                 trait_values.append(val)
             if trait_values:
                 scores[trait] = np.mean(trait_values)
@@ -686,12 +687,11 @@ if st.session_state.page == "results":
     creative_scores = calculate_scores(creative_traits, st.session_state.responses)
     bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
 
-    # Convert to percentages
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Charts with legends
+    # Radar Chart Function
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
@@ -704,45 +704,37 @@ if st.session_state.page == "results":
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
+        ax.set_ylim(0, 100)  # fixed scale
         ax.set_title(title, size=14, weight="bold", pad=20)
-        ax.set_ylim(0, 100)
 
         for i, label in enumerate(labels):
-            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2, marker='o')
+            val = values[i]
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2, marker='o')
 
+        # Add legend
+        handles = [plt.Line2D([0], [0], color=palette[l], lw=2) for l in labels]
+        ax.legend(handles, labels, bbox_to_anchor=(0.9, 1.05), loc="upper left", fontsize=9)
+
+        plt.tight_layout()
         buf = io.BytesIO()
-        fig.savefig(buf, format="PNG", bbox_inches="tight")
+        fig.savefig(buf, format="PNG", bbox_inches='tight')
         buf.seek(0)
         plt.close(fig)
+        return buf
 
-        # Legend
-        legend_fig, legend_ax = plt.subplots(figsize=(2, 2))
-        for trait, color in palette.items():
-            legend_ax.plot([], [], color=color, label=trait, linewidth=3)
-        legend_ax.axis("off")
-        legend_ax.legend(loc='center')
-        legend_buf = io.BytesIO()
-        legend_fig.savefig(legend_buf, format="PNG", bbox_inches="tight")
-        legend_buf.seek(0)
-        plt.close(legend_fig)
-
-        return buf, legend_buf
-
+    # --------------------------
+    # Display Radar Charts side by side
+    # --------------------------
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        chart_buf_creative, legend_buf_creative = radar_chart(creative_perc, "Creative Traits")
-        st.image(chart_buf_creative)
-        st.image(legend_buf_creative)
-
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
     with col2:
         st.subheader("Big Five")
-        chart_buf_big5, legend_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-        st.image(chart_buf_big5)
-        st.image(legend_buf_big5)
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
     # --------------------------
-    # Archetypes with smaller padding
+    # Archetypes
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -755,12 +747,12 @@ if st.session_state.page == "results":
             background: {color};
             padding: 0.8em;
             border-radius: 10px;
-            margin-bottom: 0.8em;
+            margin-bottom: 1em;
             text-align: left;
             color: white;
             font-size: 15px;
             font-weight: normal;
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
         ">
             <h3 style="margin-top:0; font-size:18px; font-weight:bold;">{title}</h3>
             <p style="margin:0.3em 0;">{description}</p>
@@ -807,26 +799,24 @@ if st.session_state.page == "results":
     ), unsafe_allow_html=True)
 
     # --------------------------
-    # Trait Scores in Columns
+    # Trait Scores in Two Columns
     # --------------------------
     st.subheader("Your Trait Scores")
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("**Creative Traits**")
         for t, p in creative_perc.items():
-            st.markdown(f"**{t}: {p}%**")
+            st.write(f"**{t}:** {p}%")
             if p >= 67:
                 st.write(trait_descriptions[t]["high"])
             elif p >= 34:
                 st.write(trait_descriptions[t]["medium"])
             else:
                 st.write(trait_descriptions[t]["low"])
-
     with col2:
         st.markdown("**Big Five Traits**")
         for t, p in bigfive_perc.items():
-            st.markdown(f"**{t}: {p}%**")
+            st.write(f"**{t}:** {p}%")
             if p >= 67:
                 st.write(trait_descriptions[t]["high"])
             elif p >= 34:
@@ -864,4 +854,5 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
