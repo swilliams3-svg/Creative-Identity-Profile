@@ -557,7 +557,7 @@ if "responses" not in st.session_state:
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
 
-    # Columns layout preserved for info sections
+    # Columns layout for content
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("What to Expect")
@@ -567,7 +567,6 @@ if st.session_state.page == "intro":
         - Takes about **5–7 minutes** to complete.  
         - No right or wrong answers — just be honest about what feels true for you.  
         """)
-
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("What You’ll Get")
@@ -577,7 +576,6 @@ if st.session_state.page == "intro":
         - Your **creative archetype** and growth areas.  
         - Practical **tips** to develop your creativity further.  
         """)
-
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("Why This Matters")
@@ -592,13 +590,34 @@ if st.session_state.page == "intro":
     st.markdown("---")
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
-    # Centered Start Quiz button
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("Start Quiz", key="start_quiz"):
-            st.session_state.current_question = 0
-            st.session_state.page = "quiz"
-            st.rerun()
+    # Centered button using HTML
+    button_html = f"""
+    <div style="text-align:center; margin-top:1em;">
+        <button style="
+            background: {chosen_gradient};
+            color: white;
+            border-radius: 12px;
+            height: 2.5em;
+            min-width: 12em;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        "
+        onclick="window.location.href='javascript:void(0)'">
+            Start Quiz
+        </button>
+    </div>
+    """
+    st.markdown(button_html, unsafe_allow_html=True)
+
+    # Detect button click via session_state
+    if st.button("Hidden Start Quiz Trigger", key="start_quiz_hidden"):
+        st.session_state.current_question = 0
+        st.session_state.page = "quiz"
+        st.rerun()
+
 
 
 # --------------------------
