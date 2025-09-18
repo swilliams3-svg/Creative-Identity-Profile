@@ -11,10 +11,180 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
 
+# --------------------------
+# Page config
+# --------------------------
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# Colours
+# --------------------------
+# Academic PDF function
+# --------------------------
+def create_academic_pdf():
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=50,
+        rightMargin=50,
+        topMargin=50,
+        bottomMargin=50
+    )
+
+    styles = {
+        "title": ParagraphStyle(
+            "title",
+            fontSize=16,
+            leading=20,
+            alignment=TA_CENTER,
+            spaceAfter=12,
+            underline=True,
+            fontName="Helvetica-Bold"
+        ),
+        "heading": ParagraphStyle(
+            "heading",
+            fontSize=13,
+            leading=16,
+            alignment=TA_LEFT,
+            spaceBefore=10,
+            spaceAfter=6,
+            underline=True,
+            fontName="Helvetica-Bold"
+        ),
+        "body": ParagraphStyle(
+            "body",
+            fontSize=11,
+            leading=14,
+            alignment=TA_LEFT,
+            spaceAfter=6,
+            fontName="Helvetica"
+        ),
+    }
+
+    story = []
+    try:
+        with open("academic_article.txt", "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    story.append(Spacer(1, 12))
+                elif line.startswith("# "):
+                    story.append(Paragraph(line[2:], styles["title"]))
+                elif line.startswith("## "):
+                    story.append(Paragraph(line[3:], styles["heading"]))
+                else:
+                    story.append(Paragraph(line, styles["body"]))
+    except:
+        story.append(Paragraph("Academic article file not found.", styles["body"]))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+# --------------------------
+# Results PDF function
+# --------------------------
+def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=40,
+        rightMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
+
+    styles = {
+        "title": ParagraphStyle(
+            "title",
+            fontSize=18,
+            leading=22,
+            alignment=TA_CENTER,
+            spaceAfter=12,
+            fontName="Helvetica-Bold"
+        ),
+        "subtitle": ParagraphStyle(
+            "subtitle",
+            fontSize=14,
+            leading=18,
+            alignment=TA_LEFT,
+            spaceAfter=8,
+            fontName="Helvetica-Bold"
+        ),
+        "body": ParagraphStyle(
+            "body",
+            fontSize=11,
+            leading=14,
+            alignment=TA_LEFT,
+            spaceAfter=6,
+            fontName="Helvetica"
+        ),
+    }
+
+    story = []
+
+    # Title
+    story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
+    story.append(Spacer(1, 12))
+
+    # Charts side by side
+    img_creative = Image(chart_buf_creative, width=250, height=250)
+    img_big5 = Image(chart_buf_big5, width=250, height=250)
+    chart_table = Table([[img_creative, img_big5]], colWidths=[270, 270])
+    story.append(chart_table)
+    story.append(Spacer(1, 12))
+
+    # Archetypes
+    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+    top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
+
+    def add_archetype(trait, score, title_label):
+        if score >= 67:
+            desc = trait_descriptions[trait]["high"]
+        elif score >= 34:
+            desc = trait_descriptions[trait]["medium"]
+        else:
+            desc = trait_descriptions[trait]["low"]
+        story.append(Paragraph(f"{title_label}: {archetypes[trait][0]} ({archetypes[trait][1]})", styles["subtitle"]))
+        story.append(Paragraph(desc, styles["body"]))
+        story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[trait][2]}", styles["body"]))
+        story.append(Spacer(1, 8))
+
+    add_archetype(top_trait, top_score, "Primary Archetype")
+    add_archetype(sub_trait, sub_score, "Sub-Archetype")
+    add_archetype(lowest_trait, low_score, "Growth Area")
+
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Trait Scores", styles["subtitle"]))
+
+    for t, p in creative_perc.items():
+        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
+        if p >= 67:
+            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
+        elif p >= 34:
+            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
+        else:
+            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
+        story.append(Spacer(1, 4))
+
+    for t, p in bigfive_perc.items():
+        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
+        if p >= 67:
+            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
+        elif p >= 34:
+            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
+        else:
+            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
+        story.append(Spacer(1, 4))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+# --------------------------
+# Colour palette
 # --------------------------
 palette = {
     "Originality": "#E56B6F",
@@ -31,7 +201,7 @@ palette = {
 }
 
 # --------------------------
-# Creative Traits
+# Creative traits
 # --------------------------
 creative_traits = {
     "Originality": [
@@ -67,7 +237,7 @@ creative_traits = {
 }
 
 # --------------------------
-# Big Five Traits
+# Big Five traits
 # --------------------------
 big_five_traits = {
     "Openness": [
@@ -98,24 +268,24 @@ big_five_traits = {
 }
 
 # --------------------------
-# Reverse-coded mapping
+# Reverse-coded items
 # --------------------------
 reverse_items = {
     "Originality": [],
     "Curiosity": [],
-    "Risk-Taking": [1],       # 2nd question reverse-coded
+    "Risk-Taking": [1],
     "Imagination": [],
-    "Discipline": [2],        # 3rd question reverse-coded
+    "Discipline": [2],
     "Collaboration": [],
-    "Openness": [2],           # 3rd question reverse-coded
-    "Conscientiousness": [2],  # 3rd question reverse-coded
-    "Extraversion": [2],       # 3rd question reverse-coded
-    "Agreeableness": [2],      # 3rd question reverse-coded
-    "Neuroticism": [2]         # 3rd question reverse-coded
+    "Openness": [2],
+    "Conscientiousness": [2],
+    "Extraversion": [2],
+    "Agreeableness": [2],
+    "Neuroticism": [2]
 }
 
 # --------------------------
-# Trait Descriptions
+# Trait descriptions
 # --------------------------
 trait_descriptions = {
     "Originality": {
@@ -188,105 +358,7 @@ archetypes = {
 }
 
 # --------------------------
-# Reverse-coded scoring function
-# --------------------------
-def calculate_scores(traits, responses):
-    scores = {}
-    for trait, qs in traits.items():
-        trait_values = []
-        for i, q in enumerate(qs):
-            key = f"{trait}_{q}"
-            if key not in responses:
-                continue
-            val = int(responses[key][0])  # extract number
-            if trait in reverse_items and i in reverse_items[trait]:
-                val = 6 - val
-            trait_values.append(val)
-        if trait_values:
-            scores[trait] = np.mean(trait_values)
-    return scores
-
-# --------------------------
-# Academic PDF function
-# --------------------------
-def create_academic_pdf():
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=50, rightMargin=50, topMargin=50, bottomMargin=50)
-    styles = {
-        "title": ParagraphStyle("title", fontSize=16, leading=20, alignment=TA_CENTER, spaceAfter=12, underline=True, fontName="Helvetica-Bold"),
-        "heading": ParagraphStyle("heading", fontSize=13, leading=16, alignment=TA_LEFT, spaceBefore=10, spaceAfter=6, underline=True, fontName="Helvetica-Bold"),
-        "body": ParagraphStyle("body", fontSize=11, leading=14, alignment=TA_LEFT, spaceAfter=6, fontName="Helvetica")
-    }
-    story = []
-    try:
-        with open("academic_article.txt", "r") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    story.append(Spacer(1, 12))
-                elif line.startswith("# "):
-                    story.append(Paragraph(line[2:], styles["title"]))
-                elif line.startswith("## "):
-                    story.append(Paragraph(line[3:], styles["heading"]))
-                else:
-                    story.append(Paragraph(line, styles["body"]))
-    except FileNotFoundError:
-        story.append(Paragraph("Academic article file not found.", styles["body"]))
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
-
-# --------------------------
-# Results PDF function
-# --------------------------
-def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5):
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=40)
-    styles = {
-        "title": ParagraphStyle("title", fontSize=18, leading=22, alignment=TA_CENTER, spaceAfter=12, fontName="Helvetica-Bold"),
-        "subtitle": ParagraphStyle("subtitle", fontSize=14, leading=18, alignment=TA_LEFT, spaceAfter=8, fontName="Helvetica-Bold"),
-        "body": ParagraphStyle("body", fontSize=11, leading=14, alignment=TA_LEFT, spaceAfter=6, fontName="Helvetica")
-    }
-    story = []
-    story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
-    story.append(Spacer(1, 12))
-    img_creative = Image(chart_buf_creative, width=250, height=250)
-    img_big5 = Image(chart_buf_big5, width=250, height=250)
-    story.append(Table([[img_creative, img_big5]], colWidths=[270, 270]))
-    story.append(Spacer(1, 12))
-    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-    top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-    top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
-
-    def add_archetype(trait, score, title_label):
-        if score >= 67:
-            desc = trait_descriptions[trait]["high"]
-        elif score >= 34:
-            desc = trait_descriptions[trait]["medium"]
-        else:
-            desc = trait_descriptions[trait]["low"]
-        story.append(Paragraph(f"{title_label}: {archetypes[trait][0]} ({archetypes[trait][1]})", styles["subtitle"]))
-        story.append(Paragraph(desc, styles["body"]))
-        story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[trait][2]}", styles["body"]))
-        story.append(Spacer(1, 8))
-
-    add_archetype(top_trait, top_score, "Primary Archetype")
-    add_archetype(sub_trait, sub_score, "Sub-Archetype")
-    add_archetype(lowest_trait, low_score, "Growth Area")
-
-    story.append(Spacer(1, 12))
-    story.append(Paragraph("Trait Scores", styles["subtitle"]))
-    for t, p in creative_perc.items():
-        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
-    for t, p in bigfive_perc.items():
-        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
-
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
-
-# --------------------------
-# Button styling
+# Button gradients and styles
 # --------------------------
 gradients = [
     "linear-gradient(90deg, #7b2ff7, #f107a3)",
@@ -329,11 +401,14 @@ div.stDownloadButton > button:hover {{
     filter: brightness(1.1);
     transform: scale(1.03);
 }}
+.stProgress > div > div > div > div {{
+    background-color: #b0b0b0;
+}}
 </style>
 """, unsafe_allow_html=True)
 
 # --------------------------
-# Session state setup
+# Initialize session_state
 # --------------------------
 if "page" not in st.session_state:
     st.session_state.page = "intro"
@@ -345,37 +420,30 @@ if "responses" not in st.session_state:
 # --------------------------
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
-    col1, col2 = st.columns([1, 5])
-    with col2:
-        st.subheader("What to Expect")
-        st.markdown("""
-        - **33 short statements**, answered one at a time.  
-        - Each uses a **1–5 scale** (*Strongly Disagree → Strongly Agree*).  
-        - Takes about **5–7 minutes** to complete.  
-        - No right or wrong answers — just be honest about what feels true for you.  
-        """)
-    col1, col2 = st.columns([1, 5])
-    with col2:
-        st.subheader("What You’ll Get")
-        st.markdown("""
-        - A personalised profile of your **creative traits** and **personality traits**.  
-        - A **visual breakdown** of your results (radar charts).  
-        - Your **creative archetype** and growth areas.  
-        - Practical **tips** to develop your creativity further.  
-        """)
-    col1, col2 = st.columns([1, 5])
-    with col2:
-        st.subheader("Why This Matters")
-        st.markdown("""
-        Creativity and personality shape how you **approach challenges, generate ideas, and collaborate**.  
-        By understanding your unique profile, you can:  
-        - Play to your strengths.  
-        - Recognise and improve growth areas.  
-        - Gain deeper insight into your personal and professional identity.  
-        """)
+    st.subheader("What to Expect")
+    st.markdown("""
+    - **33 short statements**, answered one at a time.  
+    - Each uses a **1–5 scale** (*Strongly Disagree → Strongly Agree*).  
+    - Takes about **5–7 minutes** to complete.  
+    - No right or wrong answers — just be honest about what feels true for you.  
+    """)
+    st.subheader("What You’ll Get")
+    st.markdown("""
+    - A personalised profile of your **creative traits** and **personality traits**.  
+    - A **visual breakdown** of your results (radar charts).  
+    - Your **creative archetype** and growth areas.  
+    - Practical **tips** to develop your creativity further.  
+    """)
+    st.subheader("Why This Matters")
+    st.markdown("""
+    Creativity and personality shape how you **approach challenges, generate ideas, and collaborate**.  
+    By understanding your unique profile, you can:  
+    - Play to your strengths.  
+    - Recognise and improve growth areas.  
+    - Gain deeper insight into your personal and professional identity.  
+    """)
     st.markdown("---")
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
-
     if st.button("Start Quiz", key="start_quiz"):
         st.session_state.current_question = 0
         st.session_state.page = "quiz"
@@ -385,6 +453,7 @@ if st.session_state.page == "intro":
 # Quiz Page
 # --------------------------
 elif st.session_state.page == "quiz":
+    # Shuffle questions once
     if "shuffled_questions" not in st.session_state:
         questions = []
         for trait, qs in {**creative_traits, **big_five_traits}.items():
@@ -399,62 +468,94 @@ elif st.session_state.page == "quiz":
     trait, q_text = st.session_state.shuffled_questions[current_index]
 
     st.header("Quiz")
-    st.markdown(f"**Question {current_index+1} of {total_questions}**")
-    st.write(q_text)
-    val = st.radio("Your answer", [1, 2, 3, 4, 5], horizontal=True, key=f"{trait}_{q_text}")
+    st.markdown(f"**Question {current_index + 1} of {total_questions}**")
+    progress = int((current_index + 1) / total_questions * 100)
+    st.progress(progress / 100)
 
-    if st.button("Next", key=f"next_{current_index}"):
-        st.session_state.responses[f"{trait}_{q_text}"] = [val]
-        if current_index + 1 < total_questions:
-            st.session_state.current_question += 1
+    # Radio buttons
+    answer = st.radio(
+        q_text,
+        ["1", "2", "3", "4", "5"],
+        index=2,
+        key=f"q_{current_index}"
+    )
+
+    # Save response
+    st.session_state.responses[current_index] = answer
+
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        if st.button("Next", key=f"next_{current_index}"):
+            if current_index + 1 < total_questions:
+                st.session_state.current_question += 1
+            else:
+                st.session_state.page = "results"
             st.rerun()
-        else:
-            st.session_state.page = "results"
-            st.rerun()
+    with col1:
+        if current_index > 0:
+            if st.button("Back", key=f"back_{current_index}"):
+                st.session_state.current_question -= 1
+                st.rerun()
 
 # --------------------------
 # Results Page
 # --------------------------
 elif st.session_state.page == "results":
-    creative_scores = calculate_scores(creative_traits, st.session_state.responses)
-    bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
+    st.title("Your Creative Identity Profile")
+    responses = st.session_state.responses
 
-    creative_perc = {k: int(v / 5 * 100) for k, v in creative_scores.items()}
-    bigfive_perc = {k: int(v / 5 * 100) for k, v in bigfive_scores.items()}
+    # Convert responses to numeric values
+    creative_scores = {trait: [] for trait in creative_traits}
+    bigfive_scores = {trait: [] for trait in big_five_traits}
 
+    for idx, (trait, _) in enumerate(st.session_state.shuffled_questions):
+        val = int(responses[idx])
+        # Check reverse coding
+        if idx % 3 in reverse_items.get(trait, []):
+            val = 6 - val
+        if trait in creative_traits:
+            creative_scores[trait].append(val)
+        else:
+            bigfive_scores[trait].append(val)
+
+    creative_avg = {k: int(np.mean(v) / 5 * 100) for k, v in creative_scores.items()}
+    bigfive_avg = {k: int(np.mean(v) / 5 * 100) for k, v in bigfive_scores.items()}
+
+    # Radar chart
     def radar_chart(scores, title):
-        categories = list(scores.keys())
+        labels = list(scores.keys())
         values = list(scores.values())
-        N = len(categories)
+        N = len(labels)
+        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
         values += values[:1]
-        angles = [n / float(N) * 2 * np.pi for n in range(N)]
         angles += angles[:1]
+
         fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
-        ax.set_theta_offset(np.pi / 2)
-        ax.set_theta_direction(-1)
-        plt.xticks(angles[:-1], categories)
-        ax.plot(angles, values, color="#FF6A00", linewidth=2, linestyle='solid')
-        ax.fill(angles, values, color="#FF6A00", alpha=0.25)
-        ax.set_ylim(0,100)
-        plt.title(title, size=14, y=1.1)
-        buf = io.BytesIO()
-        plt.savefig(buf, format='PNG', bbox_inches='tight')
-        buf.seek(0)
-        plt.close(fig)
-        return buf
+        ax.plot(angles, values, 'o-', linewidth=2)
+        ax.fill(angles, values, alpha=0.25)
+        ax.set_thetagrids(np.degrees(angles[:-1]), labels)
+        ax.set_ylim(0, 100)
+        ax.set_title(title)
+        return fig
 
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
+    fig_creative = radar_chart(creative_avg, "Creative Traits")
+    fig_big5 = radar_chart(bigfive_avg, "Big Five Traits")
 
-    st.subheader("Your Creative Traits vs Big Five")
-    col1, col2 = st.columns(2)
-    col1.image(chart_buf_creative)
-    col2.image(chart_buf_big5)
+    # Save charts to buffers
+    chart_buf_creative = io.BytesIO()
+    chart_buf_big5 = io.BytesIO()
+    fig_creative.savefig(chart_buf_creative, format='PNG', bbox_inches='tight')
+    fig_big5.savefig(chart_buf_big5, format='PNG', bbox_inches='tight')
+    chart_buf_creative.seek(0)
+    chart_buf_big5.seek(0)
+    plt.close('all')
 
-    st.markdown("### Download Your Results")
-    results_pdf = create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5)
-    st.download_button("Download Profile PDF", results_pdf, "creative_profile.pdf", "application/pdf")
+    st.pyplot(fig_creative)
+    st.pyplot(fig_big5)
 
-    st.markdown("### Academic Research")
-    academic_pdf = create_academic_pdf()
-    st.download_button("Download Academic Article PDF", academic_pdf, "academic_article.pdf", "application/pdf")
+    # Download buttons
+    results_pdf_buffer = create_results_pdf(creative_avg, bigfive_avg, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5)
+    st.download_button("Download Results PDF", results_pdf_buffer, file_name="creative_profile_results.pdf", mime="application/pdf")
+
+    academic_pdf_buffer = create_academic_pdf()
+    st.download_button("Download Academic PDF", academic_pdf_buffer, file_name="creative_profile_academic.pdf", mime="application/pdf")
