@@ -532,25 +532,25 @@ if st.session_state.page == "results":
     angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(4,4), subplot_kw=dict(polar=True))
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
     ax.set_theta_offset(np.pi/2)
     ax.set_theta_direction(-1)
-    plt.xticks(angles[:-1], categories, color='grey', size=10)
-    ax.set_rlabel_position(0)
-    plt.yticks([20,40,60,80], ["20","40","60","80"], color="grey", size=8)
-    plt.ylim(0,100)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories)
+    ax.set_yticks([20,40,60,80])
+    ax.set_ylim(0,100)
 
-    ax.plot(angles, values, color="#1f77b4", linewidth=2, linestyle='solid')
+    ax.plot(angles, values, color="#1f77b4", linewidth=2)
     ax.fill(angles, values, color="#1f77b4", alpha=0.25)
-    plt.title(title, size=12, y=1.1)
+    ax.set_title(title, size=14, y=1.1)
 
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+    fig.savefig(buf, format="PNG", bbox_inches='tight')
     buf.seek(0)
     plt.close(fig)
     return buf
 
-# Usage outside the function
+# Later in the app
 chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
 chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
 
@@ -559,7 +559,6 @@ with col1:
     st.image(chart_buf_creative)
 with col2:
     st.image(chart_buf_big5)
-
 
     # Archetypes and Growth
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
