@@ -610,7 +610,7 @@ bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
     # --------------------------
     # Radar Charts
     # --------------------------
-    def radar_chart(scores, title):
+def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
         values += values[:1]
