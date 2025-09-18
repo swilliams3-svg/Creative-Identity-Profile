@@ -571,9 +571,12 @@ elif st.session_state.page == "quiz":
 if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
-    # --------------------------
-    # Calculate scores
-    # --------------------------
+if st.session_state.page == "results":
+    st.title("Your Creative Identity Profile")
+
+# --------------------------
+# Calculate scores
+# --------------------------
 def calculate_scores(traits, responses):
     scores = {}
     for trait, qs in traits.items():
@@ -583,13 +586,17 @@ def calculate_scores(traits, responses):
             if key not in responses:
                 continue
             val = int(responses[key][0])  # extract 1–5 from string
-            # Reverse-coded adjustment
             if trait in reverse_items and i in reverse_items[trait]:
-                val = 6 - val  # flip: 1→5, 2→4, 3→3, etc.
+                val = 6 - val
             trait_values.append(val)
         if trait_values:
             scores[trait] = np.mean(trait_values)
     return scores
+
+creative_scores = calculate_scores(creative_traits, st.session_state.responses)
+bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
+creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
+bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
 # Example usage:
 creative_scores = calculate_scores(creative_traits, st.session_state.responses)
