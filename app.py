@@ -14,7 +14,6 @@ from reportlab.lib.utils import ImageReader
 st.set_page_config(page_title="Creative Identity Profile", layout="centered")
 
 # --------------------------
-# --------------------------
 # Academic PDF function
 # --------------------------
 def create_academic_pdf():
@@ -493,6 +492,34 @@ if st.session_state.page == "quiz":
         st.experimental_rerun()
 
 # --------------------------
+# Radar Chart Function
+# --------------------------
+def radar_chart(scores, title):
+    categories = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]
+    angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+    ax.set_theta_offset(np.pi/2)
+    ax.set_theta_direction(-1)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories)
+    ax.set_yticks([20,40,60,80])
+    ax.set_ylim(0,100)
+
+    ax.plot(angles, values, color="#1f77b4", linewidth=2)
+    ax.fill(angles, values, color="#1f77b4", alpha=0.25)
+    ax.set_title(title, size=14, y=1.1)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG", bbox_inches='tight')
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+# --------------------------
 # Results Page
 # --------------------------
 if st.session_state.page == "results":
@@ -522,46 +549,18 @@ if st.session_state.page == "results":
             vals.append(val)
         bigfive_perc[trait] = round(np.mean(vals)/5*100)
 
-    # --------------------------
-    # Radar Chart Function
-    # --------------------------
-def radar_chart(scores, title):
-    categories = list(scores.keys())
-    values = list(scores.values())
-    values += values[:1]
-    angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
-    angles += angles[:1]
+    # Generate radar charts
+    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
 
-    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
-    ax.set_theta_offset(np.pi/2)
-    ax.set_theta_direction(-1)
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories)
-    ax.set_yticks([20,40,60,80])
-    ax.set_ylim(0,100)
+    # Display charts side by side
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(chart_buf_creative)
+    with col2:
+        st.image(chart_buf_big5)
 
-    ax.plot(angles, values, color="#1f77b4", linewidth=2)
-    ax.fill(angles, values, color="#1f77b4", alpha=0.25)
-    ax.set_title(title, size=14, y=1.1)
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="PNG", bbox_inches='tight')
-    buf.seek(0)
-    plt.close(fig)
-    return buf
-
-
-# Later in the app
-chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
-
-col1, col2 = st.columns(2)
-with col1:
-    st.image(chart_buf_creative)
-with col2:
-    st.image(chart_buf_big5)
-
-    # Archetypes and Growth
+    # Display Archetypes
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, low_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
 
@@ -579,7 +578,10 @@ with col2:
     # Download PDFs
     # --------------------------
     academic_pdf = create_academic_pdf()
-    results_pdf = create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5)
+    results_pdf = create_results_pdf(
+        creative_perc, bigfive_perc, trait_descriptions, archetypes,
+        chart_buf_creative, chart_buf_big5
+    )
 
     st.download_button(
         "Download Academic Article PDF",
@@ -594,3 +596,4 @@ with col2:
         file_name="creative_identity_results.pdf",
         mime="application/pdf"
     )
+
