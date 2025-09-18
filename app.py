@@ -591,26 +591,14 @@ if st.session_state.page == "intro":
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
     # Centered button using HTML
-    button_html = f"""
-    <div style="text-align:center; margin-top:1em;">
-        <button style="
-            background: {chosen_gradient};
-            color: white;
-            border-radius: 12px;
-            height: 2.5em;
-            min-width: 12em;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            transition: 0.3s;
-        "
-        onclick="window.location.href='javascript:void(0)'">
-            Start Quiz
-        </button>
-    </div>
-    """
-    st.markdown(button_html, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)  # optional spacing
+
+col1, col2, col3 = st.columns([1, 2, 1])  # create 3 columns
+with col2:  # put the button in the center column
+    if st.button("Start Quiz"):
+        st.session_state.current_question = 0
+        st.session_state.page = "quiz"
+        st.rerun()
 
     # Detect button click via session_state
     if st.button("Hidden Start Quiz Trigger", key="start_quiz_hidden"):
