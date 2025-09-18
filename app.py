@@ -557,7 +557,7 @@ if "responses" not in st.session_state:
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
 
-    # Columns layout for intro text
+    # What to Expect
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("What to Expect")
@@ -567,6 +567,8 @@ if st.session_state.page == "intro":
         - Takes about **5–7 minutes** to complete.  
         - No right or wrong answers — just be honest about what feels true for you.  
         """)
+
+    # What You'll Get
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("What You’ll Get")
@@ -576,6 +578,8 @@ if st.session_state.page == "intro":
         - Your **creative archetype** and growth areas.  
         - Practical **tips** to develop your creativity further.  
         """)
+
+    # Why This Matters
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("Why This Matters")
@@ -590,10 +594,17 @@ if st.session_state.page == "intro":
     st.markdown("---")
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
-    if st.button("Start Quiz", key="start_quiz"):
-        st.session_state.current_question = 0
-        st.session_state.page = "quiz"
-        st.rerun()
+    # Add vertical spacing above button
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    # Centered Start Quiz button
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("Start Quiz", key="start_quiz"):
+            st.session_state.current_question = 0
+            st.session_state.page = "quiz"
+            st.rerun()
+
 
 # --------------------------
 # Quiz Page (one question per page)
