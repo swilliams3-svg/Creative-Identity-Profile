@@ -702,23 +702,6 @@ if st.session_state.page == "results":
     # --------------------------
     # Calculate scores
     # --------------------------
-    def calculate_scores(traits, responses):
-        scores = {}
-        for trait, qs in traits.items():
-            trait_values = []
-            for i, q in enumerate(qs):
-                key = f"{trait}_{q}"
-                if key not in responses:
-                    continue
-                val = int(responses[key][0])  # extract 1–5 from string
-                # Reverse-coded adjustment
-                if trait in reverse_items and i in reverse_items[trait]:
-                    val = 6 - val
-                trait_values.append(val)
-            if trait_values:
-                scores[trait] = np.mean(trait_values)
-        return scores
-
     creative_scores = calculate_scores(creative_traits, st.session_state.responses)
     bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
 
@@ -726,26 +709,33 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Charts
+    # Radar Chart function (replacement)
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
-        values += values[:1]
-        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        values += values[:1]  # close the loop
+        num_vars = len(labels)
+        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
         angles += angles[:1]
 
         fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+
+        # Plot all traits as a single polygon
+        values_loop = list(scores.values())
+        values_loop += values_loop[:1]
+        ax.plot(angles, values_loop, color="grey", linewidth=1, alpha=0.3)  # faint outline if desired
+        for i, label in enumerate(labels):
+            ax.plot(angles, values_loop, color=palette[label], linewidth=2, label=label)
+
+        # Axes settings
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
+        ax.set_ylim(0, 100)
         ax.set_title(title, size=14, weight="bold", pad=20)
 
-        for i, label in enumerate(labels):
-            val = values[i]
-            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2, label=label)
-
-        # Add legend
+        # Legend outside chart
         ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
 
         buf = io.BytesIO()
@@ -754,14 +744,18 @@ if st.session_state.page == "results":
         plt.close(fig)
         return buf
 
+    # --------------------------
+    # Display radar charts side by side
+    # --------------------------
+    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
         st.image(chart_buf_creative)
     with col2:
         st.subheader("Big Five")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
         st.image(chart_buf_big5)
 
     # --------------------------
@@ -887,4 +881,5 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
