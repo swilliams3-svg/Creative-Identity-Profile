@@ -573,36 +573,20 @@ if st.session_state.page == "results":
     # --------------------------
     # Calculate scores
     # --------------------------
-    def calculate_scores(traits, responses):
-        scores = {}
-        for trait, qs in traits.items():
-            trait_values = []
-            for i, q in enumerate(qs):
-                key = f"{trait}_{q}"
-                if key not in responses:
-                    continue
-                val = int(responses[key][0])  # extract 1–5 from string
-                if trait in reverse_items and i in reverse_items[trait]:
-                    val = 6 - val
-                trait_values.append(val)
-            if trait_values:
-                scores[trait] = np.mean(trait_values)
-        return scores
-
     creative_scores = calculate_scores(creative_traits, st.session_state.responses)
     bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
 
+    # Convert to percentage (1 → 0%, 5 → 100%)
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Chart Function
+    # Radar Charts
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
-        values += values[:1]  # close the circle
-
+        values += values[:1]
         angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
         angles += angles[:1]
 
@@ -612,14 +596,10 @@ if st.session_state.page == "results":
         ax.set_yticklabels([])
         ax.set_title(title, size=14, weight="bold", pad=20)
 
-        # Connect points with lines using palette
         for i, label in enumerate(labels):
             val = values[i]
-            next_val = values[i + 1]
-            ax.plot([angles[i], angles[i + 1]], [val, next_val], color=palette[label], linewidth=2)
-
-        # Fill area lightly
-        ax.fill(angles, values, color='gray', alpha=0.1)
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
+            ax.fill(angles, values, alpha=0.1, color=palette[label])
 
         st.pyplot(fig)
 
@@ -629,9 +609,6 @@ if st.session_state.page == "results":
         plt.close(fig)
         return buf
 
-    # --------------------------
-    # Render Radar Charts
-    # --------------------------
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
@@ -698,17 +675,19 @@ if st.session_state.page == "results":
     ), unsafe_allow_html=True)
 
     # Growth Area
+    growth_tip = archetypes[lowest_trait][2] if lowest_trait in archetypes else "No specific tip available."
     st.markdown(archetype_card(
         lowest_trait,
         f"Growth Area: {lowest_trait}",
         trait_descriptions[lowest_trait]["low"],
-        archetypes[lowest_trait][2]
+        growth_tip
     ), unsafe_allow_html=True)
 
     # --------------------------
     # Trait Scores
     # --------------------------
     st.subheader("Your Trait Scores")
+
     for t, p in creative_perc.items():
         st.write(f"**{t}:** {p}%")
         if p >= 67:
@@ -757,6 +736,7 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
 
 
