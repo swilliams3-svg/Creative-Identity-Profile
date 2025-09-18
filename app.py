@@ -590,43 +590,55 @@ if st.session_state.page == "intro":
     st.markdown("---")
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
-    # Centered button using HTML
-    st.markdown("<br>", unsafe_allow_html=True)
+    # --------------------------
+# Centered Gradient Start Quiz Button (Functional)
+# --------------------------
+st.markdown("<br>", unsafe_allow_html=True)
 
-# Center the button with columns
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
-    if st.button("Start Quiz", key="start_quiz"):
-        st.session_state.current_question = 0
-        st.session_state.page = "quiz"
-        st.rerun()
+# Choose your gradient
+import random
+gradients = [
+    "linear-gradient(90deg, #7b2ff7, #f107a3)",
+    "linear-gradient(90deg, #06beb6, #48b1bf)",
+    "linear-gradient(90deg, #ff6a00, #ee0979)"
+]
+chosen_gradient = random.choice(gradients)
 
-# Apply gradient styling via CSS
-st.markdown(f"""
-<style>
-div.stButton > button#{st.get_option("theme.base")} {{
-    background: {chosen_gradient} !important;
-    color: white !important;
-    border-radius: 12px !important;
-    height: 2.5em !important;
-    min-width: 12em !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    border: none !important;
-}}
-div.stButton > button:hover {{
-    filter: brightness(1.1);
-    transform: scale(1.03);
-}}
-</style>
-""", unsafe_allow_html=True)
+# Create a clickable div that acts like a button
+button_html = f"""
+<div style="
+    display:flex;
+    justify-content:center;
+    margin-top:1em;
+">
+    <div 
+        onclick="document.querySelector('button[data-testid=start_quiz_button]').click()" 
+        style="
+            background: {chosen_gradient};
+            color: white;
+            border-radius: 12px;
+            padding: 0.6em 2em;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.3s;
+        "
+        onmouseover="this.style.filter='brightness(1.1)'; this.style.transform='scale(1.03)';"
+        onmouseout="this.style.filter='brightness(1)'; this.style.transform='scale(1)';"
+    >
+        Start Quiz
+    </div>
+</div>
+"""
 
-    # Detect button click via session_state
-    if st.button("Hidden Start Quiz Trigger", key="start_quiz_hidden"):
-        st.session_state.current_question = 0
-        st.session_state.page = "quiz"
-        st.rerun()
+st.markdown(button_html, unsafe_allow_html=True)
 
+# Hidden Streamlit button that will handle session state
+if st.button("Hidden Start Quiz Trigger", key="start_quiz_button"):
+    st.session_state.current_question = 0
+    st.session_state.page = "quiz"
+    st.rerun()
 
 
 # --------------------------
