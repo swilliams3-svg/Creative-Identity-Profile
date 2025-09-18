@@ -557,7 +557,7 @@ if "responses" not in st.session_state:
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
 
-    # Section 1: What to Expect
+    # Columns layout preserved for info sections
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("What to Expect")
@@ -568,7 +568,6 @@ if st.session_state.page == "intro":
         - No right or wrong answers — just be honest about what feels true for you.  
         """)
 
-    # Section 2: What You’ll Get
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("What You’ll Get")
@@ -579,7 +578,6 @@ if st.session_state.page == "intro":
         - Practical **tips** to develop your creativity further.  
         """)
 
-    # Section 3: Why This Matters
     col1, col2 = st.columns([1, 5])
     with col2:
         st.subheader("Why This Matters")
@@ -594,37 +592,14 @@ if st.session_state.page == "intro":
     st.markdown("---")
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
-    # --------------------------
-    # Centered Start Quiz Button with Gradient Styling
-    # --------------------------
+    # Centered Start Quiz button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown(f"""
-        <style>
-        div.stButton > button#start_quiz {{
-            background: {chosen_gradient};
-            color: white;
-            border-radius: 12px;
-            height: 2.5em;
-            min-width: 10em;
-            font-size: 16px;
-            font-weight: bold;
-            transition: 0.3s;
-            border: none;
-            margin: 0.2em auto;
-            display: block;
-        }}
-        div.stButton > button#start_quiz:hover {{
-            filter: brightness(1.1);
-            transform: scale(1.03);
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
         if st.button("Start Quiz", key="start_quiz"):
             st.session_state.current_question = 0
             st.session_state.page = "quiz"
             st.rerun()
+
 
 # --------------------------
 # Quiz Page (one question per page)
