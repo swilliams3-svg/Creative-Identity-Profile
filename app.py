@@ -440,6 +440,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
+
 # --------------------------
 # Page flow setup
 # --------------------------
@@ -453,6 +454,7 @@ if "responses" not in st.session_state:
 # --------------------------
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
+
     # Columns layout preserved
     col1, col2 = st.columns([1, 5])
     with col2:
@@ -751,3 +753,7 @@ bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
+
+
+
