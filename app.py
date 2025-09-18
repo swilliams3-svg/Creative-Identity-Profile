@@ -657,7 +657,6 @@ elif st.session_state.page == "quiz":
 # --------------------------
 # Block 5: Results Page
 # --------------------------
-
 # --------------------------
 # Results Page
 # --------------------------
@@ -675,7 +674,8 @@ if st.session_state.page == "results":
                 key = f"{trait}_{q}"
                 if key not in responses:
                     continue
-                val = int(responses[key][0])
+                val = int(responses[key][0])  # extract 1–5 from string
+                # Reverse-coded adjustment
                 if trait in reverse_items and i in reverse_items[trait]:
                     val = 6 - val
                 trait_values.append(val)
@@ -690,47 +690,71 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Charts with legend and fixed size
+    # Radar Charts
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
-        values += values[:1]  # close the loop
+        values += values[:1]
         angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
         angles += angles[:1]
 
         fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
-        ax.set_theta_offset(np.pi / 2)
-        ax.set_theta_direction(-1)
-        ax.set_ylim(0, 100)  # scale 0-100
-
-        # Draw each line
-        for i, label in enumerate(labels):
-            val = values[i]
-            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2, label=label)
-            ax.fill([angles[i], angles[i+1], angles[i+1], angles[i]], [0,0,val,val], color=palette[label], alpha=0.1)
-
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
         ax.set_title(title, size=14, weight="bold", pad=20)
+
+        for i, label in enumerate(labels):
+            val = values[i]
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2, label=label)
+
+        # Add legend
         ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
 
         buf = io.BytesIO()
         fig.savefig(buf, format="PNG", bbox_inches='tight')
         buf.seek(0)
         plt.close(fig)
-        return buf, fig
+        return buf
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        chart_buf_creative, fig_creative = radar_chart(creative_perc, "Creative Traits")
-        st.pyplot(fig_creative)
+        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+        st.image(chart_buf_creative)
     with col2:
         st.subheader("Big Five")
-        chart_buf_big5, fig_big5 = radar_chart(bigfive_perc, "Big Five")
-        st.pyplot(fig_big5)
+        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+        st.image(chart_buf_big5)
+
+    # --------------------------
+    # Trait Scores in Two Columns
+    # --------------------------
+    st.subheader("Your Trait Scores")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### Creative Traits")
+        for t, p in creative_perc.items():
+            st.markdown(f"**{t}:** {p}%")
+            if p >= 67:
+                st.markdown(trait_descriptions[t]["high"])
+            elif p >= 34:
+                st.markdown(trait_descriptions[t]["medium"])
+            else:
+                st.markdown(trait_descriptions[t]["low"])
+
+    with col2:
+        st.markdown("### Big Five Traits")
+        for t, p in bigfive_perc.items():
+            st.markdown(f"**{t}:** {p}%")
+            if p >= 67:
+                st.markdown(trait_descriptions[t]["high"])
+            elif p >= 34:
+                st.markdown(trait_descriptions[t]["medium"])
+            else:
+                st.markdown(trait_descriptions[t]["low"])
 
     # --------------------------
     # Archetypes
@@ -745,13 +769,13 @@ if st.session_state.page == "results":
         <div style="
             background: {color};
             padding: 0.8em;
-            border-radius: 10px;
-            margin-bottom: 0.8em;
+            border-radius: 12px;
+            margin-bottom: 1em;
             text-align: left;
             color: white;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: normal;
-            box-shadow: 0px 3px 8px rgba(0,0,0,0.2);
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
         ">
             <h3 style="margin-top:0; font-size:18px; font-weight:bold;">{title}</h3>
             <p style="margin:0.3em 0;">{description}</p>
@@ -759,20 +783,37 @@ if st.session_state.page == "results":
         </div>
         """
 
+    # Primary Archetype
+    if top_score >= 67:
+        desc = trait_descriptions[top_trait]["high"]
+    elif top_score >= 34:
+        desc = trait_descriptions[top_trait]["medium"]
+    else:
+        desc = trait_descriptions[top_trait]["low"]
+
     st.markdown(archetype_card(
         top_trait,
         f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
-        trait_descriptions[top_trait]["high"] if top_score >= 67 else trait_descriptions[top_trait]["medium"] if top_score >=34 else trait_descriptions[top_trait]["low"],
+        desc,
         archetypes[top_trait][2]
     ), unsafe_allow_html=True)
+
+    # Sub-Archetype
+    if sub_score >= 67:
+        desc = trait_descriptions[sub_trait]["high"]
+    elif sub_score >= 34:
+        desc = trait_descriptions[sub_trait]["medium"]
+    else:
+        desc = trait_descriptions[sub_trait]["low"]
 
     st.markdown(archetype_card(
         sub_trait,
         f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
-        trait_descriptions[sub_trait]["high"] if sub_score >= 67 else trait_descriptions[sub_trait]["medium"] if sub_score >=34 else trait_descriptions[sub_trait]["low"],
+        desc,
         archetypes[sub_trait][2]
     ), unsafe_allow_html=True)
 
+    # Growth Area
     st.markdown(archetype_card(
         lowest_trait,
         f"Growth Area: {lowest_trait}",
@@ -781,38 +822,11 @@ if st.session_state.page == "results":
     ), unsafe_allow_html=True)
 
     # --------------------------
-    # Trait Scores in two columns
-    # --------------------------
-    st.subheader("Your Trait Scores")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("### Creative Traits")
-        for t, p in creative_perc.items():
-            st.markdown(f"**{t}:** {p}%")
-            if p >= 67:
-                st.write(trait_descriptions[t]["high"])
-            elif p >= 34:
-                st.write(trait_descriptions[t]["medium"])
-            else:
-                st.write(trait_descriptions[t]["low"])
-
-    with col2:
-        st.markdown("### Big Five Traits")
-        for t, p in bigfive_perc.items():
-            st.markdown(f"**{t}:** {p}%")
-            if p >= 67:
-                st.write(trait_descriptions[t]["high"])
-            elif p >= 34:
-                st.write(trait_descriptions[t]["medium"])
-            else:
-                st.write(trait_descriptions[t]["low"])
-
-    # --------------------------
     # Download PDFs
     # --------------------------
     st.subheader("Download PDFs")
     col1, col2 = st.columns(2)
+
     with col1:
         results_pdf = create_results_pdf(
             creative_perc,
@@ -837,6 +851,3 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
-
-
-
