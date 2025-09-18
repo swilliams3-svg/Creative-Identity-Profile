@@ -525,7 +525,7 @@ if st.session_state.page == "results":
     # --------------------------
     # Radar Chart Function
     # --------------------------
-  def radar_chart(scores, title):
+def radar_chart(scores, title):
     categories = list(scores.keys())
     values = list(scores.values())
     values += values[:1]
@@ -549,6 +549,7 @@ if st.session_state.page == "results":
     buf.seek(0)
     plt.close(fig)
     return buf
+
 
 # Later in the app
 chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
