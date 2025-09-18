@@ -573,10 +573,25 @@ if st.session_state.page == "results":
     # --------------------------
     # Calculate scores
     # --------------------------
+    def calculate_scores(traits, responses):
+        scores = {}
+        for trait, qs in traits.items():
+            trait_values = []
+            for i, q in enumerate(qs):
+                key = f"{trait}_{q}"
+                if key not in responses:
+                    continue
+                val = int(responses[key][0])  # extract 1–5 from string
+                if trait in reverse_items and i in reverse_items[trait]:
+                    val = 6 - val
+                trait_values.append(val)
+            if trait_values:
+                scores[trait] = np.mean(trait_values)
+        return scores
+
     creative_scores = calculate_scores(creative_traits, st.session_state.responses)
     bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
 
-    # Convert to percentage (1 → 0%, 5 → 100%)
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
@@ -586,7 +601,8 @@ if st.session_state.page == "results":
     def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
-        values += values[:1]  # close the loop
+        values += values[:1]  # close the circle
+
         angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
         angles += angles[:1]
 
@@ -596,21 +612,14 @@ if st.session_state.page == "results":
         ax.set_yticklabels([])
         ax.set_title(title, size=14, weight="bold", pad=20)
 
-        # Draw each segment in its palette color
-        for i, label in enumerate(labels[:-1]):  # avoid duplicate last point
-            ax.plot(
-                [angles[i], angles[i + 1]],
-                [values[i], values[i + 1]],
-                color=palette.get(label, "blue"),
-                linewidth=2
-            )
+        # Connect points with lines using palette
+        for i, label in enumerate(labels):
+            val = values[i]
+            next_val = values[i + 1]
+            ax.plot([angles[i], angles[i + 1]], [val, next_val], color=palette[label], linewidth=2)
 
-        # Legend
-        handles = [
-            plt.Line2D([0], [0], color=palette.get(label, "blue"), lw=2, label=label)
-            for label in labels[:-1]
-        ]
-        ax.legend(handles=handles, bbox_to_anchor=(1.1, 1.05), fontsize=8)
+        # Fill area lightly
+        ax.fill(angles, values, color='gray', alpha=0.1)
 
         st.pyplot(fig)
 
@@ -621,7 +630,7 @@ if st.session_state.page == "results":
         return buf
 
     # --------------------------
-    # Display Radar Charts
+    # Render Radar Charts
     # --------------------------
     col1, col2 = st.columns(2)
     with col1:
