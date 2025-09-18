@@ -554,9 +554,6 @@ if "responses" not in st.session_state:
 # --------------------------
 # Intro Page
 # --------------------------
-# --------------------------
-# Intro Page
-# --------------------------
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
 
