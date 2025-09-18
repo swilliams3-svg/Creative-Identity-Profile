@@ -498,28 +498,77 @@ elif st.session_state.page == "quiz":
 # --------------------------
 # Results Page
 # --------------------------
-elif st.session_state.page == "results":
+if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
+    # --------------------------
     # Calculate scores
+    # --------------------------
+    def calculate_scores(traits, responses):
+        scores = {}
+        for trait, qs in traits.items():
+            trait_values = []
+            for i, q in enumerate(qs):
+                key = f"{trait}_{q}"
+                if key not in responses:
+                    continue
+                val = int(responses[key][0])  # extract 1–5 from string
+                # Reverse-coded adjustment
+                if trait in reverse_items and i in reverse_items[trait]:
+                    val = 6 - val
+                trait_values.append(val)
+            if trait_values:
+                scores[trait] = np.mean(trait_values)
+        return scores
+
     creative_scores = calculate_scores(creative_traits, st.session_state.responses)
     bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
+
+    # Convert to percentage (1 → 0%, 5 → 100%)
     creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
-    # Radar charts
+    # --------------------------
+    # Radar chart function
+    # --------------------------
+    def radar_chart(scores, title):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]
+        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        angles += angles[:1]
+
+        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_title(title, size=14, weight="bold", pad=20)
+
+        for i, label in enumerate(labels):
+            val = values[i]
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG")
+        buf.seek(0)
+        plt.close(fig)
+        return buf
+
+    # --------------------------
+    # Display Radar Charts side by side
+    # --------------------------
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
         chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-        st.pyplot(plt.imread(chart_buf_creative))
+        st.image(chart_buf_creative)
     with col2:
         st.subheader("Big Five")
         chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-        st.pyplot(plt.imread(chart_buf_big5))
+        st.image(chart_buf_big5)
 
     # --------------------------
-    # Archetypes Display
+    # Archetypes
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -552,9 +601,13 @@ elif st.session_state.page == "results":
         desc = trait_descriptions[top_trait]["medium"]
     else:
         desc = trait_descriptions[top_trait]["low"]
-    st.markdown(archetype_card(top_trait,
+
+    st.markdown(archetype_card(
+        top_trait,
         f"🌟 Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
-        desc, archetypes[top_trait][2]), unsafe_allow_html=True)
+        desc,
+        archetypes[top_trait][2]
+    ), unsafe_allow_html=True)
 
     # Sub-Archetype
     if sub_score >= 67:
@@ -563,15 +616,21 @@ elif st.session_state.page == "results":
         desc = trait_descriptions[sub_trait]["medium"]
     else:
         desc = trait_descriptions[sub_trait]["low"]
-    st.markdown(archetype_card(sub_trait,
+
+    st.markdown(archetype_card(
+        sub_trait,
         f"✨ Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
-        desc, archetypes[sub_trait][2]), unsafe_allow_html=True)
+        desc,
+        archetypes[sub_trait][2]
+    ), unsafe_allow_html=True)
 
     # Growth Area
-    st.markdown(archetype_card(lowest_trait,
+    st.markdown(archetype_card(
+        lowest_trait,
         f"🌱 Growth Area: {lowest_trait}",
         trait_descriptions[lowest_trait]["low"],
-        archetypes[lowest_trait][2]), unsafe_allow_html=True)
+        archetypes[lowest_trait][2]
+    ), unsafe_allow_html=True)
 
     # --------------------------
     # Trait Scores
@@ -602,12 +661,27 @@ elif st.session_state.page == "results":
     col1, col2 = st.columns(2)
 
     with col1:
-        results_pdf = create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes,
-                                         chart_buf_creative, chart_buf_big5)
-        st.download_button("Download Your Results PDF", data=results_pdf,
-                           file_name="creative_results.pdf", mime="application/pdf")
+        results_pdf = create_results_pdf(
+            creative_perc,
+            bigfive_perc,
+            trait_descriptions,
+            archetypes,
+            chart_buf_creative,
+            chart_buf_big5
+        )
+        st.download_button(
+            "Download Your Results PDF",
+            data=results_pdf,
+            file_name="creative_results.pdf",
+            mime="application/pdf"
+        )
 
     with col2:
         academic_pdf = create_academic_pdf()
-        st.download_button("Download Academic Research PDF", data=academic_pdf,
-                           file_name="academic_research.pdf", mime="application/pdf")
+        st.download_button(
+            "Download Academic Research PDF",
+            data=academic_pdf,
+            file_name="academic_research.pdf",
+            mime="application/pdf"
+        )
+
