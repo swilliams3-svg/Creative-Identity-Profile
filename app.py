@@ -607,41 +607,57 @@ creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()
 bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
 
-    # --------------------------
-    # Radar Charts
-    # --------------------------
-    def radar_chart(scores, title):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]
-        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
-        angles += angles[:1]
+    ## --------------------------
+# Radar Charts
+# --------------------------
+def radar_chart(scores, title):
+    labels = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]  # close the loop
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_title(title, size=14, weight="bold", pad=20)
+    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])
+    ax.set_title(title, size=14, weight="bold", pad=20)
 
-        for i, label in enumerate(labels):
-            val = values[i]
-            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
+    # Draw each segment in its palette color
+    for i, label in enumerate(labels):
+        ax.plot(
+            [angles[i], angles[i + 1]],
+            [values[i], values[i + 1]],
+            color=palette.get(label, "blue"),
+            linewidth=2,
+            label=label if i == 0 else ""  # prevent duplicate legend entries
+        )
 
-        st.pyplot(fig)
+    # Create a legend using trait colors
+    handles = [
+        plt.Line2D([0], [0], color=palette.get(label, "blue"), lw=2, label=label)
+        for label in labels[:-1]
+    ]
+    ax.legend(handles=handles, bbox_to_anchor=(1.1, 1.05), fontsize=8)
 
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG")
-        buf.seek(0)
-        plt.close(fig)
-        return buf
+    st.pyplot(fig)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Creative Traits")
-            chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-        with col2:
-            st.subheader("Big Five")
-            chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG")
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+
+# ✅ Usage outside the function (you already have this)
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader("Creative Traits")
+    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+with col2:
+    st.subheader("Big Five")
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+
 
     # --------------------------
     # Archetypes
