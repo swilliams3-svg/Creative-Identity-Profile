@@ -591,6 +591,32 @@ if st.session_state.page == "intro":
     st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
 
     # --------------------------
+    # Right-aligned functional button with color styling
+    # --------------------------
+    col1, col2, col3 = st.columns([3, 1, 1])
+    with col3:
+        button_style = """
+            style="
+                background-color: #7b2ff7;
+                color: white;
+                border-radius: 12px;
+                padding: 0.6em 1.8em;
+                font-size:16px;
+                font-weight:bold;
+                cursor:pointer;
+                border:none;
+                transition: 0.3s;
+            "
+            onmouseover="this.style.filter='brightness(1.1)'; this.style.transform='scale(1.03)';"
+            onmouseout="this.style.filter='brightness(1)'; this.style.transform='scale(1)';"
+        """
+        if st.button("Start Quiz"):
+            st.session_state.current_question = 0
+            st.session_state.page = "quiz"
+            st.rerun()
+
+
+    # --------------------------
     # Centered Start Quiz Button
     # --------------------------
     st.markdown("<br>", unsafe_allow_html=True)  # optional spacing
