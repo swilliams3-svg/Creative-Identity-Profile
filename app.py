@@ -610,7 +610,7 @@ bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
     # --------------------------
     # Radar Charts
     # --------------------------
-def radar_chart(scores, title):
+    def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
         values += values[:1]
@@ -635,13 +635,13 @@ def radar_chart(scores, title):
         plt.close(fig)
         return buf
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Creative Traits")
-        chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    with col2:
-        st.subheader("Big Five")
-        chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Creative Traits")
+            chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+        with col2:
+            st.subheader("Big Five")
+            chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
     # --------------------------
     # Archetypes
