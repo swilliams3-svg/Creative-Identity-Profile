@@ -673,7 +673,7 @@ bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     st.markdown(archetype_card(
         top_trait,
-        f"🌟 Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
+        f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
         desc,
         archetypes[top_trait][2]
     ), unsafe_allow_html=True)
@@ -688,7 +688,7 @@ bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     st.markdown(archetype_card(
         sub_trait,
-        f"✨ Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
+        f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
         desc,
         archetypes[sub_trait][2]
     ), unsafe_allow_html=True)
@@ -696,7 +696,7 @@ bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
     # Growth Area
     st.markdown(archetype_card(
         lowest_trait,
-        f"🌱 Growth Area: {lowest_trait}",
+        f"Growth Area: {lowest_trait}",
         trait_descriptions[lowest_trait]["low"],
         archetypes[lowest_trait][2]
     ), unsafe_allow_html=True)
