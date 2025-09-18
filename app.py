@@ -206,68 +206,89 @@ palette = {
 }
 
 # --------------------------
-# Creative Traits & Big Five
+# Creative Traits
 # --------------------------
 creative_traits = {
     "Originality": [
-        "I enjoy producing novel and unconventional ideas.",
+        "I often find myself suggesting unusual or unexpected solutions.",
         "I often think of alternative solutions others might not consider.",
         "I value uniqueness in my work and thinking."
     ],
     "Curiosity": [
-        "I like questioning and exploring new concepts.",
+        "I ask questions even when I’m not sure there’s an easy answer.",
         "I seek out opportunities to learn new things.",
         "I am curious about how things work."
     ],
     "Risk-Taking": [
         "I am comfortable with uncertainty when exploring ideas.",
-        "I don’t mind failing if it means trying something new.",
+        "I sometimes avoid new ideas because they might not work.",  # reverse-coded
         "I take creative risks in my projects."
     ],
     "Imagination": [
-        "I often visualize possibilities in my mind.",
+        "I often picture possibilities in my mind before I try them out.",
         "I enjoy daydreaming and thinking about new scenarios.",
         "I use mental imagery when solving problems."
     ],
     "Discipline": [
         "I can stay focused on creative projects until completion.",
         "I put structured effort into developing my ideas.",
-        "I persist with my work even when it is challenging."
+        "I find it difficult to stay focused on creative projects for a long time."  # reverse-coded
     ],
     "Collaboration": [
-        "I value feedback from others in my creative process.",
+        "When working with others, I build on their ideas as much as I share my own.",
         "I enjoy exchanging ideas with others.",
         "I often co-create with peers or colleagues."
     ]
 }
 
+# --------------------------
+# Big Five Traits
+# --------------------------
 big_five_traits = {
     "Openness": [
         "I enjoy exploring new ideas and perspectives.",
-        "I am open to different experiences and viewpoints.",
-        "I like engaging with abstract or imaginative ideas."
+        "I enjoy exploring new art, music, or ideas, even if they’re unfamiliar.",
+        "I prefer sticking to familiar routines over trying new experiences."  # reverse-coded
     ],
     "Conscientiousness": [
         "I pay attention to details when working.",
-        "I follow through with my plans and goals.",
-        "I like being organized in my daily life."
+        "I make detailed plans before starting a task.",
+        "I often leave tasks unfinished."  # reverse-coded
     ],
     "Extraversion": [
         "I feel energized when interacting with people.",
         "I enjoy group activities and conversations.",
-        "I like being in social situations."
+        "I usually prefer being alone rather than in social situations."  # reverse-coded
     ],
     "Agreeableness": [
         "I am considerate of others’ needs and feelings.",
-        "I value cooperation over competition.",
-        "I try to maintain harmony in groups."
+        "I try to see things from other people’s perspectives during disagreements.",
+        "I sometimes put my own needs before others’."  # reverse-coded
     ],
     "Neuroticism": [
         "I often feel stressed or anxious in daily life.",
         "I can become easily worried about problems.",
-        "I sometimes struggle to remain calm under pressure."
+        "I remain calm even when under pressure."  # reverse-coded
     ]
 }
+
+# --------------------------
+# Reverse-coded mapping
+# --------------------------
+reverse_items = {
+    "Originality": [],
+    "Curiosity": [],
+    "Risk-Taking": [1],       # 2nd question reverse-coded
+    "Imagination": [],
+    "Discipline": [2],        # 3rd question reverse-coded
+    "Collaboration": [],
+    "Openness": [2],           # 3rd question reverse-coded
+    "Conscientiousness": [2],  # 3rd question reverse-coded
+    "Extraversion": [2],       # 3rd question reverse-coded
+    "Agreeableness": [2],      # 3rd question reverse-coded
+    "Neuroticism": [2]         # 3rd question reverse-coded
+}
+
 
 # --------------------------
 # Trait Descriptions
@@ -553,17 +574,31 @@ if st.session_state.page == "results":
     # --------------------------
     # Calculate scores
     # --------------------------
-    creative_scores = {
-        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
-        for t, qs in creative_traits.items()
-    }
-    bigfive_scores = {
-        t: np.mean([int(st.session_state.responses[f"{t}_{q}"][0]) for q in qs])
-        for t, qs in big_five_traits.items()
-    }
+def calculate_scores(traits, responses):
+    scores = {}
+    for trait, qs in traits.items():
+        trait_values = []
+        for i, q in enumerate(qs):
+            key = f"{trait}_{q}"
+            if key not in responses:
+                continue
+            val = int(responses[key][0])  # extract 1–5 from string
+            # Reverse-coded adjustment
+            if trait in reverse_items and i in reverse_items[trait]:
+                val = 6 - val  # flip: 1→5, 2→4, 3→3, etc.
+            trait_values.append(val)
+        if trait_values:
+            scores[trait] = np.mean(trait_values)
+    return scores
 
-    creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
-    bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
+# Example usage:
+creative_scores = calculate_scores(creative_traits, st.session_state.responses)
+bigfive_scores = calculate_scores(big_five_traits, st.session_state.responses)
+
+# Convert to percentage (1 → 0%, 5 → 100%)
+creative_perc = {t: round((s - 1) / 4 * 100) for t, s in creative_scores.items()}
+bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
+
 
     # --------------------------
     # Radar Charts
