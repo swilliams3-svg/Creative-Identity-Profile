@@ -525,39 +525,41 @@ if st.session_state.page == "results":
     # --------------------------
     # Radar Chart Function
     # --------------------------
-    def radar_chart(scores, title):
-        categories = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]
-        angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
-        angles += angles[:1]
+  def radar_chart(scores, title):
+    categories = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]
+    angles = np.linspace(0, 2*np.pi, len(categories), endpoint=False).tolist()
+    angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(4,4), subplot_kw=dict(polar=True))
-        ax.set_theta_offset(np.pi/2)
-        ax.set_theta_direction(-1)
-        plt.xticks(angles[:-1], categories, color='grey', size=10)
-        ax.set_rlabel_position(0)
-        plt.yticks([20,40,60,80], ["20","40","60","80"], color="grey", size=8)
-        plt.ylim(0,100)
+    fig, ax = plt.subplots(figsize=(4,4), subplot_kw=dict(polar=True))
+    ax.set_theta_offset(np.pi/2)
+    ax.set_theta_direction(-1)
+    plt.xticks(angles[:-1], categories, color='grey', size=10)
+    ax.set_rlabel_position(0)
+    plt.yticks([20,40,60,80], ["20","40","60","80"], color="grey", size=8)
+    plt.ylim(0,100)
 
-        ax.plot(angles, values, color="#1f77b4", linewidth=2, linestyle='solid')
-        ax.fill(angles, values, color="#1f77b4", alpha=0.25)
-        plt.title(title, size=12, y=1.1)
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
-        buf.seek(0)
-        plt.close(fig)
-        return buf
+    ax.plot(angles, values, color="#1f77b4", linewidth=2, linestyle='solid')
+    ax.fill(angles, values, color="#1f77b4", alpha=0.25)
+    plt.title(title, size=12, y=1.1)
 
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+    buf.seek(0)
+    plt.close(fig)
+    return buf
 
-    st.markdown("### Your Trait Profiles")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(chart_buf_creative)
-    with col2:
-        st.image(chart_buf_big5)
+# Usage outside the function
+chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
+
+col1, col2 = st.columns(2)
+with col1:
+    st.image(chart_buf_creative)
+with col2:
+    st.image(chart_buf_big5)
+
 
     # Archetypes and Growth
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
