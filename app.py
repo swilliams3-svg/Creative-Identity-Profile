@@ -332,42 +332,6 @@ def create_academic_pdf():
 # --------------------------
 # Results PDF function
 # --------------------------
-# --------------------------
-# PDF-safe radar chart function
-# --------------------------
-def radar_chart_pdf(scores, title, size=4):
-    labels = list(scores.keys())
-    values = list(scores.values())
-    values += values[:1]  # close the loop
-    num_vars = len(labels)
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    angles += angles[:1]
-
-    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
-
-    # Plot polygon outline
-    ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
-    ax.fill(angles, values, color='grey', alpha=0.05)
-
-    # Plot each trait with colored points
-    for i, label in enumerate(labels):
-        ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
-
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels([])
-    ax.set_ylim(0, 100)
-    ax.set_title(title, size=12, weight="bold", pad=20)
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
-    buf.seek(0)
-    plt.close(fig)
-    return buf
-
-# --------------------------
-# Create Results PDF
-# --------------------------
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
@@ -426,21 +390,15 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Spacer(1, 12))
 
     # --------------------------
-    # PDF-safe radar charts
+    # PDF-safe radar charts (3x3 inches)
     # --------------------------
-    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4.5)
-    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4.5)
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=3)
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=3)
 
-    size_inch = 3
-    img_creative = Image(chart_buf_creative)
-    img_creative.drawWidth = size_inch * inch
-    img_creative.drawHeight = size_inch * inch
+    img_creative = Image(chart_buf_creative, width=3*inch, height=3*inch)
+    img_big5 = Image(chart_buf_big5, width=3*inch, height=3*inch)
 
-    img_big5 = Image(chart_buf_big5)
-    img_big5.drawWidth = size_inch * inch
-    img_big5.drawHeight = size_inch * inch
-
-    chart_table = Table([[img_creative, img_big5]], colWidths=[size_inch*inch, size_inch*inch])
+    chart_table = Table([[img_creative, img_big5]], colWidths=[3*inch, 3*inch])
     story.append(chart_table)
     story.append(Spacer(1, 16))
 
@@ -544,7 +502,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     doc.build(story)
     buffer.seek(0)
     return buffer
-
 
 
 # --------------------------
