@@ -557,63 +557,64 @@ if "responses" not in st.session_state:
 if st.session_state.page == "intro":
     st.title("Creative Personality Profile")
 
-    # Columns layout for content
-    col1, col2 = st.columns([1, 5])
-    with col2:
-        st.subheader("What to Expect")
-        st.markdown("""
-        - **33 short statements**, answered one at a time.  
-        - Each uses a **1–5 scale** (*Strongly Disagree → Strongly Agree*).  
-        - Takes about **5–7 minutes** to complete.  
-        - No right or wrong answers — just be honest about what feels true for you.  
-        """)
-    col1, col2 = st.columns([1, 5])
-    with col2:
-        st.subheader("What You’ll Get")
-        st.markdown("""
-        - A personalised profile of your **creative traits** and **personality traits**.  
-        - A **visual breakdown** of your results (radar charts).  
-        - Your **creative archetype** and growth areas.  
-        - Practical **tips** to develop your creativity further.  
-        """)
-    col1, col2 = st.columns([1, 5])
-    with col2:
-        st.subheader("Why This Matters")
-        st.markdown("""
-        Creativity and personality shape how you **approach challenges, generate ideas, and collaborate**.  
-        By understanding your unique profile, you can:  
-        - Play to your strengths.  
-        - Recognise and improve growth areas.  
-        - Gain deeper insight into your personal and professional identity.  
-        """)
+    st.subheader("What to Expect")
+    st.markdown("""
+    - 33 short statements, answered one at a time.  
+    - Each uses a 1–5 scale (Strongly Disagree → Strongly Agree).  
+    - Takes about 5–7 minutes to complete.  
+    - No right or wrong answers — just be honest about what feels true for you.
+    """)
 
-    st.markdown("---")
-    st.markdown("Take your time, reflect honestly, and enjoy discovering your creative identity.")
+    st.subheader("What You’ll Get")
+    st.markdown("""
+    - A personalised profile of your creative traits and personality traits.  
+    - A visual breakdown of your results (radar charts).  
+    - Your creative archetype and growth areas.  
+    - Practical tips to develop your creativity further.
+    """)
 
-    # --------------------------
-    # Right-aligned functional button with color styling
-    # --------------------------
-    col1, col2, col3 = st.columns([3, 1, 1])
-    with col3:
-        button_style = """
-            style="
-                background-color: #7b2ff7;
-                color: white;
-                border-radius: 12px;
-                padding: 0.6em 1.8em;
-                font-size:16px;
-                font-weight:bold;
-                cursor:pointer;
-                border:none;
-                transition: 0.3s;
-            "
-            onmouseover="this.style.filter='brightness(1.1)'; this.style.transform='scale(1.03)';"
-            onmouseout="this.style.filter='brightness(1)'; this.style.transform='scale(1)';"
+    st.subheader("Why This Matters")
+    st.markdown("""
+    Creativity and personality shape how you approach challenges, generate ideas, and collaborate.  
+    By understanding your unique profile, you can:
+
+    - Play to your strengths.  
+    - Recognise and improve growth areas.  
+    - Gain deeper insight into your personal and professional identity.  
+
+    Take your time, reflect honestly, and enjoy discovering your creative identity.
+    """)
+
+    # ✅ Inject CSS to style the Start Quiz button
+    st.markdown(
         """
-        if st.button("Start Quiz"):
-            st.session_state.current_question = 0
+        <style>
+        div.stButton > button:first-child {
+            background: linear-gradient(135deg, #7b2ff7, #f107a3);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            padding: 0.6em 1.2em;
+            border: none;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+        div.stButton > button:first-child:hover {
+            background: linear-gradient(135deg, #f107a3, #7b2ff7);
+            transform: scale(1.05);
+            box-shadow: 0px 6px 12px rgba(0,0,0,0.3);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ✅ Centered Start Quiz button
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("Start Quiz", key="start_quiz"):
             st.session_state.page = "quiz"
-            st.rerun()
 
 
     # --------------------------
