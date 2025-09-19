@@ -368,8 +368,12 @@ def radar_chart_pdf(scores, title):
 
 
 # --------------------------
-# Create Results PDF (auto chart sizing)
+# Results PDF function
 # --------------------------
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib import colors
+
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -424,15 +428,16 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Spacer(1, 12))
 
     # --------------------------
-    # Radar charts with automatic sizing
+    # PDF-safe radar charts with dynamic sizing
     # --------------------------
-    # Creative chart slightly bigger for 6 traits
-    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits")
-    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five")
+    from math import ceil
 
-    # Determine width/height based on trait count
+    # Decide chart size based on number of traits
     width_creative = height_creative = 4 if len(creative_perc) > 5 else 3
     width_big5 = height_big5 = 4 if len(bigfive_perc) > 5 else 3
+
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=width_creative)
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=width_big5)
 
     img_creative = Image(chart_buf_creative, width=width_creative*inch, height=height_creative*inch)
     img_big5 = Image(chart_buf_big5, width=width_big5*inch, height=height_big5*inch)
@@ -442,7 +447,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Spacer(1, 16))
 
     # --------------------------
-    # Archetypes with color blocks
+    # Archetypes with colour blocks
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -450,6 +455,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
 
     def archetype_card_pdf(trait, title, description, tip):
         color = palette.get(trait, "#7b2ff7")
+        # Title block
         table_data = [[Paragraph(title, ParagraphStyle(
             "card_title",
             fontSize=14,
@@ -467,6 +473,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         ])
         story.append(card)
         story.append(Spacer(1, 4))
+        # Description and growth tip
         story.append(Paragraph(description, styles["body"]))
         story.append(Paragraph(f"<b>Growth Tip:</b> {tip}", styles["body"]))
         story.append(Spacer(1, 12))
@@ -491,7 +498,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     # --------------------------
     def trait_table_pdf(traits_dict):
         traits = list(traits_dict.items())
-        mid = (len(traits) + 1) // 2
+        mid = ceil(len(traits)/2)
         left = traits[:mid]
         right = traits[mid:]
 
@@ -539,6 +546,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     doc.build(story)
     buffer.seek(0)
     return buffer
+
 
 
 # --------------------------
