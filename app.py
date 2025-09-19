@@ -340,10 +340,11 @@ def radar_chart_pdf(scores, title):
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
-    # Set figure size larger so chart is not squashed
-    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+    # Size automatically scales based on number of traits
+    size = max(5, min(7, len(labels)))  # adjust figure size
+    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
 
-    # Draw polygon outline (faint grey)
+    # Draw faint grey outline
     ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
     ax.fill(angles, values, color='grey', alpha=0.05)
 
@@ -357,13 +358,15 @@ def radar_chart_pdf(scores, title):
     ax.set_xticklabels(labels)
     ax.set_yticklabels([])
     ax.set_ylim(0, 100)
-    ax.set_title(title, size=14, weight="bold", pad=20)
+    ax.set_title(title, size=14, weight="bold", pad=15)
 
+    # Save to BytesIO buffer
     buf = io.BytesIO()
     fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
     buf.seek(0)
     plt.close(fig)
     return buf
+
 
 # --------------------------
 # Create Results PDF
