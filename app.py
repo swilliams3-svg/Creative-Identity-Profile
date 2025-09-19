@@ -330,6 +330,42 @@ def create_academic_pdf():
     return buffer
 
 # --------------------------
+# PDF-safe radar chart function (3x3 inches)
+# --------------------------
+def radar_chart_pdf(scores, title, size=3):
+    labels = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]  # close the loop
+    num_vars = len(labels)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
+
+    # Draw polygon outline (faint grey)
+    ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
+    ax.fill(angles, values, color='grey', alpha=0.05)
+
+    # Plot each trait line in its color
+    for i, label in enumerate(labels):
+        ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
+        ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=6)
+
+    # Axes settings
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])
+    ax.set_ylim(0, 100)
+    ax.set_title(title, size=12, weight="bold", pad=15)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+
+# --------------------------
 # Results PDF function
 # --------------------------
 from reportlab.lib.units import inch
