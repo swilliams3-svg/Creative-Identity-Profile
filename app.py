@@ -696,7 +696,7 @@ if st.session_state.page == "results":
     # --------------------------
     # Radar Chart function (replacement)
     # --------------------------
-    def radar_chart(scores, title, size=6, dpi=150):
+def radar_chart(scores, title, size=6, dpi=150):
     labels = list(scores.keys())
     values = list(scores.values())
 
