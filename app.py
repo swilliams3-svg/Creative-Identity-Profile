@@ -285,16 +285,16 @@ def create_academic_pdf():
     styles = {
         "title": ParagraphStyle(
             "title",
-            fontSize=16,
-            leading=20,
+            fontSize=14,
+            leading=18,
             alignment=TA_CENTER,
-            spaceAfter=12,
+            spaceAfter=10,
             underline=True,
             fontName="Helvetica-Bold"
         ),
         "heading": ParagraphStyle(
             "heading",
-            fontSize=13,
+            fontSize=12,
             leading=16,
             alignment=TA_LEFT,
             spaceBefore=10,
@@ -304,7 +304,7 @@ def create_academic_pdf():
         ),
         "body": ParagraphStyle(
             "body",
-            fontSize=11,
+            fontSize=10,
             leading=14,
             alignment=TA_LEFT,
             spaceAfter=6,
