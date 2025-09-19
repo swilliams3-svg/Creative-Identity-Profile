@@ -696,38 +696,49 @@ if st.session_state.page == "results":
     # --------------------------
     # Radar Chart function (replacement)
     # --------------------------
-    def radar_chart(scores, title):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]  # close the loop
-        num_vars = len(labels)
-        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-        angles += angles[:1]
+    def radar_chart(scores, title, size=6, dpi=150):
+    labels = list(scores.keys())
+    values = list(scores.values())
 
-        fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+    # close the loop for plotting
+    values_loop = values + values[:1]
+    num_vars = len(labels)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]
 
-        # Plot all traits as a single polygon
-        values_loop = list(scores.values())
-        values_loop += values_loop[:1]
-        ax.plot(angles, values_loop, color="grey", linewidth=1, alpha=0.3)  # faint outline if desired
-        for i, label in enumerate(labels):
-            ax.plot(angles, values_loop, color=palette[label], linewidth=2, label=label)
+    # create square figure (important)
+    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
 
-        # Axes settings
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_ylim(0, 100)
-        ax.set_title(title, size=14, weight="bold", pad=20)
+    # Plot the filled polygon lightly to give context
+    ax.plot(angles, values_loop, color="grey", linewidth=1, alpha=0.25)
+    ax.fill(angles, values_loop, alpha=0.08, color="grey")
 
-        # Legend outside chart
-        ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+    # Plot each segment using the palette colours so the line colours match legend
+    for i, label in enumerate(labels):
+        ax.plot([angles[i], angles[i+1]], [values_loop[i], values_loop[i+1]],
+                color=palette.get(label, "#777777"), linewidth=2)
 
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG", bbox_inches='tight')
-        buf.seek(0)
-        plt.close(fig)
-        return buf
+    # Axes/labels
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])     # hide radial labels for a cleaner look
+    ax.set_ylim(0, 100)
+    ax.set_title(title, size=14, weight="bold", pad=12)
+
+    # Build a legend inside the figure area under the chart (not outside it)
+    for t, c in palette.items():
+        ax.plot([], [], color=c, linewidth=2, label=t)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=3, fontsize=8)
+
+    # Leave room at bottom for the legend, then save the full square canvas
+    plt.tight_layout(rect=[0, 0.08, 1, 1])
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG", dpi=dpi)   # do NOT use bbox_inches='tight' here
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
 
     # --------------------------
     # Display radar charts side by side
