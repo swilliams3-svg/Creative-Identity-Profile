@@ -7,12 +7,14 @@ import matplotlib.pyplot as plt
 import io
 import random
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch  # <-- add this
 from reportlab.pdfgen import canvas
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
+
 
 # --------------------------
 # Page config
