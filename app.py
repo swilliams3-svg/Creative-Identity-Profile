@@ -332,7 +332,7 @@ def create_academic_pdf():
 # --------------------------
 # PDF-safe radar chart function (3x3 inches)
 # --------------------------
-def radar_chart_pdf(scores, title):
+def radar_chart_pdf(scores, title, size=3):
     labels = list(scores.keys())
     values = list(scores.values())
     values += values[:1]  # close the loop
@@ -340,11 +340,9 @@ def radar_chart_pdf(scores, title):
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
-    # Adjust size based on number of traits
-    size = 4 if len(labels) > 5 else 3  # creative chart slightly bigger
     fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
 
-    # Draw polygon outline (faint grey)
+    # Draw faint polygon outline
     ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
     ax.fill(angles, values, color='grey', alpha=0.05)
 
@@ -365,6 +363,7 @@ def radar_chart_pdf(scores, title):
     buf.seek(0)
     plt.close(fig)
     return buf
+
 
 
 # --------------------------
