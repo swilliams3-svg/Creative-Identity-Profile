@@ -376,12 +376,13 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
     story.append(Spacer(1, 12))
 
-    # Radar Charts side by side
-    img_creative = Image(chart_buf_creative, width=250, height=250)
-    img_big5 = Image(chart_buf_big5, width=250, height=250)
-    chart_table = Table([[img_creative, img_big5]], colWidths=[270, 270])
+    # Radar Charts side by side (preserve aspect ratio by giving only width)
+    img_creative = Image(chart_buf_creative, width=270)   # height will auto-scale
+    img_big5 = Image(chart_buf_big5, width=270)
+    chart_table = Table([[img_creative, img_big5]], colWidths=[280, 280])
+    chart_table.hAlign = 'CENTER'
     story.append(chart_table)
-    story.append(Spacer(1, 12))
+
 
     # Archetypes
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
