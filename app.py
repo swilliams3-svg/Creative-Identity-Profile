@@ -436,37 +436,39 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
 # --------------------------
 # Radar Chart function
 # --------------------------
-def radar_chart(scores, title):
+def radar_chart_pdf(scores, title, size=6):
     labels = list(scores.keys())
     values = list(scores.values())
-    values += values[:1]
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    values += values[:1]  # close the loop
+    num_vars = len(labels)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+    # Create square figure to prevent stretching
+    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
+
+    # Plot the polygon connecting the points
+    ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
+    ax.fill(angles, values, color='grey', alpha=0.05)
+
+    # Plot individual trait points with their colors
+    for i, label in enumerate(labels):
+        ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
+
+    # Axes settings
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
     ax.set_yticklabels([])
-    ax.set_ylim(0, 100)  # consistent scale for both charts
+    ax.set_ylim(0, 100)
     ax.set_title(title, size=14, weight="bold", pad=20)
 
-    # Plot each line
-    for i, label in enumerate(labels):
-        val = values[i]
-        ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
-
-    # Add a legend
-    for t, c in palette.items():
-        ax.plot([], [], color=c, label=t, linewidth=2)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1.1))
-
-    st.pyplot(fig)
-
+    # No legend for PDF
     buf = io.BytesIO()
-    fig.savefig(buf, format="PNG")
+    fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
     buf.seek(0)
     plt.close(fig)
     return buf
+
 
 # --------------------------
 # Score calculation
@@ -691,60 +693,81 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Chart function (no legend)
+    # Radar chart for PDF
     # --------------------------
-    def radar_chart(scores, title):
+    def radar_chart_pdf(scores, title, size=6):
         labels = list(scores.keys())
         values = list(scores.values())
-        values += values[:1]  # close the loop
+        values += values[:1]  # close loop
         num_vars = len(labels)
         angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
         angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
+        fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
 
-        # Polygon (shape) for all traits
-        ax.plot(angles, values, color='grey', linewidth=2, alpha=0.3)
-        ax.fill(angles, values, color='grey', alpha=0.1)
+        # Plot outline polygon
+        ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
+        ax.fill(angles, values, color='grey', alpha=0.05)
 
-        # Colored points for individual traits
+        # Plot colored points for each trait
         for i, label in enumerate(labels):
-            ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=10)
+            ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
 
-        # Axes settings
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
         ax.set_ylim(0, 100)
         ax.set_title(title, size=14, weight="bold", pad=20)
 
-        # No legend
         buf = io.BytesIO()
-        fig.savefig(buf, format="PNG", bbox_inches='tight')
+        fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
         buf.seek(0)
         plt.close(fig)
         return buf
 
     # --------------------------
-    # Display radar charts side by side
+    # Display radar charts on-screen
     # --------------------------
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
+    def radar_chart_screen(scores, title):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]
+        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        angles += angles[:1]
 
+        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+
+        for i, label in enumerate(labels):
+            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
+
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_ylim(0, 100)
+        ax.set_title(title, size=14, weight="bold", pad=20)
+
+        st.pyplot(fig)
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG")
+        buf.seek(0)
+        plt.close(fig)
+        return buf
+
+    # On-screen charts
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        st.image(chart_buf_creative, use_container_width=True)
+        radar_chart_screen(creative_perc, "Creative Traits")
     with col2:
         st.subheader("Big Five")
-        st.image(chart_buf_big5, use_container_width=True)
+        radar_chart_screen(bigfive_perc, "Big Five")
 
     # --------------------------
-    # Trait Scores in Two Columns
+    # Trait Scores
     # --------------------------
     st.subheader("Your Trait Scores")
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### Creative Traits")
         for t, p in creative_perc.items():
@@ -839,6 +862,8 @@ if st.session_state.page == "results":
     col1, col2 = st.columns(2)
 
     with col1:
+        chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits")
+        chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five")
         results_pdf = create_results_pdf(
             creative_perc,
             bigfive_perc,
@@ -862,5 +887,4 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
-
 
