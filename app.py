@@ -332,17 +332,7 @@ def create_academic_pdf():
 # --------------------------
 # PDF-safe radar chart function
 # --------------------------
-from reportlab.lib.units import inch
-from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
-from reportlab.lib import colors
-import io
-import matplotlib.pyplot as plt
-import numpy as np
-
-def radar_chart_pdf(scores, title, size=4):
-    """
-    Creates a square radar chart PNG buffer for PDF.
-    """
+def radar_chart_pdf(scores, title):
     labels = list(scores.keys())
     values = list(scores.values())
     values += values[:1]  # close the loop
@@ -350,13 +340,14 @@ def radar_chart_pdf(scores, title, size=4):
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
+    # Set figure size larger so chart is not squashed
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
 
     # Draw polygon outline (faint grey)
     ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
     ax.fill(angles, values, color='grey', alpha=0.05)
 
-    # Plot each trait line in its colour
+    # Plot each trait line in its color
     for i, label in enumerate(labels):
         ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
         ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=6)
@@ -366,7 +357,7 @@ def radar_chart_pdf(scores, title, size=4):
     ax.set_xticklabels(labels)
     ax.set_yticklabels([])
     ax.set_ylim(0, 100)
-    ax.set_title(title, size=12, weight="bold", pad=15)
+    ax.set_title(title, size=14, weight="bold", pad=20)
 
     buf = io.BytesIO()
     fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
@@ -374,19 +365,19 @@ def radar_chart_pdf(scores, title, size=4):
     plt.close(fig)
     return buf
 
-
 # --------------------------
 # Create Results PDF
 # --------------------------
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
+    # Slightly smaller margins to give more space for charts
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=40,
-        rightMargin=40,
-        topMargin=40,
-        bottomMargin=40
+        leftMargin=30,
+        rightMargin=30,
+        topMargin=30,
+        bottomMargin=30
     )
 
     styles = {
@@ -413,33 +404,28 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             alignment=TA_LEFT,
             spaceAfter=6,
             fontName="Helvetica"
-        ),
+        )
     }
 
     story = []
 
-    # --------------------------
     # Title
-    # --------------------------
     story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
     story.append(Spacer(1, 12))
 
-    # --------------------------
-    # PDF-safe radar charts (4x4 inches)
-    # --------------------------
-    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4)
-    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4)
+    # Radar charts
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits")
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five")
 
-    img_creative = Image(chart_buf_creative, width=4*inch, height=4*inch)
-    img_big5 = Image(chart_buf_big5, width=4*inch, height=4*inch)
+    # Increase chart size to 5.5 inches and allow wider table columns
+    img_creative = Image(chart_buf_creative, width=5.5*inch, height=5.5*inch)
+    img_big5 = Image(chart_buf_big5, width=5.5*inch, height=5.5*inch)
 
-    chart_table = Table([[img_creative, img_big5]], colWidths=[4*inch, 4*inch])
+    chart_table = Table([[img_creative, img_big5]], colWidths=[5.5*inch, 5.5*inch])
     story.append(chart_table)
     story.append(Spacer(1, 16))
 
-    # --------------------------
-    # Archetypes with coloured blocks
-    # --------------------------
+    # Archetypes (keep coloured blocks as before)
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
@@ -467,7 +453,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         story.append(Paragraph(f"<b>Growth Tip:</b> {tip}", styles["body"]))
         story.append(Spacer(1, 12))
 
-    # Primary, Sub, Growth
     desc = trait_descriptions[top_trait]["high"] if top_score >= 67 else \
            trait_descriptions[top_trait]["medium"] if top_score >= 34 else \
            trait_descriptions[top_trait]["low"]
@@ -480,9 +465,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
 
     archetype_card_pdf(lowest_trait, f"Growth Area: {lowest_trait}", trait_descriptions[lowest_trait]["low"], archetypes[lowest_trait][2])
 
-    # --------------------------
-    # Traits in two columns
-    # --------------------------
+    # Traits in two columns with slightly wider columns to fit page
     def trait_table_pdf(traits_dict):
         traits = list(traits_dict.items())
         mid = (len(traits) + 1) // 2
@@ -510,7 +493,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             table_data.append([Paragraph(left_text, styles["body"]),
                                Paragraph(right_text, styles["body"])])
 
-        table = Table(table_data, colWidths=[4*inch, 4*inch])
+        table = Table(table_data, colWidths=[3.75*inch, 3.75*inch])
         table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 4),
@@ -527,9 +510,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Paragraph("Big Five Traits", styles["subtitle"]))
     trait_table_pdf(bigfive_perc)
 
-    # --------------------------
-    # Build PDF
-    # --------------------------
     doc.build(story)
     buffer.seek(0)
     return buffer
