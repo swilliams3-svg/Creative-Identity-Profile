@@ -434,7 +434,8 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     img_creative = Image(chart_buf_creative, width=3*inch, height=3*inch)
     img_big5 = Image(chart_buf_big5, width=3*inch, height=3*inch)
 
-    chart_table = Table([[img_creative, img_big5]], colWidths=[3*inch, 3*inch])
+    # Increase table column widths slightly to prevent squashing
+    chart_table = Table([[img_creative, img_big5]], colWidths=[3.5*inch, 3.5*inch])
     story.append(chart_table)
     story.append(Spacer(1, 16))
 
@@ -515,7 +516,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             table_data.append([Paragraph(left_text, styles["body"]),
                                Paragraph(right_text, styles["body"])])
 
-        table = Table(table_data, colWidths=[3*inch, 3*inch])
+        table = Table(table_data, colWidths=[3.5*inch, 3.5*inch])
         table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 4),
