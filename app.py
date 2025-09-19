@@ -330,9 +330,19 @@ def create_academic_pdf():
     return buffer
 
 # --------------------------
-# PDF-safe radar chart function (3x3 inches)
+# PDF-safe radar chart function
 # --------------------------
-def radar_chart_pdf(scores, title, size=3):
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib import colors
+import io
+import matplotlib.pyplot as plt
+import numpy as np
+
+def radar_chart_pdf(scores, title, size=4):
+    """
+    Creates a square radar chart PNG buffer for PDF.
+    """
     labels = list(scores.keys())
     values = list(scores.values())
     values += values[:1]  # close the loop
@@ -342,11 +352,11 @@ def radar_chart_pdf(scores, title, size=3):
 
     fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
 
-    # Draw faint polygon outline
+    # Draw polygon outline (faint grey)
     ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
     ax.fill(angles, values, color='grey', alpha=0.05)
 
-    # Plot each trait line in its color
+    # Plot each trait line in its colour
     for i, label in enumerate(labels):
         ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
         ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=6)
@@ -365,14 +375,9 @@ def radar_chart_pdf(scores, title, size=3):
     return buf
 
 
-
 # --------------------------
-# Results PDF function
+# Create Results PDF
 # --------------------------
-from reportlab.lib.units import inch
-from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
-from reportlab.lib import colors
-
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -409,13 +414,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             spaceAfter=6,
             fontName="Helvetica"
         ),
-        "trait_name": ParagraphStyle(
-            "trait_name",
-            fontSize=12,
-            leading=14,
-            alignment=TA_LEFT,
-            fontName="Helvetica-Bold"
-        )
     }
 
     story = []
@@ -427,26 +425,20 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Spacer(1, 12))
 
     # --------------------------
-    # PDF-safe radar charts with dynamic sizing
+    # PDF-safe radar charts (4x4 inches)
     # --------------------------
-    from math import ceil
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4)
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4)
 
-    # Decide chart size based on number of traits
-    width_creative = height_creative = 4 if len(creative_perc) > 5 else 3
-    width_big5 = height_big5 = 4 if len(bigfive_perc) > 5 else 3
+    img_creative = Image(chart_buf_creative, width=4*inch, height=4*inch)
+    img_big5 = Image(chart_buf_big5, width=4*inch, height=4*inch)
 
-    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=width_creative)
-    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=width_big5)
-
-    img_creative = Image(chart_buf_creative, width=width_creative*inch, height=height_creative*inch)
-    img_big5 = Image(chart_buf_big5, width=width_big5*inch, height=height_big5*inch)
-
-    chart_table = Table([[img_creative, img_big5]], colWidths=[width_creative*inch, width_big5*inch])
+    chart_table = Table([[img_creative, img_big5]], colWidths=[4*inch, 4*inch])
     story.append(chart_table)
     story.append(Spacer(1, 16))
 
     # --------------------------
-    # Archetypes with colour blocks
+    # Archetypes with coloured blocks
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -454,7 +446,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
 
     def archetype_card_pdf(trait, title, description, tip):
         color = palette.get(trait, "#7b2ff7")
-        # Title block
         table_data = [[Paragraph(title, ParagraphStyle(
             "card_title",
             fontSize=14,
@@ -472,32 +463,29 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         ])
         story.append(card)
         story.append(Spacer(1, 4))
-        # Description and growth tip
         story.append(Paragraph(description, styles["body"]))
         story.append(Paragraph(f"<b>Growth Tip:</b> {tip}", styles["body"]))
         story.append(Spacer(1, 12))
 
-    # Primary Archetype
+    # Primary, Sub, Growth
     desc = trait_descriptions[top_trait]["high"] if top_score >= 67 else \
            trait_descriptions[top_trait]["medium"] if top_score >= 34 else \
            trait_descriptions[top_trait]["low"]
     archetype_card_pdf(top_trait, f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})", desc, archetypes[top_trait][2])
 
-    # Sub-Archetype
     desc = trait_descriptions[sub_trait]["high"] if sub_score >= 67 else \
            trait_descriptions[sub_trait]["medium"] if sub_score >= 34 else \
            trait_descriptions[sub_trait]["low"]
     archetype_card_pdf(sub_trait, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})", desc, archetypes[sub_trait][2])
 
-    # Growth Area
     archetype_card_pdf(lowest_trait, f"Growth Area: {lowest_trait}", trait_descriptions[lowest_trait]["low"], archetypes[lowest_trait][2])
 
     # --------------------------
-    # Traits in Two Columns
+    # Traits in two columns
     # --------------------------
     def trait_table_pdf(traits_dict):
         traits = list(traits_dict.items())
-        mid = ceil(len(traits)/2)
+        mid = (len(traits) + 1) // 2
         left = traits[:mid]
         right = traits[mid:]
 
@@ -522,7 +510,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             table_data.append([Paragraph(left_text, styles["body"]),
                                Paragraph(right_text, styles["body"])])
 
-        table = Table(table_data, colWidths=[3*inch, 3*inch])
+        table = Table(table_data, colWidths=[4*inch, 4*inch])
         table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 4),
@@ -545,7 +533,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     doc.build(story)
     buffer.seek(0)
     return buffer
-
 
 
 # --------------------------
