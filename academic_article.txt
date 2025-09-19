@@ -10,15 +10,10 @@ The Creative Identity & Personality Profile was designed by drawing upon establi
 Research shows that creativity is not a single skill, but a combination of dispositions, habits, and mindsets (Runco & Jaeger, 2012; Amabile, 1996; Sternberg, 2006). Six traits from many listed werer narrowed down and then selected for this quiz, each reflecting well-documented components of creative behaviour:
 
 •	Originality – the ability to generate novel and unconventional ideas (Guilford, 1950). 
-
 •	Curiosity – openness to questioning and exploring new concepts (Kashdan et al., 2004). 
-
 •	Risk-Taking – willingness to tolerate uncertainty and possible failure (Beghetto, 2009). 
-
 •	Imagination – capacity for mental imagery and envisioning possibilities (Vygotsky, 2004). 
-
 •	Discipline – persistence, effort, and self-regulation in creative work (Torrance, 1974). 
-
 •	Collaboration – social interaction and exchange as enablers of creativity (Sawyer, 2012).
 
 The quiz items for these traits are inspired by creativity assessments such as the Torrance Tests of Creative Thinking (TTCT), Amabile’s Consensual Assessment Technique, and contemporary studies on creative personality characteristics.
@@ -69,41 +64,23 @@ This quiz sits at the intersection of creativity research and personality psycho
 ## References
 
 Amabile, T. M. (1996). Creativity in Context. Boulder, CO: Westview Press.
-
 Beghetto, R. A. (2009). Correlates of intellectual risk taking in elementary school science. Journal of Research in Science Teaching, 46(2), 210–223. 
-
 Boden, M. A. (1990). The Creative Mind: Myths and Mechanisms. London: Routledge.
-
 Boden, M. A. (2004). The Creative Mind: Myths and Mechanisms (2nd ed.). London: Routledge.
-
 Costa, P. T., & McCrae, R. R. (1992). Revised NEO Personality Inventory (NEO PI-R) and NEO Five-Factor Inventory (NEO-FFI). Odessa, FL: Psychological Assessment Resources.
-
 Dacey, J. S., & Lennon, K. H. (1998). Understanding Creativity: The Interplay of Biological, Psychological, and Social Factors. San Francisco: Jossey-Bass.
-
 Fauconnier, G., & Turner, M. (2002). The Way We Think: Conceptual Blending and the Mind’s Hidden Complexities. New York: Basic Books.
-
 Feist, G. J. (1998). A meta-analysis of personality in scientific and artistic creativity. Personality and Social Psychology Review, 2(4), 290–309. 
-
 Finke, R. A., Ward, T. B., & Smith, S. M. (1992). Creative Cognition: Theory, Research, and Applications. Cambridge, MA: MIT Press.
-
 Guilford, J. P. (1950). Creativity. American Psychologist, 5(9), 444–454.
-
 Kashdan, T. B., Rose, P., & Fincham, F. D. (2004). Curiosity and exploration: Facilitating positive subjective experiences and personal growth opportunities. Journal of Personality Assessment, 82(3), 291–305. 
-
 McAdams, D. P. (1993). The Stories We Live By: Personal Myths and the Making of the Self. Guilford Press. 
-
 Puryear, J. S., Kettler, T., & Rinn, A. N. (2017). Relationships of personality to differential conceptions of creativity: A systematic review. Psychology of Aesthetics, Creativity, and the Arts, 11(1), 59–68. 
-
 Runco, M. A. (2007). Creativity: Theories and Themes: Research, Development, and Practice. San Diego: Academic Press.
-
 Sawyer, R. K. (2012). Explaining Creativity: The Science of Human Innovation (2nd ed.). Oxford University Press. 
-
 Silvia, P. J., Kaufman, J. C., & Pretz, J. E. (2012). The Cambridge Handbook of Creativity Assessment. In J. C. Kaufman & R. J. Sternberg (Eds.), The Cambridge Handbook of Creativity (pp. 635–661). Cambridge University Press. 
-
 Sternberg, R. J. (1988). The Triarchic Mind: A New Theory of Human Intelligence. New York: Viking.
-
 Sternberg, R. J. (2005). Creativity or Creativities? International Journal of Human-Computer Studies, 63(4–5), 370–382.
-
 Torrance, E. P. (1966). Torrance Tests of Creative Thinking. Lexington, MA: Personnel Press.
 
 
