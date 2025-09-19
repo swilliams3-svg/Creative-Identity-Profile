@@ -694,7 +694,7 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Chart function
+    # Radar Chart function (for PDF)
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
@@ -704,16 +704,11 @@ if st.session_state.page == "results":
         angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
         angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
-        ax.set_theta_offset(np.pi / 2)
-        ax.set_theta_direction(-1)
+        fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))  # increased size for PDF
 
-        # Plot each trait
+        # Plot all traits as a single polygon
         for i, label in enumerate(labels):
-            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2, label=label)
-
-        # Complete polygon
-        ax.fill(angles, values, color="grey", alpha=0.1)
+            ax.plot(angles, values, color=palette[label], linewidth=2, label=label)
 
         # Axes settings
         ax.set_xticks(angles[:-1])
@@ -743,13 +738,13 @@ if st.session_state.page == "results":
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        st.image(chart_buf_creative, use_column_width=True)
+        st.image(chart_buf_creative, use_container_width=True)  # updated parameter
     with col2:
         st.subheader("Big Five Traits")
-        st.image(chart_buf_big5, use_column_width=True)
+        st.image(chart_buf_big5, use_container_width=True)  # updated parameter
 
     # --------------------------
-    # Display trait scores
+    # Trait Scores in Two Columns
     # --------------------------
     st.subheader("Your Trait Scores")
     col1, col2 = st.columns(2)
@@ -763,6 +758,7 @@ if st.session_state.page == "results":
                 st.markdown(trait_descriptions[t]["medium"])
             else:
                 st.markdown(trait_descriptions[t]["low"])
+
     with col2:
         st.markdown("### Big Five Traits")
         for t, p in bigfive_perc.items():
@@ -775,7 +771,7 @@ if st.session_state.page == "results":
                 st.markdown(trait_descriptions[t]["low"])
 
     # --------------------------
-    # Display archetypes
+    # Display Archetypes
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -869,6 +865,7 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
 
 
