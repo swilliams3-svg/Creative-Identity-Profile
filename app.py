@@ -678,9 +678,6 @@ elif st.session_state.page == "quiz":
 # --------------------------
 # Block 5: Results Page
 # --------------------------
-# --------------------------
-# Block 5: Results Page
-# --------------------------
 if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
@@ -694,7 +691,7 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Chart function
+    # Radar Chart function (no legend)
     # --------------------------
     def radar_chart(scores, title):
         labels = list(scores.keys())
@@ -721,11 +718,7 @@ if st.session_state.page == "results":
         ax.set_ylim(0, 100)
         ax.set_title(title, size=14, weight="bold", pad=20)
 
-        # Legend outside chart
-        for t, c in palette.items():
-            ax.plot([], [], color=c, label=t, linewidth=2)
-        ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
-
+        # No legend
         buf = io.BytesIO()
         fig.savefig(buf, format="PNG", bbox_inches='tight')
         buf.seek(0)
@@ -869,4 +862,5 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
