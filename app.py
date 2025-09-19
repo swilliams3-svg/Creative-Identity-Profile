@@ -368,12 +368,8 @@ def radar_chart_pdf(scores, title):
 
 
 # --------------------------
-# Results PDF function
+# Create Results PDF (auto chart sizing)
 # --------------------------
-from reportlab.lib.units import inch
-from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
-from reportlab.lib import colors
-
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -428,21 +424,25 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Spacer(1, 12))
 
     # --------------------------
-    # PDF-safe radar charts (3x3 inches)
+    # Radar charts with automatic sizing
     # --------------------------
-    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=3)
-    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=3)
+    # Creative chart slightly bigger for 6 traits
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits")
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five")
 
-    img_creative = Image(chart_buf_creative, width=3*inch, height=3*inch)
-    img_big5 = Image(chart_buf_big5, width=3*inch, height=3*inch)
+    # Determine width/height based on trait count
+    width_creative = height_creative = 4 if len(creative_perc) > 5 else 3
+    width_big5 = height_big5 = 4 if len(bigfive_perc) > 5 else 3
 
-    # Increase table column widths slightly to prevent squashing
-    chart_table = Table([[img_creative, img_big5]], colWidths=[3.5*inch, 3.5*inch])
+    img_creative = Image(chart_buf_creative, width=width_creative*inch, height=height_creative*inch)
+    img_big5 = Image(chart_buf_big5, width=width_big5*inch, height=height_big5*inch)
+
+    chart_table = Table([[img_creative, img_big5]], colWidths=[width_creative*inch, width_big5*inch])
     story.append(chart_table)
     story.append(Spacer(1, 16))
 
     # --------------------------
-    # Archetypes with colour blocks
+    # Archetypes with color blocks
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -450,7 +450,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
 
     def archetype_card_pdf(trait, title, description, tip):
         color = palette.get(trait, "#7b2ff7")
-        # Title block
         table_data = [[Paragraph(title, ParagraphStyle(
             "card_title",
             fontSize=14,
@@ -468,7 +467,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         ])
         story.append(card)
         story.append(Spacer(1, 4))
-        # Description and growth tip
         story.append(Paragraph(description, styles["body"]))
         story.append(Paragraph(f"<b>Growth Tip:</b> {tip}", styles["body"]))
         story.append(Spacer(1, 12))
@@ -518,7 +516,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             table_data.append([Paragraph(left_text, styles["body"]),
                                Paragraph(right_text, styles["body"])])
 
-        table = Table(table_data, colWidths=[3.5*inch, 3.5*inch])
+        table = Table(table_data, colWidths=[3*inch, 3*inch])
         table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 4),
