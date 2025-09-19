@@ -585,51 +585,34 @@ if st.session_state.page == "intro":
     Take your time, reflect honestly, and enjoy discovering your creative identity.
     """)
 
-    # ✅ Inject CSS to style the Start Quiz button
+    # ✅ Centered gradient "Start Quiz" button
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("Start Quiz", key="intro_start_quiz"):
+            st.session_state.current_question = 0
+            st.session_state.page = "quiz"
+            st.rerun()
+
+    # ✅ Gradient styling for the button
     st.markdown(
         """
         <style>
         div.stButton > button:first-child {
-            background: linear-gradient(135deg, #7b2ff7, #f107a3);
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
             color: white;
             font-size: 18px;
-            font-weight: bold;
-            border-radius: 12px;
             padding: 0.6em 1.2em;
+            border-radius: 8px;
             border: none;
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
-            transition: 0.3s;
+            cursor: pointer;
         }
         div.stButton > button:first-child:hover {
-            background: linear-gradient(135deg, #f107a3, #7b2ff7);
-            transform: scale(1.05);
-            box-shadow: 0px 6px 12px rgba(0,0,0,0.3);
+            background: linear-gradient(to right, #feb47b, #ff7e5f);
         }
         </style>
         """,
         unsafe_allow_html=True
     )
-
-    # ✅ Centered Start Quiz button
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        if st.button("Start Quiz", key="start_quiz"):
-            st.session_state.page = "quiz"
-
-
-    # --------------------------
-    # Centered Start Quiz Button
-    # --------------------------
-    st.markdown("<br>", unsafe_allow_html=True)  # optional spacing
-
-    # 3 columns to center the button
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("Start Quiz"):
-            st.session_state.current_question = 0
-            st.session_state.page = "quiz"
-            st.rerun()
-
 
 
 # --------------------------
