@@ -694,72 +694,65 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar Chart function (replacement)
+    # Radar Chart function
     # --------------------------
-def radar_chart(scores, title, size=6, dpi=150):
-    labels = list(scores.keys())
-    values = list(scores.values())
+    def radar_chart(scores, title):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]  # close the loop
+        num_vars = len(labels)
+        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+        angles += angles[:1]
 
-    # close the loop for plotting
-    values_loop = values + values[:1]
-    num_vars = len(labels)
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    angles += angles[:1]
+        fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+        ax.set_theta_offset(np.pi / 2)
+        ax.set_theta_direction(-1)
 
-    # create square figure (important)
-    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
+        # Plot each trait
+        for i, label in enumerate(labels):
+            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2, label=label)
 
-    # Plot the filled polygon lightly to give context
-    ax.plot(angles, values_loop, color="grey", linewidth=1, alpha=0.25)
-    ax.fill(angles, values_loop, alpha=0.08, color="grey")
+        # Complete polygon
+        ax.fill(angles, values, color="grey", alpha=0.1)
 
-    # Plot each segment using the palette colours so the line colours match legend
-    for i, label in enumerate(labels):
-        ax.plot([angles[i], angles[i+1]], [values_loop[i], values_loop[i+1]],
-                color=palette.get(label, "#777777"), linewidth=2)
+        # Axes settings
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_ylim(0, 100)
+        ax.set_title(title, size=14, weight="bold", pad=20)
 
-    # Axes/labels
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels([])     # hide radial labels for a cleaner look
-    ax.set_ylim(0, 100)
-    ax.set_title(title, size=14, weight="bold", pad=12)
+        # Legend outside chart
+        ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
 
-    # Build a legend inside the figure area under the chart (not outside it)
-    for t, c in palette.items():
-        ax.plot([], [], color=c, linewidth=2, label=t)
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=3, fontsize=8)
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG", bbox_inches='tight')
+        buf.seek(0)
+        plt.close(fig)
+        return buf
 
-    # Leave room at bottom for the legend, then save the full square canvas
-    plt.tight_layout(rect=[0, 0.08, 1, 1])
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="PNG", dpi=dpi)   # do NOT use bbox_inches='tight' here
-    buf.seek(0)
-    plt.close(fig)
-    return buf
-
+    # --------------------------
+    # Generate radar charts
+    # --------------------------
+    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
 
     # --------------------------
     # Display radar charts side by side
     # --------------------------
-    chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
-
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        st.image(chart_buf_creative)
+        st.image(chart_buf_creative, use_column_width=True)
     with col2:
-        st.subheader("Big Five")
-        st.image(chart_buf_big5)
+        st.subheader("Big Five Traits")
+        st.image(chart_buf_big5, use_column_width=True)
 
     # --------------------------
-    # Trait Scores in Two Columns
+    # Display trait scores
     # --------------------------
     st.subheader("Your Trait Scores")
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### Creative Traits")
         for t, p in creative_perc.items():
@@ -770,7 +763,6 @@ def radar_chart(scores, title, size=6, dpi=150):
                 st.markdown(trait_descriptions[t]["medium"])
             else:
                 st.markdown(trait_descriptions[t]["low"])
-
     with col2:
         st.markdown("### Big Five Traits")
         for t, p in bigfive_perc.items():
@@ -783,7 +775,7 @@ def radar_chart(scores, title, size=6, dpi=150):
                 st.markdown(trait_descriptions[t]["low"])
 
     # --------------------------
-    # Archetypes
+    # Display archetypes
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
@@ -877,5 +869,6 @@ def radar_chart(scores, title, size=6, dpi=150):
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
+
 
 
