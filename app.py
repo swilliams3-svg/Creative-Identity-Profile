@@ -679,7 +679,7 @@ elif st.session_state.page == "quiz":
 # Block 5: Results Page
 # --------------------------
 # --------------------------
-# Results Page
+# Block 5: Results Page
 # --------------------------
 if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
@@ -706,12 +706,13 @@ if st.session_state.page == "results":
 
         fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
 
-        # Plot each trait with its color and light fill
+        # Polygon (shape) for all traits
+        ax.plot(angles, values, color='grey', linewidth=2, alpha=0.3)
+        ax.fill(angles, values, color='grey', alpha=0.1)
+
+        # Colored points for individual traits
         for i, label in enumerate(labels):
-            trait_values = [scores[label] for label in labels]
-            trait_values += trait_values[:1]
-            ax.plot(angles, trait_values, color=palette[label], linewidth=2, label=label)
-            ax.fill(angles, trait_values, color=palette[label], alpha=0.2)
+            ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=10)
 
         # Axes settings
         ax.set_xticks(angles[:-1])
@@ -721,6 +722,8 @@ if st.session_state.page == "results":
         ax.set_title(title, size=14, weight="bold", pad=20)
 
         # Legend outside chart
+        for t, c in palette.items():
+            ax.plot([], [], color=c, label=t, linewidth=2)
         ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
 
         buf = io.BytesIO()
@@ -733,14 +736,14 @@ if st.session_state.page == "results":
     # Display radar charts side by side
     # --------------------------
     chart_buf_creative = radar_chart(creative_perc, "Creative Traits")
-    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five Traits")
+    chart_buf_big5 = radar_chart(bigfive_perc, "Big Five")
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
         st.image(chart_buf_creative, use_container_width=True)
     with col2:
-        st.subheader("Big Five Traits")
+        st.subheader("Big Five")
         st.image(chart_buf_big5, use_container_width=True)
 
     # --------------------------
@@ -866,7 +869,4 @@ if st.session_state.page == "results":
             file_name="academic_research.pdf",
             mime="application/pdf"
         )
-
-
-
 
