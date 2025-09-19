@@ -368,6 +368,10 @@ def radar_chart_pdf(scores, title, size=4):
 # --------------------------
 # Create Results PDF
 # --------------------------
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib import colors
+
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -382,10 +386,10 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     styles = {
         "title": ParagraphStyle(
             "title",
-            fontSize=18,
-            leading=22,
+            fontSize=20,
+            leading=24,
             alignment=TA_CENTER,
-            spaceAfter=12,
+            spaceAfter=16,
             fontName="Helvetica-Bold"
         ),
         "subtitle": ParagraphStyle(
@@ -404,109 +408,135 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             spaceAfter=6,
             fontName="Helvetica"
         ),
+        "trait_name": ParagraphStyle(
+            "trait_name",
+            fontSize=12,
+            leading=14,
+            alignment=TA_LEFT,
+            fontName="Helvetica-Bold"
+        )
     }
 
     story = []
 
+    # --------------------------
     # Title
+    # --------------------------
     story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
     story.append(Spacer(1, 12))
 
     # --------------------------
     # PDF-safe radar charts
     # --------------------------
-    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4)
-    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4)
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4.5)
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4.5)
 
-    img_creative = Image(chart_buf_creative, width=250, height=250)
-    img_big5 = Image(chart_buf_big5, width=250, height=250)
-    chart_table = Table([[img_creative, img_big5]], colWidths=[270, 270])
+    size_inch = 3
+    img_creative = Image(chart_buf_creative)
+    img_creative.drawWidth = size_inch * inch
+    img_creative.drawHeight = size_inch * inch
+
+    img_big5 = Image(chart_buf_big5)
+    img_big5.drawWidth = size_inch * inch
+    img_big5.drawHeight = size_inch * inch
+
+    chart_table = Table([[img_creative, img_big5]], colWidths=[size_inch*inch, size_inch*inch])
     story.append(chart_table)
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 16))
 
     # --------------------------
-    # Archetypes
+    # Archetypes with colour blocks
     # --------------------------
     sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
     top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
     top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
 
-    def archetype_card(trait, title, description, tip):
+    def archetype_card_pdf(trait, title, description, tip):
         color = palette.get(trait, "#7b2ff7")
-        return f"""
-        <div style="
-            background: {color};
-            padding: 0.8em;
-            border-radius: 12px;
-            margin-bottom: 1em;
-            text-align: left;
-            color: white;
-            font-size: 16px;
-            font-weight: normal;
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
-        ">
-            <h3 style="margin-top:0; font-size:18px; font-weight:bold;">{title}</h3>
-            <p style="margin:0.3em 0;">{description}</p>
-            <p style="margin:0.3em 0;"><b>Growth Tip:</b> {tip}</p>
-        </div>
-        """
+        # Title block
+        table_data = [[Paragraph(title, ParagraphStyle(
+            "card_title",
+            fontSize=14,
+            leading=16,
+            alignment=TA_LEFT,
+            textColor=colors.white,
+            fontName="Helvetica-Bold"
+        ))]]
+        card = Table(table_data, style=[
+            ('BACKGROUND', (0,0), (-1,-1), color),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ])
+        story.append(card)
+        story.append(Spacer(1, 4))
+        # Description and growth tip
+        story.append(Paragraph(description, styles["body"]))
+        story.append(Paragraph(f"<b>Growth Tip:</b> {tip}", styles["body"]))
+        story.append(Spacer(1, 12))
 
     # Primary Archetype
-    if top_score >= 67:
-        desc = trait_descriptions[top_trait]["high"]
-    elif top_score >= 34:
-        desc = trait_descriptions[top_trait]["medium"]
-    else:
-        desc = trait_descriptions[top_trait]["low"]
-
-    story.append(Paragraph(f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})", styles["subtitle"]))
-    story.append(Paragraph(desc, styles["body"]))
-    story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[top_trait][2]}", styles["body"]))
-    story.append(Spacer(1, 8))
+    desc = trait_descriptions[top_trait]["high"] if top_score >= 67 else \
+           trait_descriptions[top_trait]["medium"] if top_score >= 34 else \
+           trait_descriptions[top_trait]["low"]
+    archetype_card_pdf(top_trait, f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})", desc, archetypes[top_trait][2])
 
     # Sub-Archetype
-    if sub_score >= 67:
-        desc = trait_descriptions[sub_trait]["high"]
-    elif sub_score >= 34:
-        desc = trait_descriptions[sub_trait]["medium"]
-    else:
-        desc = trait_descriptions[sub_trait]["low"]
-
-    story.append(Paragraph(f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})", styles["subtitle"]))
-    story.append(Paragraph(desc, styles["body"]))
-    story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[sub_trait][2]}", styles["body"]))
-    story.append(Spacer(1, 8))
+    desc = trait_descriptions[sub_trait]["high"] if sub_score >= 67 else \
+           trait_descriptions[sub_trait]["medium"] if sub_score >= 34 else \
+           trait_descriptions[sub_trait]["low"]
+    archetype_card_pdf(sub_trait, f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})", desc, archetypes[sub_trait][2])
 
     # Growth Area
-    story.append(Paragraph(f"Growth Area: {lowest_trait}", styles["subtitle"]))
-    story.append(Paragraph(trait_descriptions[lowest_trait]["low"], styles["body"]))
-    story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[lowest_trait][2]}", styles["body"]))
-    story.append(Spacer(1, 12))
+    archetype_card_pdf(lowest_trait, f"Growth Area: {lowest_trait}", trait_descriptions[lowest_trait]["low"], archetypes[lowest_trait][2])
 
     # --------------------------
-    # Trait Scores
+    # Traits in Two Columns
     # --------------------------
+    def trait_table_pdf(traits_dict):
+        traits = list(traits_dict.items())
+        mid = (len(traits) + 1) // 2
+        left = traits[:mid]
+        right = traits[mid:]
+
+        table_data = []
+        for i in range(max(len(left), len(right))):
+            left_text = ""
+            if i < len(left):
+                t, p = left[i]
+                desc = trait_descriptions[t]["high"] if p >= 67 else \
+                       trait_descriptions[t]["medium"] if p >= 34 else \
+                       trait_descriptions[t]["low"]
+                left_text = f"<b>{t}: {p}%</b><br/>{desc}"
+
+            right_text = ""
+            if i < len(right):
+                t, p = right[i]
+                desc = trait_descriptions[t]["high"] if p >= 67 else \
+                       trait_descriptions[t]["medium"] if p >= 34 else \
+                       trait_descriptions[t]["low"]
+                right_text = f"<b>{t}: {p}%</b><br/>{desc}"
+
+            table_data.append([Paragraph(left_text, styles["body"]),
+                               Paragraph(right_text, styles["body"])])
+
+        table = Table(table_data, colWidths=[3*inch, 3*inch])
+        table.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('LEFTPADDING', (0,0), (-1,-1), 4),
+            ('RIGHTPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING', (0,0), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6)
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 12))
+
     story.append(Paragraph("Creative Traits", styles["subtitle"]))
-    for t, p in creative_perc.items():
-        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
-        if p >= 67:
-            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
-        elif p >= 34:
-            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
-        else:
-            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
-        story.append(Spacer(1, 2))
+    trait_table_pdf(creative_perc)
 
     story.append(Paragraph("Big Five Traits", styles["subtitle"]))
-    for t, p in bigfive_perc.items():
-        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
-        if p >= 67:
-            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
-        elif p >= 34:
-            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
-        else:
-            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
-        story.append(Spacer(1, 2))
+    trait_table_pdf(bigfive_perc)
 
     # --------------------------
     # Build PDF
@@ -514,6 +544,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     doc.build(story)
     buffer.seek(0)
     return buffer
+
 
 
 # --------------------------
