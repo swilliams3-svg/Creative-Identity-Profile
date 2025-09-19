@@ -332,6 +332,42 @@ def create_academic_pdf():
 # --------------------------
 # Results PDF function
 # --------------------------
+# --------------------------
+# PDF-safe radar chart function
+# --------------------------
+def radar_chart_pdf(scores, title, size=4):
+    labels = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]  # close the loop
+    num_vars = len(labels)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
+
+    # Plot polygon outline
+    ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
+    ax.fill(angles, values, color='grey', alpha=0.05)
+
+    # Plot each trait with colored points
+    for i, label in enumerate(labels):
+        ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels([])
+    ax.set_ylim(0, 100)
+    ax.set_title(title, size=12, weight="bold", pad=20)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+# --------------------------
+# Create Results PDF
+# --------------------------
 def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -377,40 +413,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Spacer(1, 12))
 
     # --------------------------
-    # PDF-safe radar chart function
-    # --------------------------
-    def radar_chart_pdf(scores, title, size=4):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]
-        num_vars = len(labels)
-        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-        angles += angles[:1]
-
-        fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
-
-        # Plot outline
-        ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
-        ax.fill(angles, values, color='grey', alpha=0.05)
-
-        # Plot colored points for each trait
-        for i, label in enumerate(labels):
-            ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
-
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_ylim(0, 100)
-        ax.set_title(title, size=12, weight="bold", pad=20)
-
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
-        buf.seek(0)
-        plt.close(fig)
-        return buf
-
-    # --------------------------
-    # Generate PDF charts
+    # PDF-safe radar charts
     # --------------------------
     chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4)
     chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4)
@@ -420,35 +423,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     chart_table = Table([[img_creative, img_big5]], colWidths=[270, 270])
     story.append(chart_table)
     story.append(Spacer(1, 12))
-
-    # --------------------------
-    # Trait Scores
-    # --------------------------
-    story.append(Paragraph("Your Trait Scores", styles["subtitle"]))
-
-    # Creative traits
-    story.append(Paragraph("Creative Traits", styles["subtitle"]))
-    for t, p in creative_perc.items():
-        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
-        if p >= 67:
-            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
-        elif p >= 34:
-            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
-        else:
-            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
-        story.append(Spacer(1, 4))
-
-    # Big Five traits
-    story.append(Paragraph("Big Five Traits", styles["subtitle"]))
-    for t, p in bigfive_perc.items():
-        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
-        if p >= 67:
-            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
-        elif p >= 34:
-            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
-        else:
-            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
-        story.append(Spacer(1, 4))
 
     # --------------------------
     # Archetypes
@@ -485,12 +459,10 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     else:
         desc = trait_descriptions[top_trait]["low"]
 
-    story.append(Paragraph(archetype_card(
-        top_trait,
-        f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
-        desc,
-        archetypes[top_trait][2]
-    ), styles["body"], bulletText=None))
+    story.append(Paragraph(f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})", styles["subtitle"]))
+    story.append(Paragraph(desc, styles["body"]))
+    story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[top_trait][2]}", styles["body"]))
+    story.append(Spacer(1, 8))
 
     # Sub-Archetype
     if sub_score >= 67:
@@ -500,20 +472,41 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     else:
         desc = trait_descriptions[sub_trait]["low"]
 
-    story.append(Paragraph(archetype_card(
-        sub_trait,
-        f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
-        desc,
-        archetypes[sub_trait][2]
-    ), styles["body"], bulletText=None))
+    story.append(Paragraph(f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})", styles["subtitle"]))
+    story.append(Paragraph(desc, styles["body"]))
+    story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[sub_trait][2]}", styles["body"]))
+    story.append(Spacer(1, 8))
 
     # Growth Area
-    story.append(Paragraph(archetype_card(
-        lowest_trait,
-        f"Growth Area: {lowest_trait}",
-        trait_descriptions[lowest_trait]["low"],
-        archetypes[lowest_trait][2]
-    ), styles["body"], bulletText=None))
+    story.append(Paragraph(f"Growth Area: {lowest_trait}", styles["subtitle"]))
+    story.append(Paragraph(trait_descriptions[lowest_trait]["low"], styles["body"]))
+    story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[lowest_trait][2]}", styles["body"]))
+    story.append(Spacer(1, 12))
+
+    # --------------------------
+    # Trait Scores
+    # --------------------------
+    story.append(Paragraph("Creative Traits", styles["subtitle"]))
+    for t, p in creative_perc.items():
+        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
+        if p >= 67:
+            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
+        elif p >= 34:
+            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
+        else:
+            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
+        story.append(Spacer(1, 2))
+
+    story.append(Paragraph("Big Five Traits", styles["subtitle"]))
+    for t, p in bigfive_perc.items():
+        story.append(Paragraph(f"{t}: {p}%", styles["body"]))
+        if p >= 67:
+            story.append(Paragraph(trait_descriptions[t]["high"], styles["body"]))
+        elif p >= 34:
+            story.append(Paragraph(trait_descriptions[t]["medium"], styles["body"]))
+        else:
+            story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
+        story.append(Spacer(1, 2))
 
     # --------------------------
     # Build PDF
@@ -521,7 +514,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     doc.build(story)
     buffer.seek(0)
     return buffer
-
 
 
 # --------------------------
@@ -734,6 +726,7 @@ elif st.session_state.page == "quiz":
 # --------------------------
 # Block 5: Results Page
 # --------------------------
+
 if st.session_state.page == "results":
     st.title("Your Creative Identity Profile")
 
@@ -747,53 +740,23 @@ if st.session_state.page == "results":
     bigfive_perc = {t: round((s - 1) / 4 * 100) for t, s in bigfive_scores.items()}
 
     # --------------------------
-    # Radar chart for PDF
+    # Display radar charts on page (Streamlit)
     # --------------------------
-    def radar_chart_pdf(scores, title, size=6):
-        labels = list(scores.keys())
-        values = list(scores.values())
-        values += values[:1]  # close loop
-        num_vars = len(labels)
-        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-        angles += angles[:1]
-
-        fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
-
-        # Plot outline polygon
-        ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
-        ax.fill(angles, values, color='grey', alpha=0.05)
-
-        # Plot colored points for each trait
-        for i, label in enumerate(labels):
-            ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
-
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels)
-        ax.set_yticklabels([])
-        ax.set_ylim(0, 100)
-        ax.set_title(title, size=14, weight="bold", pad=20)
-
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
-        buf.seek(0)
-        plt.close(fig)
-        return buf
-
-    # --------------------------
-    # Display radar charts on-screen
-    # --------------------------
-    def radar_chart_screen(scores, title):
+    def radar_chart(scores, title):
         labels = list(scores.keys())
         values = list(scores.values())
         values += values[:1]
         angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
         angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+        fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
 
+        # Plot each trait line in its colour
         for i, label in enumerate(labels):
-            ax.plot([angles[i], angles[i+1]], [values[i], values[i+1]], color=palette[label], linewidth=2)
+            val = values[i]
+            ax.plot([angles[i], angles[i+1]], [val, values[i+1]], color=palette[label], linewidth=2)
 
+        # Axes settings
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(labels)
         ax.set_yticklabels([])
@@ -802,26 +765,20 @@ if st.session_state.page == "results":
 
         st.pyplot(fig)
 
-        buf = io.BytesIO()
-        fig.savefig(buf, format="PNG")
-        buf.seek(0)
-        plt.close(fig)
-        return buf
-
-    # On-screen charts
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Creative Traits")
-        radar_chart_screen(creative_perc, "Creative Traits")
+        radar_chart(creative_perc, "Creative Traits")
     with col2:
         st.subheader("Big Five")
-        radar_chart_screen(bigfive_perc, "Big Five")
+        radar_chart(bigfive_perc, "Big Five")
 
     # --------------------------
-    # Trait Scores
+    # Trait Scores in Two Columns
     # --------------------------
     st.subheader("Your Trait Scores")
     col1, col2 = st.columns(2)
+
     with col1:
         st.markdown("### Creative Traits")
         for t, p in creative_perc.items():
@@ -916,15 +873,11 @@ if st.session_state.page == "results":
     col1, col2 = st.columns(2)
 
     with col1:
-        chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits")
-        chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five")
         results_pdf = create_results_pdf(
             creative_perc,
             bigfive_perc,
             trait_descriptions,
-            archetypes,
-            chart_buf_creative,
-            chart_buf_big5
+            archetypes
         )
         st.download_button(
             "Download Your Results PDF",
