@@ -332,7 +332,7 @@ def create_academic_pdf():
 # --------------------------
 # Results PDF function
 # --------------------------
-def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes, chart_buf_creative, chart_buf_big5):
+def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetypes):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -376,38 +376,58 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
     story.append(Paragraph("Your Creative Identity Profile", styles["title"]))
     story.append(Spacer(1, 12))
 
-    # Radar Charts side by side (preserve aspect ratio by giving only width)
-    img_creative = Image(chart_buf_creative, width=270)   # height will auto-scale
-    img_big5 = Image(chart_buf_big5, width=270)
-    chart_table = Table([[img_creative, img_big5]], colWidths=[280, 280])
-    chart_table.hAlign = 'CENTER'
+    # --------------------------
+    # PDF-safe radar chart function
+    # --------------------------
+    def radar_chart_pdf(scores, title, size=4):
+        labels = list(scores.keys())
+        values = list(scores.values())
+        values += values[:1]
+        num_vars = len(labels)
+        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+        angles += angles[:1]
+
+        fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
+
+        # Plot outline
+        ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
+        ax.fill(angles, values, color='grey', alpha=0.05)
+
+        # Plot colored points for each trait
+        for i, label in enumerate(labels):
+            ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
+
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels([])
+        ax.set_ylim(0, 100)
+        ax.set_title(title, size=12, weight="bold", pad=20)
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
+        buf.seek(0)
+        plt.close(fig)
+        return buf
+
+    # --------------------------
+    # Generate PDF charts
+    # --------------------------
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4)
+    chart_buf_big5 = radar_chart_pdf(bigfive_perc, "Big Five", size=4)
+
+    img_creative = Image(chart_buf_creative, width=250, height=250)
+    img_big5 = Image(chart_buf_big5, width=250, height=250)
+    chart_table = Table([[img_creative, img_big5]], colWidths=[270, 270])
     story.append(chart_table)
-
-
-    # Archetypes
-    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
-    top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
-    top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
-
-    def add_archetype(trait, score, title_label):
-        if score >= 67:
-            desc = trait_descriptions[trait]["high"]
-        elif score >= 34:
-            desc = trait_descriptions[trait]["medium"]
-        else:
-            desc = trait_descriptions[trait]["low"]
-        story.append(Paragraph(f"{title_label}: {archetypes[trait][0]} ({archetypes[trait][1]})", styles["subtitle"]))
-        story.append(Paragraph(desc, styles["body"]))
-        story.append(Paragraph(f"<b>Growth Tip:</b> {archetypes[trait][2]}", styles["body"]))
-        story.append(Spacer(1, 8))
-
-    add_archetype(top_trait, top_score, "Primary Archetype")
-    add_archetype(sub_trait, sub_score, "Sub-Archetype")
-    add_archetype(lowest_trait, low_score, "Growth Area")
     story.append(Spacer(1, 12))
-    story.append(Paragraph("Trait Scores", styles["subtitle"]))
+
+    # --------------------------
+    # Trait Scores
+    # --------------------------
+    story.append(Paragraph("Your Trait Scores", styles["subtitle"]))
 
     # Creative traits
+    story.append(Paragraph("Creative Traits", styles["subtitle"]))
     for t, p in creative_perc.items():
         story.append(Paragraph(f"{t}: {p}%", styles["body"]))
         if p >= 67:
@@ -419,6 +439,7 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         story.append(Spacer(1, 4))
 
     # Big Five traits
+    story.append(Paragraph("Big Five Traits", styles["subtitle"]))
     for t, p in bigfive_perc.items():
         story.append(Paragraph(f"{t}: {p}%", styles["body"]))
         if p >= 67:
@@ -429,45 +450,78 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
             story.append(Paragraph(trait_descriptions[t]["low"], styles["body"]))
         story.append(Spacer(1, 4))
 
+    # --------------------------
+    # Archetypes
+    # --------------------------
+    sorted_traits = sorted(creative_perc.items(), key=lambda x: x[1], reverse=True)
+    top_trait, sub_trait, lowest_trait = sorted_traits[0][0], sorted_traits[1][0], sorted_traits[-1][0]
+    top_score, sub_score, low_score = sorted_traits[0][1], sorted_traits[1][1], sorted_traits[-1][1]
+
+    def archetype_card(trait, title, description, tip):
+        color = palette.get(trait, "#7b2ff7")
+        return f"""
+        <div style="
+            background: {color};
+            padding: 0.8em;
+            border-radius: 12px;
+            margin-bottom: 1em;
+            text-align: left;
+            color: white;
+            font-size: 16px;
+            font-weight: normal;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
+        ">
+            <h3 style="margin-top:0; font-size:18px; font-weight:bold;">{title}</h3>
+            <p style="margin:0.3em 0;">{description}</p>
+            <p style="margin:0.3em 0;"><b>Growth Tip:</b> {tip}</p>
+        </div>
+        """
+
+    # Primary Archetype
+    if top_score >= 67:
+        desc = trait_descriptions[top_trait]["high"]
+    elif top_score >= 34:
+        desc = trait_descriptions[top_trait]["medium"]
+    else:
+        desc = trait_descriptions[top_trait]["low"]
+
+    story.append(Paragraph(archetype_card(
+        top_trait,
+        f"Primary Archetype: {archetypes[top_trait][0]} ({archetypes[top_trait][1]})",
+        desc,
+        archetypes[top_trait][2]
+    ), styles["body"], bulletText=None))
+
+    # Sub-Archetype
+    if sub_score >= 67:
+        desc = trait_descriptions[sub_trait]["high"]
+    elif sub_score >= 34:
+        desc = trait_descriptions[sub_trait]["medium"]
+    else:
+        desc = trait_descriptions[sub_trait]["low"]
+
+    story.append(Paragraph(archetype_card(
+        sub_trait,
+        f"Sub-Archetype: {archetypes[sub_trait][0]} ({archetypes[sub_trait][1]})",
+        desc,
+        archetypes[sub_trait][2]
+    ), styles["body"], bulletText=None))
+
+    # Growth Area
+    story.append(Paragraph(archetype_card(
+        lowest_trait,
+        f"Growth Area: {lowest_trait}",
+        trait_descriptions[lowest_trait]["low"],
+        archetypes[lowest_trait][2]
+    ), styles["body"], bulletText=None))
+
+    # --------------------------
+    # Build PDF
+    # --------------------------
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-# --------------------------
-# Radar Chart function
-# --------------------------
-def radar_chart_pdf(scores, title, size=6):
-    labels = list(scores.keys())
-    values = list(scores.values())
-    values += values[:1]  # close the loop
-    num_vars = len(labels)
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    angles += angles[:1]
-
-    # Create square figure to prevent stretching
-    fig, ax = plt.subplots(figsize=(size, size), subplot_kw=dict(polar=True))
-
-    # Plot the polygon connecting the points
-    ax.plot(angles, values, color='grey', linewidth=1, alpha=0.3)
-    ax.fill(angles, values, color='grey', alpha=0.05)
-
-    # Plot individual trait points with their colors
-    for i, label in enumerate(labels):
-        ax.plot(angles[i], values[i], 'o', color=palette[label], markersize=8)
-
-    # Axes settings
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels([])
-    ax.set_ylim(0, 100)
-    ax.set_title(title, size=14, weight="bold", pad=20)
-
-    # No legend for PDF
-    buf = io.BytesIO()
-    fig.savefig(buf, format="PNG", bbox_inches='tight', dpi=150)
-    buf.seek(0)
-    plt.close(fig)
-    return buf
 
 
 # --------------------------
