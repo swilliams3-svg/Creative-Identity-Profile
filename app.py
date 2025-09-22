@@ -373,7 +373,7 @@ def radar_chart_pdf(scores, title, size=4):
 # --------------------------
 # Results PDF
 # --------------------------
-def create_results_pdf(creative_perc, big5_perc, archetypes):
+def create_results_pdf(creative_perc, big5_perc, trait_descriptions, archetypes):
     from reportlab.lib.units import inch
 
     buffer = io.BytesIO()
