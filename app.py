@@ -510,7 +510,10 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
 
     story.append(Spacer(1, 8))
 
-    # --- Traits: two-column lists for Creative and Big Five ---
+    # --- Insert Page Break here to start a new page for traits ---
+    story.append(PageBreak())
+
+    # --- Traits: two-column lists for Creative and Big Five on the new page ---
     def trait_table(traits_dict, heading_text):
         story.append(Paragraph(heading_text, styles["subtitle"]))
         traits = list(traits_dict.items())
@@ -519,7 +522,6 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         right = traits[mid:]
 
         rows = []
-        # compute content column width in points (half of content area)
         col_w = (content_width_pts / 2.0)
 
         for i in range(max(len(left), len(right))):
@@ -550,10 +552,10 @@ def create_results_pdf(creative_perc, bigfive_perc, trait_descriptions, archetyp
         story.append(tbl)
         story.append(Spacer(1, 10))
 
+    # Add the two trait tables to the **second page**
     trait_table(creative_perc, "Creative Traits")
     trait_table(bigfive_perc, "Big Five Traits")
 
-    # Build
     doc.build(story)
     buffer.seek(0)
     return buffer
