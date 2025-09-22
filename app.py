@@ -369,6 +369,10 @@ def radar_chart_pdf(scores, title, size=4):
     plt.close(fig)
     return buf
 
+
+# --------------------------
+# Results PDF
+# --------------------------
 def create_results_pdf(creative_perc, big5_perc, archetypes):
     from reportlab.lib.units import inch
 
