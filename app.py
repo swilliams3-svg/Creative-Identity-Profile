@@ -369,6 +369,80 @@ def radar_chart_pdf(scores, title, size=4):
     plt.close(fig)
     return buf
 
+def create_results_pdf(creative_perc, big5_perc, archetypes):
+    from reportlab.lib.units import inch
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    story = []
+
+    # Title
+    story.append(Paragraph("Creative Identity Profile Results", ParagraphStyle(
+        name="Title", alignment=TA_CENTER, fontSize=18, spaceAfter=20
+    )))
+
+    # Radar charts
+    chart_buf_creative = radar_chart_pdf(creative_perc, "Creative Traits", size=4.5)
+    chart_buf_big5 = radar_chart_pdf(big5_perc, "Big Five Traits", size=4.5)
+
+    img_creative = Image(chart_buf_creative, width=5*inch, height=5*inch)
+    img_big5 = Image(chart_buf_big5, width=5*inch, height=5*inch)
+
+    chart_table = Table([[img_creative, img_big5]], colWidths=[5*inch, 5*inch])
+    chart_table.setStyle(TableStyle([("ALIGN", (0, 0), (-1, -1), "CENTER")]))
+    story.append(chart_table)
+    story.append(Spacer(1, 20))
+
+    # Archetypes section
+    story.append(Paragraph("Your Archetypes", ParagraphStyle(
+        name="ArchetypeHeader", fontSize=14, alignment=TA_LEFT, spaceAfter=12
+    )))
+
+    archetype_data = []
+    for name, color in archetypes:
+        archetype_data.append([
+            Paragraph(name, ParagraphStyle(name="Normal", fontSize=12)),
+            Table([[Paragraph(" ", ParagraphStyle(name="Block"))]],
+                  colWidths=[0.4*inch], rowHeights=[0.3*inch],
+                  style=TableStyle([("BACKGROUND", (0, 0), (-1, -1), color)]))
+        ])
+
+    archetype_table = Table(archetype_data, colWidths=[4*inch, 0.6*inch])
+    archetype_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(archetype_table)
+    story.append(Spacer(1, 20))
+
+    # Creative traits section
+    story.append(Paragraph("Creative Traits Breakdown", ParagraphStyle(
+        name="TraitsHeader", fontSize=14, alignment=TA_LEFT, spaceAfter=12
+    )))
+
+    creative_data = []
+    row = []
+    for i, (trait, score) in enumerate(creative_perc.items()):
+        row.append(Paragraph(f"{trait}: {score}%", ParagraphStyle(name="Normal", fontSize=11)))
+        if len(row) == 2:
+            creative_data.append(row)
+            row = []
+    if row:  # leftover
+        creative_data.append(row)
+
+    creative_table = Table(creative_data, colWidths=[3.8*inch, 3.8*inch])
+    creative_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(creative_table)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
 
 # --------------------------
