@@ -3,4 +3,3 @@ fpdf==1.7.2
 matplotlib
 numpy
 reportlab
-streamlit-autorefresh>=1.0.1
